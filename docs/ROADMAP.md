@@ -58,7 +58,7 @@
 |---|---|---|---|---|
 | M1-1 | 把 watchOS target 并入 Phone 工程 / 建立伴生配对，两端开 **Watch Connectivity** capability | Phone + Watch | — | 不做这步 `WCSession` 无法配对。见 [WATCH_CHANNEL.md](WATCH_CHANNEL.md) §3 |
 | M1-2 | 建 `Shared/Models.swift`，**同时加入两个 target** | Phone + Watch | M1-1 | 消灭"同名不同义" |
-| M1-3 | 模型改名：Watch 采集模型 → `WatchSession`；Phone UI 行模型 → `SessionRow` | Phone + Watch | M1-2 | 见 [OVERVIEW.md](OVERVIEW.md) §3.1 |
+| M1-3 | 模型改名：Watch 采集模型 → `WatchSession`；Phone 展示模型 → `TrainingRecord`（**不要**用 `SessionRow`，已被行视图占用） | Phone + Watch | M1-2 | 见 [OVERVIEW.md](OVERVIEW.md) §3.1 |
 | M1-4 | Watch 产出 `MatchSession` DTO（字段逐字对齐契约） | Watch | M1-3 | **本里程碑最核心的一步**，差异清单见 [CONTRACT.md](CONTRACT.md) §3.3 |
 | M1-5 | Watch 补 `finishWorkout()`；补心率/卡路里的**标量**聚合（avg/max） | Watch | — | 现在 `HKWorkout` 没真正写入 HealthKit |
 | M1-6 | 两端实现 `WCSessionDelegate` 封装（消息 + 文件） | Phone + Watch | M1-1 | 参照实现 5 个坑见 [WATCH_CHANNEL.md](WATCH_CHANNEL.md) §5 |
@@ -141,7 +141,7 @@
 
 | # | 风险 | 影响 | 处置 |
 |---|---|---|---|
-| R1 | `TrainingSession` 同名不同义 | 改一处以为改了三处，静默出错 | M1-3 改名 |
+| R1 | `TrainingSession` 同名不同义（Watch 采集模型 / Phone 展示模型） | 改一处以为改了三处，静默出错；且若某文件被同时加进两个 target 会立刻编译失败 | M1-3 改名（Watch→`WatchSession`，Phone→`TrainingRecord`） |
 | R2 | 服务端字段白名单是**静默**的 | 新增字段不加白名单会被丢弃，无报错 | 改契约必须同步改 `server/sync.py` 的 `SYNCABLE` |
 | R3 | 三端独立仓库，无 CI 联动 | 一端先改会导致线上静默失配 | 契约变更走 [CONTRACT.md](CONTRACT.md) §7 流程；建议后续加共享契约校验脚本 |
 | R4 | `openid ↔ student_id` 仍靠派生 | 多端身份对不上时数据"查不到" | M3-6 |

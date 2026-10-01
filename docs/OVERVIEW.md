@@ -99,13 +99,27 @@
 |---|---|---|---|
 | **`WatchSession`** | Watch 内部 | 采集域模型：一场训练 + `swings[]` + `heartRates[]` | 现名 `TrainingSession`（待改名） |
 | **`MatchSession`** | 传输契约 | **上行 DTO**，字段名 = 后端入参字段名 | 参照实现 `Shared/Models.swift` |
-| **`SessionRow`** | Phone UI | 列表里的一行展示数据（标题 / 日期 / 分数） | 现名 `TrainingSession`（待改名） |
+| **`TrainingRecord`** | Phone UI | 列表里的一行展示数据（标题 / 日期 / 分数） | 现名 `TrainingSession`（待改名） |
+| **`SessionRow`** | Phone UI | 上面那条记录的 **SwiftUI 行视图**（已是 View，**不改**） | 已存在，`Views/HomeView.swift` |
 | **`training_sessions`** | Server | L2 表名，一场训练一行 | — |
 
-> 📌 **落地要求**：Phone 侧的 UI 模型必须改名（`SessionRow`），
-> Watch 侧的采集模型也必须改名（`WatchSession`），
+> 📌 **落地要求**：Phone 侧的 UI 模型改名 `TrainingRecord`，
+> Watch 侧的采集模型改名 `WatchSession`，
 > 把 `TrainingSession` 这个词**只留给后端表概念**。
-> 见 [ROADMAP.md](ROADMAP.md) 的 P0-3。
+> 见 [ROADMAP.md](ROADMAP.md) 的 M1-3。
+>
+> ⚠️ **改名目标名已于 2026-10-01 修正**：上一版文档写的是 Phone 模型改名 `SessionRow`，
+> 这是错的。`ATennis/Views/HomeView.swift:530` 已经有一个 `struct SessionRow: View`
+> （首页与全部记录页共用的行视图），照那个方案改名会直接**编译冲突**。
+> 现改为 `TrainingRecord`（与 `Models.swift` 里 `// MARK: - 训练记录` 的既有命名意图一致），
+> `SessionRow` 保持为 View 名不动。
+
+### 3.1.1 另有一组同名但**不需要改**的类型
+
+`HomeView`、`ContentView` 在两个工程里都存在，但它们是 SwiftUI 的常规入口名，
+且各自在独立模块内，**不构成隐患**——除非将来把某个文件同时加进两个 target。
+真正要防的是「一个文件进两个 target」的场景，届时凡是重名类型都会立刻编译失败，
+所以新增共享文件后要立刻跑一次双 target 编译。
 
 ### 3.2 其他统一术语
 
