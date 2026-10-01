@@ -1,0 +1,559 @@
+{% extends "base.html" %}
+{#- 本文件由 scripts/build_pages.py 从设计稿自动生成，请勿手改；
+    修改请改设计稿后重新运行构建脚本。
+    功能扩展区块在 _feedback_extra.html，由脚本以 include 追加，不会被覆盖。 -#}
+{% set nav_active = "feedback" %}
+{% block title %}用户建议与需求工单中心{% endblock %}
+{% block main %}<div class="flex flex-col w-full px-space-xl py-space-lg space-y-space-lg">
+<!-- Header Section with Tactical Layout -->
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-sm mb-space-xs">
+<span class="px-space-sm py-0.5 rounded-full bg-surface-container-high text-primary-fixed font-label-sm text-label-sm uppercase tracking-wider flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+          User Voice & Telemetry Loop
+        </span>
+<span class="text-outline text-label-sm font-label-sm">更新于 2分钟前</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">用户建议与需求工单中心</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">
+        实时收集来自 iOS 端与 Apple Watch 端用户的产品建议、体验反馈与算法缺陷报错
+      </p>
+</div>
+<!-- Action Group -->
+<div class="flex items-center gap-space-sm flex-wrap">
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-all font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px] text-secondary">auto_fix_high</span>
+<span>智能需求聚类</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-all font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px] text-outline">file_download</span>
+<span>导出反馈 CSV</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 shadow-[0_0_20px_rgba(195,244,0,0.18)] transition-all">
+<span class="material-symbols-outlined text-[18px]">alt_route</span>
+<span>批量状态流转</span>
+</button>
+</div>
+</div>
+<!-- Metric Summary Bento Cards (4 Cards) -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md">
+<!-- Card 1: 累计反馈总数 -->
+<div class="p-space-lg rounded-xl bg-surface-container-low relative overflow-hidden shadow-sm flex flex-col justify-between group hover:bg-surface-container transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Total Received</span>
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary-fixed">
+<span class="material-symbols-outlined text-[20px]">inbox</span>
+</div>
+</div>
+<div class="mt-space-md">
+<div class="font-headline-sm text-headline-sm text-on-surface-variant font-medium">累计反馈总数</div>
+<div class="flex items-baseline gap-space-xs mt-1">
+<span class="font-metric-digit text-metric-digit text-on-surface font-extrabold tracking-tight">1,280</span>
+<span class="font-label-md text-label-md text-on-surface-variant">条</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-primary-fixed flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +14.2% 本月环比
+        </span>
+<span class="font-label-sm text-label-sm text-outline">98.4% 闭环响应率</span>
+</div>
+</div>
+<!-- Card 2: 待处理 / 评估中 -->
+<div class="p-space-lg rounded-xl bg-surface-container-low relative overflow-hidden shadow-sm flex flex-col justify-between group hover:bg-surface-container transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Under Triage</span>
+<div class="w-8 h-8 rounded-lg bg-error-container/40 flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[20px]">priority_high</span>
+</div>
+</div>
+<div class="mt-space-md">
+<div class="font-headline-sm text-headline-sm text-on-surface-variant font-medium">待处理 / 评估中</div>
+<div class="flex items-baseline gap-space-xs mt-1">
+<span class="font-metric-digit text-metric-digit text-on-surface font-extrabold tracking-tight">24</span>
+<span class="font-label-md text-label-md text-on-surface-variant">条</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-bold">
+          高优先级 6 条
+        </span>
+<span class="font-label-sm text-label-sm text-outline">均响应 1.8h</span>
+</div>
+</div>
+<!-- Card 3: 已采纳并规划版本 -->
+<div class="p-space-lg rounded-xl bg-surface-container-low relative overflow-hidden shadow-sm flex flex-col justify-between group hover:bg-surface-container transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Roadmap Ingest</span>
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">rocket_launch</span>
+</div>
+</div>
+<div class="mt-space-md">
+<div class="font-headline-sm text-headline-sm text-on-surface-variant font-medium">已采纳并规划版本</div>
+<div class="flex items-baseline gap-space-xs mt-1">
+<span class="font-metric-digit text-metric-digit text-on-surface font-extrabold tracking-tight">142</span>
+<span class="font-label-md text-label-md text-on-surface-variant">条</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-primary-container text-on-primary-container font-label-sm text-label-sm font-bold">
+          已上线 86 项功能
+        </span>
+<span class="font-label-sm text-label-sm text-outline">转化率 11.1%</span>
+</div>
+</div>
+<!-- Card 4: 用户平均满意度 -->
+<div class="p-space-lg rounded-xl bg-surface-container-low relative overflow-hidden shadow-sm flex flex-col justify-between group hover:bg-surface-container transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">User Happiness</span>
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary-fixed">
+<span class="material-symbols-outlined text-[20px]">sentiment_very_satisfied</span>
+</div>
+</div>
+<div class="mt-space-md">
+<div class="font-headline-sm text-headline-sm text-on-surface-variant font-medium">用户平均满意度</div>
+<div class="flex items-baseline gap-space-xs mt-1">
+<span class="font-metric-digit text-metric-digit text-primary-fixed font-extrabold tracking-tight">4.85</span>
+<span class="font-label-md text-label-md text-on-surface-variant">/ 5.0</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm flex items-center justify-between">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary-fixed" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-sm text-label-sm text-on-surface font-bold">NPS 72</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">全行业前 2% 水准</span>
+</div>
+</div>
+</div>
+<!-- Feedback Management 3-Column Workspace -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-md items-start">
+<!-- Column 1: Left Filter & Taxonomy Panel (3 Cols) -->
+<div class="xl:col-span-3 space-y-space-md">
+<!-- Status Filter Tile -->
+<div class="p-space-md rounded-xl bg-surface-container-low space-y-space-md">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider font-bold">状态快速过滤</span>
+<button class="text-label-sm font-label-sm text-primary-fixed hover:underline">重置</button>
+</div>
+<div class="space-y-1">
+<button class="w-full flex items-center justify-between px-space-md py-2 rounded-xl bg-surface-container text-primary-fixed font-semibold text-body-md font-body-md transition-all">
+<span class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+              全部建议
+            </span>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface">1,280</span>
+</button>
+<button class="w-full flex items-center justify-between px-space-md py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface text-body-md font-body-md transition-all">
+<span class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+              待审核
+            </span>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface">24</span>
+</button>
+<button class="w-full flex items-center justify-between px-space-md py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface text-body-md font-body-md transition-all">
+<span class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span>
+              评估中 (In Review)
+            </span>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface">18</span>
+</button>
+<button class="w-full flex items-center justify-between px-space-md py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface text-body-md font-body-md transition-all">
+<span class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-secondary-container"></span>
+              开发排期中
+            </span>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface">32</span>
+</button>
+<button class="w-full flex items-center justify-between px-space-md py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface text-body-md font-body-md transition-all">
+<span class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-primary-fixed-dim"></span>
+              已上线发布
+            </span>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface">86</span>
+</button>
+<button class="w-full flex items-center justify-between px-space-md py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface text-body-md font-body-md transition-all">
+<span class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+              已归档 / 关闭
+            </span>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface">1,120</span>
+</button>
+</div>
+</div>
+<!-- Ingestion Channels Breakdown -->
+<div class="p-space-md rounded-xl bg-surface-container-low space-y-space-md">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider font-bold">硬件与来源渠道</span>
+<div class="space-y-space-sm">
+<div>
+<div class="flex justify-between text-label-md font-label-md text-on-surface mb-1">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">phone_iphone</span>
+                iPhone App
+              </span>
+<span class="font-bold">68%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 68%;"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-label-md font-label-md text-on-surface mb-1">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary-fixed">watch</span>
+                Apple Watch (Ultra/S9)
+              </span>
+<span class="font-bold">24%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 24%;"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-label-md font-label-md text-on-surface mb-1">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-tertiary-fixed-dim">tablet_mac</span>
+                线下教练端 / iPad Mount
+              </span>
+<span class="font-bold">8%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-fixed-dim rounded-full" style="width: 8%;"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Problem Taxonomy Categories -->
+<div class="p-space-md rounded-xl bg-surface-container-low space-y-space-sm">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider font-bold">核心问题分类</span>
+<div class="flex flex-col gap-1 text-label-md font-label-md">
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-high/50 hover:bg-surface-container-high transition-colors cursor-pointer">
+<span class="text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary-fixed">sports_baseball</span>
+              算法与击球识别
+            </span>
+<span class="text-outline">320</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-high transition-colors cursor-pointer">
+<span class="text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary">dashboard_customize</span>
+              UI 与交互体验
+            </span>
+<span class="text-outline">280</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-high transition-colors cursor-pointer">
+<span class="text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary-container">query_stats</span>
+              数据报表与导出
+            </span>
+<span class="text-outline">240</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-high transition-colors cursor-pointer">
+<span class="text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-error">bluetooth_searching</span>
+              硬件与蓝牙同步
+            </span>
+<span class="text-outline">180</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-high transition-colors cursor-pointer">
+<span class="text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-tertiary-fixed-dim">school</span>
+              教学课程与训练库
+            </span>
+<span class="text-outline">260</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 2: Main Work Order List (5 Cols) -->
+<div class="xl:col-span-5 space-y-space-md">
+<!-- Search & Sort Filter Toolbar -->
+<div class="p-space-md rounded-xl bg-surface-container-low flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs overflow-x-auto py-0.5">
+<span class="px-3 py-1.5 rounded-full bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold cursor-pointer whitespace-nowrap">
+            按点赞投票高排
+          </span>
+<span class="px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md hover:text-on-surface cursor-pointer whitespace-nowrap">
+            最新提出
+          </span>
+<span class="px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md hover:text-on-surface cursor-pointer whitespace-nowrap">
+            紧急缺陷优先
+          </span>
+</div>
+<div class="text-outline font-label-sm text-label-sm whitespace-nowrap">4 条选中记录</div>
+</div>
+<!-- Feed Card 1 (Selected State) -->
+<div class="p-space-lg rounded-xl bg-surface-container ring-1 ring-primary-container shadow-md flex flex-col gap-space-md transition-all cursor-pointer relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary-container"></div>
+<div class="flex items-start justify-between gap-space-sm pl-space-xs">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="font-label-sm text-label-sm font-bold text-primary-fixed bg-surface-container-lowest px-2 py-0.5 rounded">
+              #FB-20241028-09
+            </span>
+<span class="px-2 py-0.5 rounded-full bg-primary-container text-on-primary-container font-label-sm text-label-sm font-bold">
+              已规划至 v2.5
+            </span>
+<span class="px-2 py-0.5 rounded-full bg-error-container/60 text-error font-label-sm text-label-sm font-bold">
+              优先级: 高
+            </span>
+</div>
+<div class="flex items-center gap-1 text-primary-fixed font-label-md text-label-md font-bold bg-surface-container-lowest px-2.5 py-1 rounded-full">
+<span class="material-symbols-outlined text-[16px]">thumb_up</span>
+<span>+142</span>
+</div>
+</div>
+<div class="pl-space-xs space-y-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">
+            建议训练报告中增加底线切削专项的球速与旋转度统计
+          </h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">
+            当前系统在反手切削（Backhand Slice）时只记录了触球与落点，但切削产生的强烈下旋转速（RPM）和出球弧度对破网战术评估至关重要，希望能以雷达图展示。
+          </p>
+</div>
+<div class="pl-space-xs pt-space-xs flex items-center justify-between text-label-sm font-label-sm text-outline">
+<div class="flex items-center gap-space-sm">
+<span class="text-on-surface font-semibold">张哲恒</span>
+<span>·</span>
+<span class="text-secondary">NTRP 3.5</span>
+<span>·</span>
+<span>Yonex EZONE 98</span>
+</div>
+<span>3小时前 来自 iPhone 15 Pro</span>
+</div>
+</div>
+<!-- Feed Card 2 -->
+<div class="p-space-lg rounded-xl bg-surface-container-low hover:bg-surface-container flex flex-col gap-space-md transition-all cursor-pointer relative overflow-hidden">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="font-label-sm text-label-sm font-bold text-outline bg-surface-container-lowest px-2 py-0.5 rounded">
+              #FB-20241028-04
+            </span>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-container text-on-tertiary-container font-label-sm text-label-sm font-bold">
+              评估中 (Triage)
+            </span>
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-bold animate-pulse">
+              优先级: 紧急
+            </span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-label-md text-label-md font-semibold bg-surface-container-lowest px-2.5 py-1 rounded-full">
+<span class="material-symbols-outlined text-[16px]">thumb_up</span>
+<span>+218</span>
+</div>
+</div>
+<div class="space-y-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">
+            希望 Apple Watch 在正手击球出现发力代偿（如翻腕过早）时提供轻微触觉反馈
+          </h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">
+            连续发力击球时很难觉察自己的手腕提前下压翻折，如果陀螺仪检测到危险旋转角，通过 Apple Watch 的 Haptic Engine 震动提醒，可以有效预防网球肘！
+          </p>
+</div>
+<div class="pt-space-xs flex items-center justify-between text-label-sm font-label-sm text-outline">
+<div class="flex items-center gap-space-sm">
+<span class="text-on-surface font-semibold">陈雨菲</span>
+<span>·</span>
+<span class="text-secondary">NTRP 4.0</span>
+<span>·</span>
+<span>Apple Watch Ultra 2</span>
+</div>
+<span>6小时前 来自 实时训练记录</span>
+</div>
+</div>
+<!-- Feed Card 3 -->
+<div class="p-space-lg rounded-xl bg-surface-container-low hover:bg-surface-container flex flex-col gap-space-md transition-all cursor-pointer relative overflow-hidden">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="font-label-sm text-label-sm font-bold text-outline bg-surface-container-lowest px-2 py-0.5 rounded">
+              #FB-20241027-11
+            </span>
+<span class="px-2 py-0.5 rounded-full bg-secondary text-on-secondary font-label-sm text-label-sm font-bold">
+              待审核 (New)
+            </span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-label-md text-label-md font-semibold bg-surface-container-lowest px-2.5 py-1 rounded-full">
+<span class="material-symbols-outlined text-[16px]">thumb_up</span>
+<span>+96</span>
+</div>
+</div>
+<div class="space-y-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">
+            在横向对比中，希望能与职业巡回赛选手（如辛纳、阿尔卡拉斯）的数据模型作为对照
+          </h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">
+            目前对比功能只支持在学员之间拉取。业余高阶训练者非常渴望看到自己平击发球引拍轨迹和 ATP 职业选手的标杆偏差范围。
+          </p>
+</div>
+<div class="pt-space-xs flex items-center justify-between text-label-sm font-label-sm text-outline">
+<div class="flex items-center gap-space-sm">
+<span class="text-on-surface font-semibold">王浩然</span>
+<span>·</span>
+<span class="text-secondary">NTRP 4.5</span>
+<span>·</span>
+<span>Babolat Pure Aero 98</span>
+</div>
+<span>昨天 来自 iPhone App</span>
+</div>
+</div>
+<!-- Feed Card 4 -->
+<div class="p-space-lg rounded-xl bg-surface-container-low hover:bg-surface-container flex flex-col gap-space-md transition-all cursor-pointer relative overflow-hidden">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="font-label-sm text-label-sm font-bold text-outline bg-surface-container-lowest px-2 py-0.5 rounded">
+              #FB-20241026-03
+            </span>
+<span class="px-2 py-0.5 rounded-full bg-surface-bright text-on-surface font-label-sm text-label-sm font-bold">
+              开发中 (Sprint 24B)
+            </span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-label-md text-label-md font-semibold bg-surface-container-lowest px-2.5 py-1 rounded-full">
+<span class="material-symbols-outlined text-[16px]">thumb_up</span>
+<span>+88</span>
+</div>
+</div>
+<div class="space-y-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">
+            建议增加教练端一键批量布置训练计划并同步至学员 Apple Watch
+          </h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">
+            在青训营执教时，每次课后都需要挨个提醒学员。如果教练看板能圈选学员群发“底线多球500次”计划并在手表上实时倒计时督促，会极大地提高执教效率。
+          </p>
+</div>
+<div class="pt-space-xs flex items-center justify-between text-label-sm font-label-sm text-outline">
+<div class="flex items-center gap-space-sm">
+<span class="text-on-surface font-semibold">Carlos 教练</span>
+<span>·</span>
+<span class="text-primary-fixed">认证巡回赛教练</span>
+<span>·</span>
+<span>Head Speed Pro</span>
+</div>
+<span>2天前 来自 Web 教练控制台</span>
+</div>
+</div>
+</div>
+<!-- Column 3: Detail, Telemetry Context & Triage Workflow Panel (4 Cols) -->
+<div class="xl:col-span-4 space-y-space-md">
+<!-- Session Telemetry Context Card -->
+<div class="p-space-lg rounded-xl bg-surface-container-low space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-fixed animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider font-bold">关联会话数据快照</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary-fixed">Session #TR-8821</span>
+</div>
+<!-- Rich Context Visual Media -->
+<div class="rounded-lg overflow-hidden bg-surface-container-lowest relative aspect-video flex items-center justify-center group">
+<img class="w-full h-full object-cover opacity-80" data-alt="Athletic male tennis player executing a precise slice backhand stroke on a hard court under bright indoor stadium spotlight, captured in high-speed sports motion capture analysis with fluorescent neon green velocity vector overlays and kinetic motion path." src="/assets/img/feedback-b6f6f8.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent"></div>
+<div class="absolute bottom-2 left-2 right-2 flex items-center justify-between text-label-sm font-label-sm">
+<span class="px-2 py-0.5 rounded bg-surface-container/80 backdrop-blur-md text-on-surface font-semibold">
+              高频采样 · 120 FPS 轨迹捕捉
+            </span>
+<span class="px-2 py-0.5 rounded bg-surface-container/80 backdrop-blur-md text-primary-fixed font-bold">
+              反手下旋 (Backhand Slice)
+            </span>
+</div>
+</div>
+<!-- Telemetry Data Mini Grid -->
+<div class="grid grid-cols-3 gap-space-xs text-center bg-surface-container-lowest p-space-sm rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">击球平均时速</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold mt-0.5">88 <span class="text-label-sm font-label-sm text-outline font-normal">km/h</span></span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">切削旋转转速</span>
+<span class="font-headline-sm text-headline-sm text-primary-fixed font-bold mt-0.5">2,140 <span class="text-label-sm font-label-sm text-outline font-normal">RPM</span></span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">甜区击球率</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold mt-0.5">91%</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-label-md font-label-md text-on-surface-variant bg-surface-container p-space-sm rounded-lg">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-secondary">memory</span>
+<span>算法模型匹配</span>
+</span>
+<span class="text-on-surface font-semibold">CoreML-Tennis-v4.2.1</span>
+</div>
+</div>
+<!-- Internal Triage & Resolution Stream -->
+<div class="p-space-lg rounded-xl bg-surface-container-low space-y-space-md">
+<div class="flex items-center justify-between">
+<h4 class="font-label-sm text-label-sm text-outline uppercase tracking-wider font-bold">流转处理链路</h4>
+<span class="font-label-sm text-label-sm text-on-surface-variant">4 条历史流转记录</span>
+</div>
+<!-- Timeline Steps -->
+<div class="space-y-space-md relative pl-6 before:content-[''] before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-surface-container-high">
+<!-- Step 1 -->
+<div class="relative">
+<span class="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-primary-container flex items-center justify-center ring-4 ring-surface-container-low">
+<span class="w-1.5 h-1.5 rounded-full bg-on-primary-container"></span>
+</span>
+<div class="flex flex-col">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md font-bold text-on-surface">产品规划决策</span>
+<span class="font-label-sm text-label-sm text-outline">10:30</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">
+                产品经理 @Elena 评审已通过，列入 <strong class="text-primary-fixed">v2.5 切削专题版</strong> 功能列表，并标记为高优先度。
+              </p>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="relative">
+<span class="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-secondary flex items-center justify-center ring-4 ring-surface-container-low">
+<span class="w-1.5 h-1.5 rounded-full bg-on-secondary"></span>
+</span>
+<div class="flex flex-col">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md font-bold text-on-surface">算法可行性评估</span>
+<span class="font-label-sm text-label-sm text-outline">昨天 16:45</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">
+                算法专家 @Dr. Zhao 确认现有 Apple Watch 陀螺仪采样率已具备切削下旋角度识别精度，可直接调用 IMU Raw Data 输出。
+              </p>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="relative">
+<span class="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-surface-container-high flex items-center justify-center ring-4 ring-surface-container-low">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+</span>
+<div class="flex flex-col">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md font-bold text-on-surface">工单自动创建与聚类</span>
+<span class="font-label-sm text-label-sm text-outline">昨天 09:12</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">
+                NLP 引擎从 iOS 客户端收集反馈并归入“切削数据维度扩展”需求簇。
+              </p>
+</div>
+</div>
+</div>
+<!-- Quick Reply Box for the User -->
+<div class="space-y-space-sm pt-space-sm">
+<div class="flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-on-surface font-semibold">发送站内信 / Push 回复学员</span>
+<button class="text-secondary hover:underline">加载回复模板</button>
+</div>
+<div class="relative">
+<textarea class="w-full p-space-sm bg-surface-container-lowest rounded-xl font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary-container resize-none" placeholder="感谢你的建议！切削旋转与球速分析已列入 v2.5 排期..." rows="3"></textarea>
+</div>
+<div class="flex items-center justify-between gap-space-sm">
+<label class="flex items-center gap-1.5 text-label-sm font-label-sm text-on-surface-variant cursor-pointer">
+<input checked="" class="rounded bg-surface-container text-primary-container focus:ring-0" type="checkbox"/>
+<span>同步抄送给该工单的 142 名投票学员</span>
+</label>
+<button class="px-space-md py-2 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all flex items-center gap-1 shadow-[0_0_12px_rgba(195,244,0,0.15)]">
+<span class="material-symbols-outlined text-[16px]">send</span>
+<span>发送回复</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>{% endblock %}

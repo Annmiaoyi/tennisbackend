@@ -1,0 +1,194 @@
+{#- 数据采集与标注 —— 原独立 :8000 标注后端的工作台，已并入本站（:8787）。
+
+    处理方式：
+      · 外壳（侧边栏 / 顶栏）复用 base.html，与其余页面视觉同源；
+      · 页头 / 卡片 / 徽章严格沿用设计系统令牌（surface-container 卡片、
+        label-sm 大写标签、metric-digit 数值、电光绿主容器按钮），
+        不引入设计稿之外的新颜色；
+      · 中间的「视频 ↔ 波形同步标注」交互逻辑保持原实现，脚本从 static/
+        拆到 web/assets/js/annotation.js —— tailwind.config 的 content 已包含
+        ./web/assets/js/**/*.js，JS 里动态生成的类名不会被 purge。 -#}
+{% extends "base.html" %}
+{% set nav_active = "data-annotation" %}
+{% block title %}数据采集与标注{% endblock %}
+{% block main %}
+<div class="p-space-lg md:p-space-xl lg:p-margin-desktop flex flex-col gap-space-xl">
+
+<!-- 页头 -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div class="flex flex-col gap-space-2xs">
+<div class="flex items-center gap-space-sm">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high text-primary-fixed font-label-sm text-label-sm uppercase tracking-wider font-bold">Annotation</span>
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Watch Sensors → Waveform → Training Set</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight font-bold">数据采集与标注</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">
+原始传感器会话在这里完成「视频 ↔ 波形」同步标注，产出 CoreML 训练集。
+Watch 的启发式结果会自动预标注（暗色虚线），标注者只需纠错与补漏 ——
+未被更正的预标注会直接成为训练标签。
+</p>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm">
+<div class="px-space-md py-2 rounded-xl bg-surface-container flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">会话 / 已标注</span>
+<span class="font-label-md text-label-md text-on-surface font-bold">{{ ov.sessions }} / {{ ov.sessions_touched }}</span>
+</div>
+<div class="px-space-md py-2 rounded-xl bg-surface-container flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">待纠错预标注</span>
+<span class="font-label-md text-label-md text-primary-fixed font-bold">{{ ov.heuristic_proposed }}</span>
+</div>
+<a class="flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high transition-all shadow-sm" href="/settings">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">tune</span>
+<span class="font-label-md text-label-md">采集口径设置</span>
+</a>
+<a class="flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high transition-all shadow-sm" href="/api/export/dataset.csv">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">download</span>
+<span class="font-label-md text-label-md">训练集 CSV</span>
+</a>
+</div>
+</div>
+
+<!-- 统计水位 -->
+<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-space-sm">
+<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
+<span class="font-label-sm text-label-sm text-outline">原始会话</span>
+<span class="font-metric-digit text-headline-md text-primary font-bold">{{ ov.sessions }}</span>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
+<span class="font-label-sm text-label-sm text-outline">含视频</span>
+<span class="font-metric-digit text-headline-md text-secondary font-bold">{{ ov.with_video }}</span>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
+<span class="font-label-sm text-label-sm text-outline">人工确认标注</span>
+<span class="font-metric-digit text-headline-md text-primary-fixed font-bold">{{ ov.human_confirmed }}</span>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
+<span class="font-label-sm text-label-sm text-outline">待纠错</span>
+<span class="font-metric-digit text-headline-md text-tertiary-fixed-dim font-bold">{{ ov.heuristic_proposed }}</span>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
+<span class="font-label-sm text-label-sm text-outline">误检已剔除</span>
+<span class="font-metric-digit text-headline-md text-error font-bold">{{ ov.heuristic_rejected }}</span>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
+<span class="font-label-sm text-label-sm text-outline">标注者</span>
+<span class="font-metric-digit text-headline-md text-on-surface-variant font-bold">{{ ov.annotators }}</span>
+</div>
+</div>
+
+<!-- 链路 -->
+<div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[22px]">account_tree</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">采集到训练的四段链路</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">capture → upload → annotate → train</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-sm">
+{% for s in ov.stages %}
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined {{ 'text-primary-fixed' if loop.first else 'text-outline' }} text-[20px]">{{ s.icon }}</span>
+<span class="font-label-sm text-label-sm text-outline font-bold">{{ s.step }}</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface font-semibold">{{ s.title }}</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ s.body }}</span>
+</div>
+{% endfor %}
+</div>
+<p class="font-label-sm text-label-sm text-outline">{{ ov.labels_note }}</p>
+</div>
+
+<!-- ===================== 标注工作台 ===================== -->
+<div class="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)] gap-space-md items-start">
+
+<!-- 左：会话列表 + 上传 -->
+<aside class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-primary font-bold">会话</h2>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm" id="sessCount">{{ ov.sessions }} 场</span>
+</div>
+<div class="flex flex-col gap-space-xs max-h-[420px] overflow-y-auto" id="sessions">
+<div class="font-label-sm text-label-sm text-outline py-space-md text-center">加载中…</div>
+</div>
+
+<div class="border-t border-outline/20 pt-space-md flex flex-col gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-bold">上传新会话</span>
+<input class="w-full px-space-sm py-2 rounded-lg bg-surface-container-low border border-outline/25 text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:border-primary-fixed transition-colors" id="sid" placeholder="session id（与 Watch 导出一致）"/>
+<input class="w-full px-space-sm py-2 rounded-lg bg-surface-container-low border border-outline/25 text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:border-primary-fixed transition-colors" id="player" placeholder="player id（可选）"/>
+<label class="w-full flex items-center gap-space-xs px-space-sm py-2 rounded-lg bg-surface-container-low border border-dashed border-outline/35 cursor-pointer hover:border-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">description</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant flex-1" id="rawName">选择 raw_*.json</span>
+<input accept=".json" class="hidden" id="rawFile" type="file"/>
+</label>
+<label class="w-full flex items-center gap-space-xs px-space-sm py-2 rounded-lg bg-surface-container-low border border-dashed border-outline/35 cursor-pointer hover:border-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">videocam</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant flex-1" id="vidName">选择视频（可选）</span>
+<input accept="video/*" class="hidden" id="vidFile" type="file"/>
+</label>
+<button class="w-full flex items-center justify-center gap-space-xs px-space-md py-2.5 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all" id="uploadBtn">
+<span class="material-symbols-outlined text-[18px]">cloud_upload</span>
+<span>上传并预标注</span>
+</button>
+</div>
+</aside>
+
+<!-- 右：标注舞台 -->
+<section class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md min-w-0">
+<!-- 工具条 -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm text-outline">标注者</span>
+<input class="w-[130px] px-space-sm py-1.5 rounded-lg bg-surface-container-low border border-outline/25 text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:border-primary-fixed transition-colors" id="annotator" placeholder="你的名字"/>
+</div>
+<div class="flex flex-wrap items-center gap-space-xs" id="labels"></div>
+<span class="flex-1"></span>
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all shadow-[0_0_20px_rgba(195,244,0,0.15)]" id="saveBtn">
+<span class="material-symbols-outlined text-[18px]">save</span>
+<span>保存本轮</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-all" id="consBtn">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">balance</span>
+<span class="font-label-md text-label-md">一致性评分</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-all" id="exportBtn">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">ios_share</span>
+<span class="font-label-md text-label-md">annotation.json</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-all" id="dsBtn">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">table_view</span>
+<span class="font-label-md text-label-md">dataset.csv</span>
+</button>
+</div>
+
+<!-- 舞台（视频 + 波形 + 标注表，由 JS 渲染） -->
+<div id="stage" class="flex flex-col gap-space-md">
+<div class="py-space-2xl flex flex-col items-center gap-space-sm text-outline">
+<span class="material-symbols-outlined text-[40px]">graphic_eq</span>
+<span class="font-body-md text-body-md">从左侧选择或上传一个会话开始标注</span>
+</div>
+</div>
+</section>
+</div>
+</div>
+
+<!-- 一致性弹层 -->
+<div class="fixed inset-0 z-50 hidden items-center justify-center bg-surface-container-lowest/85 backdrop-blur-sm" id="cons">
+<div class="w-[min(720px,92vw)] max-h-[86vh] overflow-auto p-space-xl rounded-2xl bg-surface-container border border-outline/25 shadow-2xl flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[22px]">balance</span>
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold">标注一致性</h3>
+</div>
+<button class="p-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" id="consClose">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div id="consBody" class="flex flex-col gap-space-md"></div>
+</div>
+</div>
+</div>
+<script src="/assets/js/annotation.js"></script>
+{% endblock %}

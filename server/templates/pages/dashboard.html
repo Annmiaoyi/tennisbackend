@@ -1,0 +1,645 @@
+{% extends "base.html" %}
+{#- 本文件由 scripts/build_pages.py 从设计稿自动生成，请勿手改；
+    修改请改设计稿后重新运行构建脚本。
+    功能扩展区块在 _dashboard_extra.html，由脚本以 include 追加，不会被覆盖。 -#}
+{% set nav_active = "overview" %}
+{% block title %}平台数据与运营概览{% endblock %}
+{% block main %}<div class="flex flex-col w-full">
+<div class="px-space-xl py-space-xl flex flex-col gap-space-xl">
+<!-- Top Dashboard Header Bar -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div class="flex flex-col gap-space-2xs">
+<div class="flex items-center gap-space-xs text-outline">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-primary-fixed">TELEMETRY NEXUS</span>
+<span class="text-[10px]">•</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Live Global Session</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight font-bold">平台数据与运营概览</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">全量学员网球训练数据实时监控、活跃度指标及核心预警</p>
+</div>
+<div class="flex items-center gap-space-sm self-start lg:self-auto">
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high transition-all group shadow-sm" id="refreshBtn">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:rotate-180 transition-transform duration-500" id="refreshIcon">sync</span>
+<span class="font-label-md text-label-md">刷新数据</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all shadow-[0_0_20px_rgba(195,244,0,0.2)]">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+<span>导出周报</span>
+</button>
+</div>
+</div>
+<!-- KPI Metric Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md">
+<!-- Card 1: 注册与活跃学员 -->
+<div class="relative overflow-hidden p-space-lg rounded-xl bg-surface-container flex flex-col justify-between shadow-md group hover:bg-surface-container-high transition-all">
+<div class="absolute -right-6 -bottom-6 w-28 h-28 bg-primary-container/5 rounded-full blur-2xl pointer-events-none"></div>
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-bold">注册与活跃学员</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-primary-fixed font-label-sm text-label-sm flex items-center gap-1 font-bold">
+<span class="material-symbols-outlined text-[12px]">trending_up</span>+12.8%
+            </span>
+</div>
+<div class="mt-space-md flex items-baseline gap-space-xs">
+<span class="font-metric-digit text-metric-digit text-primary tracking-tight font-extrabold">42,850</span>
+<span class="font-body-md text-body-md text-outline">人</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm flex flex-col gap-space-xs">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">活跃度指数</span>
+<span class="text-primary-fixed font-bold">76.4% Active</span>
+</div>
+<!-- Tiny Sparkline SVG -->
+<svg class="w-full h-8 text-primary-container overflow-visible" fill="none" viewbox="0 0 100 24">
+<path d="M0 18 Q 15 14, 25 19 T 50 11 T 75 13 T 100 4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+<path d="M0 18 Q 15 14, 25 19 T 50 11 T 75 13 T 100 4 L 100 24 L 0 24 Z" fill="currentColor" fill-opacity="0.12"></path>
+</svg>
+</div>
+</div>
+<!-- Card 2: 累计记录击球量 -->
+<div class="relative overflow-hidden p-space-lg rounded-xl bg-surface-container flex flex-col justify-between shadow-md group hover:bg-surface-container-high transition-all">
+<div class="absolute -right-6 -bottom-6 w-28 h-28 bg-secondary/5 rounded-full blur-2xl pointer-events-none"></div>
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-bold">累计记录击球量</span>
+<span class="px-2 py-0.5 rounded-full bg-secondary/15 text-secondary font-label-sm text-label-sm font-semibold">
+              Live Sensor
+            </span>
+</div>
+<div class="mt-space-md flex items-baseline gap-space-xs">
+<span class="font-metric-digit text-metric-digit text-primary tracking-tight font-extrabold">3.86M</span>
+<span class="font-body-md text-body-md text-outline">次</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-secondary text-[16px]">bolt</span>
+<span>今日新增 <strong class="text-on-surface font-bold">128,490</strong></span>
+</div>
+<div class="px-1.5 py-0.5 rounded bg-surface-container-low text-primary-fixed font-bold">
+            均速 114 km/h
+          </div>
+</div>
+</div>
+<!-- Card 3: 总训练时长 -->
+<div class="relative overflow-hidden p-space-lg rounded-xl bg-surface-container flex flex-col justify-between shadow-md group hover:bg-surface-container-high transition-all">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-bold">总累计训练时长</span>
+<span class="material-symbols-outlined text-outline text-[18px]">timer</span>
+</div>
+<div class="mt-space-md flex items-baseline gap-space-xs">
+<span class="font-metric-digit text-metric-digit text-primary tracking-tight font-extrabold">84,210</span>
+<span class="font-body-md text-body-md text-outline">小时</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">人均单次 64 分钟</span>
+<span class="text-tertiary-fixed-dim font-bold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">local_fire_department</span>45.2M kcal
+          </span>
+</div>
+</div>
+<!-- Card 4: 待处理用户建议与工单 -->
+<div class="relative overflow-hidden p-space-lg rounded-xl bg-surface-container flex flex-col justify-between shadow-md group hover:bg-surface-container-high transition-all">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-bold">待处理建议与工单</span>
+<span class="px-2 py-0.5 rounded-full bg-error-container/40 text-error font-label-sm text-label-sm font-bold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span> 12 高优
+            </span>
+</div>
+<div class="mt-space-md flex items-baseline gap-space-xs">
+<span class="font-metric-digit text-metric-digit text-primary tracking-tight font-extrabold">38</span>
+<span class="font-body-md text-body-md text-outline">条未结</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">服务满意度</span>
+<span class="text-primary-fixed font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">thumb_up</span> 98.2%
+          </span>
+</div>
+</div>
+</div>
+<!-- Main Section 1: Heatmap Distribution & Hardware Telemetry -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-md items-start">
+<!-- Left (65% -> 8 cols of 12) -->
+<div class="xl:col-span-8 p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-lg shadow-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">训练活动与击球时段热力分布</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-primary-fixed font-label-sm text-label-sm font-bold">24H / 7D</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">全网球场学员连线高密期分析与动态负荷峰值</p>
+</div>
+<div class="flex items-center bg-surface-container-low p-1 rounded-xl gap-1 self-start sm:self-auto">
+<button class="px-3 py-1 rounded-lg bg-surface-container-high text-primary-fixed font-label-sm text-label-sm font-bold shadow-sm">时段热力</button>
+<button class="px-3 py-1 rounded-lg text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm">技术动作</button>
+<button class="px-3 py-1 rounded-lg text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm">球场类型</button>
+</div>
+</div>
+<!-- Visual Heatmap Grid (7 Days x 12 Blocks each representing 2 hrs) -->
+<div class="flex flex-col gap-space-xs bg-surface-container-low p-space-md rounded-xl">
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm pb-1">
+<span class="w-10">周/时段</span>
+<div class="flex-1 grid grid-cols-12 text-center">
+<span>02</span><span>04</span><span>06</span><span>08</span><span>10</span><span>12</span><span>14</span><span>16</span><span>18</span><span>20</span><span>22</span><span>24</span>
+</div>
+</div>
+<!-- Heatmap Rows -->
+<!-- Mon -->
+<div class="flex items-center justify-between gap-2">
+<span class="w-10 font-label-sm text-label-sm text-on-surface-variant font-bold">周一</span>
+<div class="flex-1 grid grid-cols-12 gap-1.5 h-6">
+<div class="rounded bg-surface-container-high/40" title="00-02: 低活跃"></div>
+<div class="rounded bg-surface-container-high/30"></div>
+<div class="rounded bg-surface-container-high/50"></div>
+<div class="rounded bg-primary-container/20"></div>
+<div class="rounded bg-primary-container/40"></div>
+<div class="rounded bg-primary-container/30"></div>
+<div class="rounded bg-primary-container/20"></div>
+<div class="rounded bg-primary-container/50"></div>
+<div class="rounded bg-primary-container/80"></div>
+<div class="rounded bg-primary-container"></div>
+<div class="rounded bg-primary-container/70"></div>
+<div class="rounded bg-primary-container/30"></div>
+</div>
+</div>
+<!-- Tue -->
+<div class="flex items-center justify-between gap-2">
+<span class="w-10 font-label-sm text-label-sm text-on-surface-variant font-bold">周二</span>
+<div class="flex-1 grid grid-cols-12 gap-1.5 h-6">
+<div class="rounded bg-surface-container-high/30"></div>
+<div class="rounded bg-surface-container-high/30"></div>
+<div class="rounded bg-surface-container-high/40"></div>
+<div class="rounded bg-primary-container/30"></div>
+<div class="rounded bg-primary-container/50"></div>
+<div class="rounded bg-primary-container/40"></div>
+<div class="rounded bg-primary-container/30"></div>
+<div class="rounded bg-primary-container/60"></div>
+<div class="rounded bg-primary-container/80"></div>
+<div class="rounded bg-primary-container"></div>
+<div class="rounded bg-primary-container/60"></div>
+<div class="rounded bg-primary-container/20"></div>
+</div>
+</div>
+<!-- Wed -->
+<div class="flex items-center justify-between gap-2">
+<span class="w-10 font-label-sm text-label-sm text-on-surface-variant font-bold">周三</span>
+<div class="flex-1 grid grid-cols-12 gap-1.5 h-6">
+<div class="rounded bg-surface-container-high/30"></div>
+<div class="rounded bg-surface-container-high/30"></div>
+<div class="rounded bg-surface-container-high/60"></div>
+<div class="rounded bg-primary-container/40"></div>
+<div class="rounded bg-primary-container/40"></div>
+<div class="rounded bg-primary-container/50"></div>
+<div class="rounded bg-primary-container/40"></div>
+<div class="rounded bg-primary-container/70"></div>
+<div class="rounded bg-primary-container"></div>
+<div class="rounded bg-primary-container"></div>
+<div class="rounded bg-primary-container/50"></div>
+<div class="rounded bg-primary-container/20"></div>
+</div>
+</div>
+<!-- Thu -->
+<div class="flex items-center justify-between gap-2">
+<span class="w-10 font-label-sm text-label-sm text-on-surface-variant font-bold">周四</span>
+<div class="flex-1 grid grid-cols-12 gap-1.5 h-6">
+<div class="rounded bg-surface-container-high/40"></div>
+<div class="rounded bg-surface-container-high/30"></div>
+<div class="rounded bg-surface-container-high/50"></div>
+<div class="rounded bg-primary-container/30"></div>
+<div class="rounded bg-primary-container/40"></div>
+<div class="rounded bg-primary-container/40"></div>
+<div class="rounded bg-primary-container/30"></div>
+<div class="rounded bg-primary-container/60"></div>
+<div class="rounded bg-primary-container/90"></div>
+<div class="rounded bg-primary-container"></div>
+<div class="rounded bg-primary-container/60"></div>
+<div class="rounded bg-primary-container/30"></div>
+</div>
+</div>
+<!-- Fri -->
+<div class="flex items-center justify-between gap-2">
+<span class="w-10 font-label-sm text-label-sm text-on-surface-variant font-bold">周五</span>
+<div class="flex-1 grid grid-cols-12 gap-1.5 h-6">
+<div class="rounded bg-surface-container-high/30"></div>
+<div class="rounded bg-surface-container-high/30"></div>
+<div class="rounded bg-surface-container-high/40"></div>
+<div class="rounded bg-primary-container/30"></div>
+<div class="rounded bg-primary-container/50"></div>
+<div class="rounded bg-primary-container/60"></div>
+<div class="rounded bg-primary-container/50"></div>
+<div class="rounded bg-primary-container/80"></div>
+<div class="rounded bg-primary-container"></div>
+<div class="rounded bg-primary-container"></div>
+<div class="rounded bg-primary-container/80"></div>
+<div class="rounded bg-primary-container/50"></div>
+</div>
+</div>
+<!-- Sat -->
+<div class="flex items-center justify-between gap-2">
+<span class="w-10 font-label-sm text-label-sm text-primary-fixed font-bold">周六</span>
+<div class="flex-1 grid grid-cols-12 gap-1.5 h-6">
+<div class="rounded bg-surface-container-high/30"></div>
+<div class="rounded bg-surface-container-high/30"></div>
+<div class="rounded bg-primary-container/50"></div>
+<div class="rounded bg-primary-container/80"></div>
+<div class="rounded bg-primary-container"></div>
+<div class="rounded bg-primary-container"></div>
+<div class="rounded bg-primary-container/80"></div>
+<div class="rounded bg-primary-container"></div>
+<div class="rounded bg-primary-container"></div>
+<div class="rounded bg-primary-container/90"></div>
+<div class="rounded bg-primary-container/70"></div>
+<div class="rounded bg-primary-container/30"></div>
+</div>
+</div>
+<!-- Sun -->
+<div class="flex items-center justify-between gap-2">
+<span class="w-10 font-label-sm text-label-sm text-primary-fixed font-bold">周日</span>
+<div class="flex-1 grid grid-cols-12 gap-1.5 h-6">
+<div class="rounded bg-surface-container-high/30"></div>
+<div class="rounded bg-surface-container-high/30"></div>
+<div class="rounded bg-primary-container/40"></div>
+<div class="rounded bg-primary-container/70"></div>
+<div class="rounded bg-primary-container"></div>
+<div class="rounded bg-primary-container"></div>
+<div class="rounded bg-primary-container/90"></div>
+<div class="rounded bg-primary-container"></div>
+<div class="rounded bg-primary-container/90"></div>
+<div class="rounded bg-primary-container/70"></div>
+<div class="rounded bg-primary-container/40"></div>
+<div class="rounded bg-surface-container-high/40"></div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs text-outline font-label-sm text-label-sm">
+<span class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+              高峰负荷：周六/周日 09:00 - 11:30 & 18:00 - 21:00
+            </span>
+<div class="flex items-center gap-2">
+<span>低</span>
+<div class="flex gap-1">
+<span class="w-3 h-2.5 rounded bg-surface-container-high/50"></span>
+<span class="w-3 h-2.5 rounded bg-primary-container/30"></span>
+<span class="w-3 h-2.5 rounded bg-primary-container/60"></span>
+<span class="w-3 h-2.5 rounded bg-primary-container"></span>
+</div>
+<span>超负荷</span>
+</div>
+</div>
+</div>
+<!-- Shot Breakdown Distribution Bar -->
+<div class="flex flex-col gap-space-sm pt-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-bold">击球动作构成分布 (Stroke Taxonomy)</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">基于近 7 天累计 1.48M 次真实拍框击球</span>
+</div>
+<!-- Multi-segmented Progress Bar -->
+<div class="w-full h-3 rounded-full overflow-hidden flex bg-surface-container-lowest">
+<div class="h-full bg-primary-container transition-all" style="width: 48%;" title="正手 Forehand 48%"></div>
+<div class="h-full bg-secondary transition-all" style="width: 32%;" title="反手 Backhand 32%"></div>
+<div class="h-full bg-error transition-all" style="width: 14%;" title="发球 Serve 14%"></div>
+<div class="h-full bg-surface-bright transition-all" style="width: 6%;" title="截击 Volley 6%"></div>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-sm pt-1">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">正手击球</span>
+<span class="font-body-md text-body-md font-bold text-primary">48% <span class="font-label-sm text-label-sm text-outline font-normal">(1.85M)</span></span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">反手击球</span>
+<span class="font-body-md text-body-md font-bold text-primary">32% <span class="font-label-sm text-label-sm text-outline font-normal">(1.23M)</span></span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-error"></span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">发球时速监控</span>
+<span class="font-body-md text-body-md font-bold text-primary">14% <span class="font-label-sm text-label-sm text-outline font-normal">(540K)</span></span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-surface-bright"></span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">网前截击与高压</span>
+<span class="font-body-md text-body-md font-bold text-primary">6% <span class="font-label-sm text-label-sm text-outline font-normal">(231K)</span></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right (35% -> 4 cols of 12) -->
+<div class="xl:col-span-4 flex flex-col gap-space-md">
+<!-- Telemetry Status Card -->
+<div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-fixed text-[22px]">watch</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">硬件与心率遥测</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-primary-fixed font-label-sm text-label-sm font-bold animate-pulse">
+              SYNCED
+            </span>
+</div>
+<!-- Mini hardware KPIs -->
+<div class="grid grid-cols-2 gap-space-sm">
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase font-semibold">Apple Watch 佩戴率</span>
+<span class="font-headline-md text-headline-md text-primary font-bold mt-1">84.6%</span>
+<span class="font-label-sm text-label-sm text-primary-fixed mt-1">Series 8/9/Ultra 居多</span>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase font-semibold">实时均值心率</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-headline-md text-headline-md text-tertiary-fixed-dim font-bold">144</span>
+<span class="font-label-sm text-label-sm text-outline">BPM</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary mt-1">有氧耐力核心区间</span>
+</div>
+</div>
+<!-- Anomaly Alert Banner -->
+<div class="p-space-md rounded-xl bg-error-container/20 flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-error text-[20px]">warning</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-error">击球速度异常预警 (4 例)</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">传感器测得瞬时超限 (>220km/h 异常抖动)</span>
+</div>
+</div>
+<button class="px-2.5 py-1 rounded bg-error-container text-on-error font-label-sm text-label-sm font-bold hover:brightness-110">复查</button>
+</div>
+</div>
+<!-- Live Active Training Sessions Feed (5 Active Players) -->
+<div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-sm shadow-md flex-1">
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-ping"></span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">实时打球会话流</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">5 位代表学员</span>
+</div>
+<div class="flex flex-col gap-space-xs divide-y divide-surface-container-high/40">
+<!-- Player 1 -->
+<div class="pt-space-xs flex items-center justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<img class="w-9 h-9 rounded-full object-cover shrink-0" data-alt="Intense portrait of an athletic male tennis player in dark sportswear with sweat on forehead, high contrast neon court lighting." src="/assets/img/dashboard-2fe75d.jpg"/>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface font-semibold truncate">林浩 (Kevin)</span>
+<span class="font-label-sm text-label-sm text-outline truncate">北京国家网球中心 · 场地 3</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0 pl-2">
+<span class="font-label-sm text-label-sm text-primary-fixed font-bold">148 拍 · 42min</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">正手上旋 128km/h</span>
+</div>
+</div>
+<!-- Player 2 -->
+<div class="pt-space-xs flex items-center justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<img class="w-9 h-9 rounded-full object-cover shrink-0" data-alt="Dynamic portrait of a focused female tennis athlete wearing a visor under indoor arena floodlights, crisp modern athletic vibe." src="/assets/img/avatar-female-player.jpg"/>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface font-semibold truncate">Sarah Jenkins</span>
+<span class="font-label-sm text-label-sm text-outline truncate">上海仙霞网球中心 · 室内 1</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0 pl-2">
+<span class="font-label-sm text-label-sm text-secondary font-bold">312 拍 · 1h 15m</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">发球均速 156km/h</span>
+</div>
+</div>
+<!-- Player 3 -->
+<div class="pt-space-xs flex items-center justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-primary-fixed font-bold text-label-md shrink-0">
+                  陈
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface font-semibold truncate">陈柏言</span>
+<span class="font-label-sm text-label-sm text-outline truncate">深圳湾体育中心 · 室外 4</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0 pl-2">
+<span class="font-label-sm text-label-sm text-primary-fixed font-bold">88 拍 · 18min</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">双反切削练习</span>
+</div>
+</div>
+<!-- Player 4 -->
+<div class="pt-space-xs flex items-center justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-secondary font-bold text-label-md shrink-0">
+                  MR
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface font-semibold truncate">Matteo Rossi</span>
+<span class="font-label-sm text-label-sm text-outline truncate">广州天河网球场 · 红土 2</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0 pl-2">
+<span class="font-label-sm text-label-sm text-tertiary-fixed-dim font-bold">420 拍 · 58min</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">心率 168 bpm 🔥</span>
+</div>
+</div>
+<!-- Player 5 -->
+<div class="pt-space-xs flex items-center justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center text-error font-bold text-label-md shrink-0">
+                  周
+                </div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface font-semibold truncate">周芷晴</span>
+<span class="font-label-sm text-label-sm text-outline truncate">杭州黄龙体育馆 · 室内 6</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0 pl-2">
+<span class="font-label-sm text-label-sm text-primary-fixed font-bold">205 拍 · 35min</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">甜区命中率 81%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Section 2: NTRP Skill Level Distribution & Feedback Quick Digest -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md items-stretch">
+<!-- Left (50% -> 6 cols): NTRP Distribution -->
+<div class="lg:col-span-6 p-space-lg rounded-xl bg-surface-container flex flex-col justify-between gap-space-md shadow-md">
+<div>
+<div class="flex items-center justify-between">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-primary font-bold">学员水平阶段分布 (NTRP 1.0 ~ 5.0+)</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">多维能力评级与分层训练频率分析</p>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">USTA 标准</span>
+</div>
+<!-- NTRP Horizontal Progress Bars -->
+<div class="mt-space-lg flex flex-col gap-space-sm">
+<!-- Level 1.0 - 2.0 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface font-semibold">NTRP 1.0 - 2.0 (入门启蒙阶段)</span>
+<span class="text-outline font-bold">8,570 人 (20.0%)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-low overflow-hidden">
+<div class="h-full bg-surface-bright rounded-full" style="width: 20%;"></div>
+</div>
+</div>
+<!-- Level 2.5 - 3.0 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface font-semibold">NTRP 2.5 - 3.0 (进阶稳定与业余初赛)</span>
+<span class="text-primary-fixed font-bold">16,280 人 (38.0%)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-low overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 38%;"></div>
+</div>
+</div>
+<!-- Level 3.5 - 4.0 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface font-semibold">NTRP 3.5 - 4.0 (中高阶竞技与巡回赛主力)</span>
+<span class="text-secondary font-bold">12,420 人 (29.0%)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-low overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 29%;"></div>
+</div>
+</div>
+<!-- Level 4.5 - 5.0+ -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface font-semibold">NTRP 4.5 - 5.0+ (精英与专业教练级别)</span>
+<span class="text-tertiary-fixed-dim font-bold">5,580 人 (13.0%)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-low overflow-hidden">
+<div class="h-full bg-tertiary-fixed-dim rounded-full" style="width: 13%;"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Radar & Ratio Breakdown Widget -->
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-sm text-label-sm text-primary-fixed font-bold uppercase">分群核心洞察</span>
+<span class="font-body-md text-body-md text-on-surface font-semibold">NTRP 3.0+ 学员单周连线频次高达 4.2 次</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">高阶球员重点沉浸在击球出球初速、落点深度及上旋 RPM 指标分析。</span>
+</div>
+<!-- Inline Stylized Mini Radar Visual -->
+<svg class="w-24 h-24 shrink-0 text-primary-container" viewbox="0 0 100 100">
+<!-- Background Polygons -->
+<polygon fill="none" points="50,10 90,38 75,85 25,85 10,38" stroke="#262b29" stroke-width="1"></polygon>
+<polygon fill="none" points="50,25 76,43 66,74 34,74 24,43" stroke="#262b29" stroke-width="1"></polygon>
+<!-- Data polygon -->
+<polygon fill="currentColor" fill-opacity="0.25" points="50,18 84,40 68,80 30,76 20,39" stroke="currentColor" stroke-width="2"></polygon>
+<circle cx="50" cy="18" fill="currentColor" r="2.5"></circle>
+<circle cx="84" cy="40" fill="currentColor" r="2.5"></circle>
+<circle cx="68" cy="80" fill="currentColor" r="2.5"></circle>
+<circle cx="30" cy="76" fill="currentColor" r="2.5"></circle>
+<circle cx="20" cy="39" fill="currentColor" r="2.5"></circle>
+</svg>
+</div>
+</div>
+<!-- Right (50% -> 6 cols): Latest Feedback & Classification Tags -->
+<div class="lg:col-span-6 p-space-lg rounded-xl bg-surface-container flex flex-col justify-between gap-space-md shadow-md">
+<div>
+<div class="flex items-center justify-between">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-primary font-bold">最新用户建议速览 & 智能分类</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">NLP 实时聚类 3 条高频学员诉求与体验工单</p>
+</div>
+<a class="font-label-sm text-label-sm text-primary-fixed hover:underline flex items-center gap-0.5" href="#">
+<span>进入工单系统</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</a>
+</div>
+<!-- Feedbacks List -->
+<div class="mt-space-md flex flex-col gap-space-sm">
+<!-- Feedback Item 1 -->
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs group hover:bg-surface-container-high/60 transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="px-2 py-0.5 rounded bg-primary-container/20 text-primary-fixed font-label-sm text-label-sm font-bold">功能新增</span>
+<span class="font-body-md text-body-md font-bold text-on-surface">希望增加底线反手切削 (Slice) 专项训练模式</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-primary-fixed font-label-sm text-label-sm font-semibold">排期评审中</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">
+                “目前算法把强力切削误判成了平击防守球，希望能提供单独的切削下旋转速与滞空弧线分析。”
+              </p>
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm pt-1">
+<span>反馈人: 顾教练 (NTRP 4.5) · 32 位学员附议</span>
+<span>2 小时前</span>
+</div>
+</div>
+<!-- Feedback Item 2 -->
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs group hover:bg-surface-container-high/60 transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="px-2 py-0.5 rounded bg-secondary/20 text-secondary font-label-sm text-label-sm font-bold">硬件交互</span>
+<span class="font-body-md text-body-md font-bold text-on-surface">Apple Watch 击球甜区振动反馈可否自定义档位？</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-primary-container text-on-primary-fixed font-label-sm text-label-sm font-bold">v2.5 灰度中</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">
+                “打多球时默认触觉振动稍弱，在手汗较多或移动急促时容易漏掉未打正甜区的提醒。”
+              </p>
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm pt-1">
+<span>反馈人: Michael L. · 89 位学员附议</span>
+<span>5 小时前</span>
+</div>
+</div>
+<!-- Feedback Item 3 -->
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs group hover:bg-surface-container-high/60 transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary-fixed-dim font-label-sm text-label-sm font-bold">算法优化</span>
+<span class="font-body-md text-body-md font-bold text-on-surface">雨后潮湿人造草地球场的反弹球速测量补偿</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-outline font-label-sm text-label-sm font-semibold">算法组验证</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">
+                “湿地球弹起偏低滑行长，AI 视觉预测落点深度有约 15cm 的系统偏差。”
+              </p>
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm pt-1">
+<span>反馈人: 杭州聚星俱乐部 · 14 场关联日志</span>
+<span>昨天 18:40</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Tags & Sentiment Summary -->
+<div class="pt-space-xs flex items-center justify-between border-t border-surface-container-high/30">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-label-sm text-label-sm text-outline font-semibold">热门标签:</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">#切削识别 (42)</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">#Watch振动 (29)</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">#甜区提示音 (18)</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary-fixed font-bold">正面评价 94.2%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    const refreshBtn = document.getElementById('refreshBtn');
+    const refreshIcon = document.getElementById('refreshIcon');
+    if(refreshBtn && refreshIcon) {
+      refreshBtn.addEventListener('click', () => {
+        refreshIcon.classList.add('animate-spin');
+        setTimeout(() => {
+          refreshIcon.classList.remove('animate-spin');
+        }, 800);
+      });
+    }
+  })();
+</script>{% endblock %}

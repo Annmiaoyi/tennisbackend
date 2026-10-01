@@ -1,0 +1,771 @@
+{% extends "base.html" %}
+{#- 本文件由 scripts/build_pages.py 从设计稿自动生成，请勿手改；
+    修改请改设计稿后重新运行构建脚本。
+    功能扩展区块在 _users_extra.html，由脚本以 include 追加，不会被覆盖。 -#}
+{% set nav_active = "user-management" %}
+{% block title %}学员与用户档案管理{% endblock %}
+{% block main %}<div class="flex flex-col w-full">
+<div class="px-space-xl py-space-lg flex flex-col gap-space-lg">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-sm mb-space-2xs">
+<span class="px-space-xs py-0.5 rounded bg-primary-container text-on-primary-container font-label-sm text-label-sm uppercase font-bold tracking-wider">Enterprise Roster</span>
+<span class="font-label-sm text-label-sm text-outline">v2.4 Live Sync</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight font-extrabold">学员与用户档案管理</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">管理全平台 42,850 名网球学员，查阅个人技术特征、训练累计数据与硬件设备绑定状态</p>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm">
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-surface-container-high text-on-surface hover:bg-surface-bright font-label-md text-label-md font-semibold transition-all">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+<span>筛选高级过滤器</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-surface-container-high text-on-surface hover:bg-surface-bright font-label-md text-label-md font-semibold transition-all">
+<span class="material-symbols-outlined text-[18px]">file_download</span>
+<span>批量导出学员档案</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all shadow-[0_0_20px_rgba(195,244,0,0.2)]">
+<span class="material-symbols-outlined text-[18px]">person_add</span>
+<span>新增特训学员</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md">
+<div class="p-space-md rounded-xl bg-surface-container-low flex items-center justify-between shadow-sm">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">总入库学员</span>
+<span class="font-metric-digit text-metric-digit text-on-surface mt-1">42,850</span>
+<div class="flex items-center gap-space-xs mt-1 text-primary-fixed font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span>较上周 +4.2%</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[26px]">groups</span>
+</div>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container-low flex items-center justify-between shadow-sm">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">今日上场挥拍</span>
+<span class="font-metric-digit text-metric-digit text-primary-fixed mt-1">3,124</span>
+<div class="flex items-center gap-space-xs mt-1 text-secondary font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">sports_tennis</span>
+<span>共产生 241,800 记击球</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[26px]">electric_bolt</span>
+</div>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container-low flex items-center justify-between shadow-sm">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">NTRP 3.5+ 进阶者占比</span>
+<span class="font-metric-digit text-metric-digit text-on-surface mt-1">54.8%</span>
+<div class="flex items-center gap-space-xs mt-1 text-outline font-label-md text-label-md">
+<span>核心竞技梯队稳定</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary-fixed-dim">
+<span class="material-symbols-outlined text-[26px]">military_tech</span>
+</div>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container-low flex items-center justify-between shadow-sm">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">智能手表绑定率</span>
+<span class="font-metric-digit text-metric-digit text-on-surface mt-1">89.4%</span>
+<div class="flex items-center gap-space-xs mt-1 text-tertiary-fixed-dim font-label-md text-label-md">
+<span>Apple Watch Ultra: 41%</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-tertiary-fixed-dim">
+<span class="material-symbols-outlined text-[26px]">watch</span>
+</div>
+</div>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-md shadow-sm">
+<div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-space-md">
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-space-md top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full h-11 pl-10 pr-space-md bg-surface-container rounded-xl text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary-container transition-all" placeholder="输入学员姓名、ID、手机号或装备型号..." type="text"/>
+</div>
+<div class="flex flex-wrap items-center gap-space-xs">
+<div class="relative">
+<select class="appearance-none bg-surface-container text-on-surface font-label-md text-label-md px-space-md py-2.5 pr-8 rounded-xl cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary-container">
+<option value="">球龄 (全部)</option>
+<option value="1-2">1-2 年入门</option>
+<option value="3-5">3-5 年进阶</option>
+<option value="5+">5 年以上资深</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">expand_more</span>
+</div>
+<div class="relative">
+<select class="appearance-none bg-surface-container text-on-surface font-label-md text-label-md px-space-md py-2.5 pr-8 rounded-xl cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary-container">
+<option value="">NTRP 评级 (全部)</option>
+<option value="2.5">NTRP 2.5 基础</option>
+<option value="3.0">NTRP 3.0 业余中级</option>
+<option value="3.5">NTRP 3.5 进阶竞赛</option>
+<option value="4.0">NTRP 4.0+ 高手俱乐部</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">expand_more</span>
+</div>
+<div class="relative">
+<select class="appearance-none bg-surface-container text-on-surface font-label-md text-label-md px-space-md py-2.5 pr-8 rounded-xl cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary-container">
+<option value="">持拍习惯 (全部)</option>
+<option value="rh-2h">右手持拍 · 双手反拍</option>
+<option value="rh-1h">右手持拍 · 单手反拍</option>
+<option value="lh-2h">左手持拍 · 双手反拍</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">expand_more</span>
+</div>
+<div class="relative">
+<select class="appearance-none bg-surface-container text-on-surface font-label-md text-label-md px-space-md py-2.5 pr-8 rounded-xl cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary-container">
+<option value="">活跃状态</option>
+<option value="active">活跃 / 今日上场</option>
+<option value="recent">近7天有记录</option>
+<option value="idle">休眠 (30天无数据)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">expand_more</span>
+</div>
+<div class="relative">
+<select class="appearance-none bg-surface-container text-on-surface font-label-md text-label-md px-space-md py-2.5 pr-8 rounded-xl cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary-container">
+<option value="">佩戴硬件</option>
+<option value="ultra">Apple Watch Ultra / 2</option>
+<option value="s9">Apple Watch Series 9 / 8</option>
+<option value="se">Apple Watch SE</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-outline text-[16px] pointer-events-none">expand_more</span>
+</div>
+<button class="px-space-md py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md font-semibold flex items-center gap-space-xs transition-colors">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+<span>重置</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider mr-2">快速过滤:</span>
+<button class="px-3 py-1 rounded-full bg-primary-container text-on-primary-fixed font-label-sm text-label-sm font-bold flex items-center gap-1 shadow-[0_0_12px_rgba(195,244,0,0.15)]">
+<span>全部学员</span>
+<span class="material-symbols-outlined text-[14px]">check</span>
+</button>
+<button class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm">
+          今日特训营 (18)
+        </button>
+<button class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm">
+          Wilson 球拍用户 (1,240)
+        </button>
+<button class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm">
+          发球时速 > 160km/h (382)
+        </button>
+<button class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm">
+          预警: 负荷超标 (12)
+        </button>
+</div>
+</div>
+<div class="grid grid-cols-1 2xl:grid-cols-12 gap-space-lg items-start">
+<div class="2xl:col-span-8 flex flex-col gap-space-md">
+<div class="rounded-xl bg-surface-container-low overflow-hidden shadow-md">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-lowest text-on-surface-variant font-label-sm text-label-sm tracking-wider uppercase">
+<th class="py-space-md px-space-md w-12 text-center">
+<input class="rounded bg-surface-container text-primary-container focus:ring-0 cursor-pointer" type="checkbox"/>
+</th>
+<th class="py-space-md px-space-md">学员信息</th>
+<th class="py-space-md px-space-md">网球技术档案</th>
+<th class="py-space-md px-space-md">NTRP 水平</th>
+<th class="py-space-md px-space-md">累计训练数据</th>
+<th class="py-space-md px-space-md">核心竞技表现</th>
+<th class="py-space-md px-space-md">最近训练</th>
+<th class="py-space-md px-space-md text-right">操作</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 text-on-surface font-body-md text-body-md">
+<tr class="bg-surface-container/60 hover:bg-surface-container transition-colors group cursor-pointer" onclick="selectUser('zhang')">
+<td class="py-space-md px-space-md text-center">
+<input checked="" class="rounded bg-surface-container text-primary-container focus:ring-0 cursor-pointer" type="checkbox"/>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="relative">
+<img class="w-11 h-11 rounded-full object-cover shadow-sm" data-alt="Intense high-definition portrait of a 28-year-old East Asian male competitive tennis player, sweat beads, wearing black athletic headband, dark titanium aesthetic background with soft volt yellow rim lighting." src="/assets/img/users-40f9e5.jpg"/>
+<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-primary-container ring-2 ring-surface-container-low"></span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm font-bold text-primary truncate">张哲恒</span>
+<span class="px-1.5 py-0.5 rounded bg-primary-container text-on-primary-container font-label-sm text-label-sm uppercase font-black">VIP</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">ID: AC-88204 · Watch Ultra</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs font-label-md text-label-md font-semibold text-on-surface">
+<span>球龄 4年</span>
+<span class="text-outline">·</span>
+<span class="text-primary-fixed">右手双反</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Wilson Pro Staff 97 · 52 lbs</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high w-max">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-label-md text-label-md font-bold text-primary">3.5 NTRP</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1">综合评分 78.4</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface">124场 · 142h</span>
+<span class="font-label-sm text-label-sm text-outline">累计击球 48,200 拍</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center justify-between gap-2 text-label-sm font-label-sm">
+<span class="text-on-surface-variant">正手均速</span>
+<span class="font-bold text-primary">118 km/h</span>
+</div>
+<div class="flex items-center justify-between gap-2 text-label-sm font-label-sm">
+<span class="text-on-surface-variant">发球峰值</span>
+<span class="font-bold text-secondary">168 km/h</span>
+</div>
+<div class="w-24 h-1.5 bg-surface-container-highest rounded-full overflow-hidden mt-1">
+<div class="h-full bg-primary-container rounded-full" style="width: 74.2%;"></div>
+</div>
+<span class="text-[10px] text-outline font-label-sm">甜区命中 74.2%</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary-fixed animate-ping"></span>
+<span class="font-label-md text-label-md font-bold text-primary-fixed">今天 16:40</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline mt-0.5">刚结束 · 截击专项</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="p-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-primary-fixed hover:bg-surface-bright transition-colors" title="查看专属分析">
+<span class="material-symbols-outlined text-[18px]">monitoring</span>
+</button>
+<button class="p-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-secondary hover:bg-surface-bright transition-colors" title="横向对比">
+<span class="material-symbols-outlined text-[18px]">compare_arrows</span>
+</button>
+<button class="p-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-colors" title="发送指导私信">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="bg-surface-container-low hover:bg-surface-container transition-colors group cursor-pointer" onclick="selectUser('li')">
+<td class="py-space-md px-space-md text-center">
+<input class="rounded bg-surface-container text-primary-container focus:ring-0 cursor-pointer" type="checkbox"/>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="relative">
+<img class="w-11 h-11 rounded-full object-cover shadow-sm" data-alt="Portrait of a focused 32-year-old Asian female tennis enthusiast holding tennis racquet over shoulder, dynamic dark athletic gym ambiance with cyan sports backlight." src="/assets/img/users-8f1135.jpg"/>
+<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-surface-container-high ring-2 ring-surface-container-low"></span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm font-bold text-primary truncate">李思源</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm uppercase font-semibold">Club</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">ID: AC-79102 · Series 9</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs font-label-md text-label-md font-semibold text-on-surface">
+<span>球龄 2年</span>
+<span class="text-outline">·</span>
+<span class="text-secondary">右手单反</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Babolat Pure Aero · 50 lbs</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high w-max">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-md text-label-md font-bold text-primary">3.0 NTRP</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1">综合评分 69.1</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface">78场 · 88h</span>
+<span class="font-label-sm text-label-sm text-outline">累计击球 29,400 拍</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center justify-between gap-2 text-label-sm font-label-sm">
+<span class="text-on-surface-variant">正手均速</span>
+<span class="font-bold text-primary">96 km/h</span>
+</div>
+<div class="flex items-center justify-between gap-2 text-label-sm font-label-sm">
+<span class="text-on-surface-variant">发球峰值</span>
+<span class="font-bold text-secondary">132 km/h</span>
+</div>
+<div class="w-24 h-1.5 bg-surface-container-highest rounded-full overflow-hidden mt-1">
+<div class="h-full bg-secondary rounded-full" style="width: 63.8%;"></div>
+</div>
+<span class="text-[10px] text-outline font-label-sm">甜区命中 63.8%</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">昨天 19:15</span>
+<span class="font-label-sm text-label-sm text-outline mt-0.5">底线对抗训练</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="p-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-primary-fixed hover:bg-surface-bright transition-colors" title="查看专属分析">
+<span class="material-symbols-outlined text-[18px]">monitoring</span>
+</button>
+<button class="p-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-secondary hover:bg-surface-bright transition-colors" title="横向对比">
+<span class="material-symbols-outlined text-[18px]">compare_arrows</span>
+</button>
+<button class="p-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-colors" title="发送指导私信">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="bg-surface-container-low hover:bg-surface-container transition-colors group cursor-pointer" onclick="selectUser('chen')">
+<td class="py-space-md px-space-md text-center">
+<input class="rounded bg-surface-container text-primary-container focus:ring-0 cursor-pointer" type="checkbox"/>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="relative">
+<img class="w-11 h-11 rounded-full object-cover shadow-sm" data-alt="Action portrait of a 24-year-old athletic East Asian woman tennis pro player, energetic pose, wearing tournament polo, clean pitch black stadium court lighting." src="/assets/img/users-8e92fd.jpg"/>
+<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-primary-container ring-2 ring-surface-container-low"></span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm font-bold text-primary truncate">陈雨菲</span>
+<span class="px-1.5 py-0.5 rounded bg-primary-container text-on-primary-container font-label-sm text-label-sm uppercase font-black">Elite</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">ID: AC-90412 · Watch Ultra 2</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs font-label-md text-label-md font-semibold text-on-surface">
+<span>球龄 6年</span>
+<span class="text-outline">·</span>
+<span class="text-tertiary-fixed-dim">左手双反</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Head Speed MP · 54 lbs</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high w-max">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-label-md text-label-md font-bold text-primary">4.5 NTRP</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1">综合评分 91.2</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface">260场 · 310h</span>
+<span class="font-label-sm text-label-sm text-outline">累计击球 112,000 拍</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center justify-between gap-2 text-label-sm font-label-sm">
+<span class="text-on-surface-variant">正手均速</span>
+<span class="font-bold text-primary">129 km/h</span>
+</div>
+<div class="flex items-center justify-between gap-2 text-label-sm font-label-sm">
+<span class="text-on-surface-variant">发球峰值</span>
+<span class="font-bold text-secondary">179 km/h</span>
+</div>
+<div class="w-24 h-1.5 bg-surface-container-highest rounded-full overflow-hidden mt-1">
+<div class="h-full bg-primary-container rounded-full" style="width: 82.5%;"></div>
+</div>
+<span class="text-[10px] text-outline font-label-sm">甜区命中 82.5%</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary-fixed"></span>
+<span class="font-label-md text-label-md font-bold text-primary-fixed">今天 11:30</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline mt-0.5">高强度实战对抗</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="p-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-primary-fixed hover:bg-surface-bright transition-colors" title="查看专属分析">
+<span class="material-symbols-outlined text-[18px]">monitoring</span>
+</button>
+<button class="p-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-secondary hover:bg-surface-bright transition-colors" title="横向对比">
+<span class="material-symbols-outlined text-[18px]">compare_arrows</span>
+</button>
+<button class="p-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-colors" title="发送指导私信">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="bg-surface-container-low hover:bg-surface-container transition-colors group cursor-pointer" onclick="selectUser('wang')">
+<td class="py-space-md px-space-md text-center">
+<input class="rounded bg-surface-container text-primary-container focus:ring-0 cursor-pointer" type="checkbox"/>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="relative">
+<img class="w-11 h-11 rounded-full object-cover shadow-sm" data-alt="Portrait of a 35-year-old confident athletic male tennis player in dark obsidian tennis polo, gym locker room background with subtle neon amber reflections." src="/assets/img/users-0bbffb.jpg"/>
+<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-surface-container-high ring-2 ring-surface-container-low"></span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm font-bold text-primary truncate">王浩然</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm uppercase font-semibold">Pro</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">ID: AC-62310 · Series 8</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs font-label-md text-label-md font-semibold text-on-surface">
+<span>球龄 5年</span>
+<span class="text-outline">·</span>
+<span class="text-primary-fixed">右手双反</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Yonex EZONE 98 · 55 lbs</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high w-max">
+<span class="w-2 h-2 rounded-full bg-primary-fixed"></span>
+<span class="font-label-md text-label-md font-bold text-primary">3.5 NTRP</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1">综合评分 76.8</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface">110场 · 130h</span>
+<span class="font-label-sm text-label-sm text-outline">累计击球 42,100 拍</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center justify-between gap-2 text-label-sm font-label-sm">
+<span class="text-on-surface-variant">正手均速</span>
+<span class="font-bold text-primary">112 km/h</span>
+</div>
+<div class="flex items-center justify-between gap-2 text-label-sm font-label-sm">
+<span class="text-on-surface-variant">发球峰值</span>
+<span class="font-bold text-secondary">158 km/h</span>
+</div>
+<div class="w-24 h-1.5 bg-surface-container-highest rounded-full overflow-hidden mt-1">
+<div class="h-full bg-primary-container rounded-full" style="width: 71.0%;"></div>
+</div>
+<span class="text-[10px] text-outline font-label-sm">甜区命中 71.0%</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">前天 09:20</span>
+<span class="font-label-sm text-label-sm text-outline mt-0.5">发球落点加练</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="p-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-primary-fixed hover:bg-surface-bright transition-colors" title="查看专属分析">
+<span class="material-symbols-outlined text-[18px]">monitoring</span>
+</button>
+<button class="p-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-secondary hover:bg-surface-bright transition-colors" title="横向对比">
+<span class="material-symbols-outlined text-[18px]">compare_arrows</span>
+</button>
+<button class="p-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-colors" title="发送指导私信">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="bg-surface-container-low hover:bg-surface-container transition-colors group cursor-pointer" onclick="selectUser('zhao')">
+<td class="py-space-md px-space-md text-center">
+<input class="rounded bg-surface-container text-primary-container focus:ring-0 cursor-pointer" type="checkbox"/>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="relative">
+<img class="w-11 h-11 rounded-full object-cover shadow-sm" data-alt="Sporty portrait of a 40-year-old Asian man tennis amateur player holding racket grip, outdoor hard court background with golden hour low sun angle." src="/assets/img/users-7ee98c.jpg"/>
+<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-surface-container-high ring-2 ring-surface-container-low"></span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm font-bold text-primary truncate">赵明</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-label-sm uppercase font-semibold">Standard</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">ID: AC-51009 · SE 2</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs font-label-md text-label-md font-semibold text-on-surface">
+<span>球龄 1.5年</span>
+<span class="text-outline">·</span>
+<span class="text-primary-fixed">右手双反</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Wilson Clash 100 · 48 lbs</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high w-max">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span class="font-label-md text-label-md font-bold text-primary">2.5 NTRP</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1">综合评分 54.0</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-surface">42场 · 46h</span>
+<span class="font-label-sm text-label-sm text-outline">累计击球 14,300 拍</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center justify-between gap-2 text-label-sm font-label-sm">
+<span class="text-on-surface-variant">正手均速</span>
+<span class="font-bold text-primary">84 km/h</span>
+</div>
+<div class="flex items-center justify-between gap-2 text-label-sm font-label-sm">
+<span class="text-on-surface-variant">发球峰值</span>
+<span class="font-bold text-secondary">115 km/h</span>
+</div>
+<div class="w-24 h-1.5 bg-surface-container-highest rounded-full overflow-hidden mt-1">
+<div class="h-full bg-outline rounded-full" style="width: 52.4%;"></div>
+</div>
+<span class="text-[10px] text-outline font-label-sm">甜区命中 52.4%</span>
+</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">3天前 18:00</span>
+<span class="font-label-sm text-label-sm text-outline mt-0.5">入门多球训练</span>
+</div>
+</td>
+<td class="py-space-md px-space-md text-right">
+<div class="flex items-center justify-end gap-space-xs">
+<button class="p-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-primary-fixed hover:bg-surface-bright transition-colors" title="查看专属分析">
+<span class="material-symbols-outlined text-[18px]">monitoring</span>
+</button>
+<button class="p-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-secondary hover:bg-surface-bright transition-colors" title="横向对比">
+<span class="material-symbols-outlined text-[18px]">compare_arrows</span>
+</button>
+<button class="p-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-colors" title="发送指导私信">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-space-md bg-surface-container-lowest flex flex-col sm:flex-row items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm text-outline font-label-md text-label-md">
+<span>显示 1 - 5 条，共 <strong class="text-on-surface">42,850</strong> 条学员记录</span>
+<span class="text-surface-container-high">|</span>
+<div class="flex items-center gap-1">
+<span>每页行数:</span>
+<select class="bg-surface-container-low text-on-surface rounded px-2 py-1 focus:outline-none">
+<option>10 条/页</option>
+<option>20 条/页</option>
+<option>50 条/页</option>
+</select>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="p-1.5 rounded-lg bg-surface-container-low text-outline hover:text-on-surface disabled:opacity-30 disabled:cursor-not-allowed">
+<span class="material-symbols-outlined text-[18px]">first_page</span>
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low text-outline hover:text-on-surface disabled:opacity-30 disabled:cursor-not-allowed">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded-lg bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold">1</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-md text-label-md">2</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-md text-label-md">3</button>
+<span class="px-1 text-outline">...</span>
+<button class="w-8 h-8 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-md text-label-md">4,285</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+<button class="p-1.5 rounded-lg bg-surface-container-low text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">last_page</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="2xl:col-span-4 flex flex-col gap-space-md sticky top-24">
+<div class="p-space-lg rounded-xl bg-surface-container-low shadow-lg relative overflow-hidden">
+<div class="absolute -right-16 -top-16 w-48 h-48 rounded-full bg-primary-container/5 blur-3xl pointer-events-none"></div>
+<div class="flex items-center justify-between pb-space-md border-b-0">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary-fixed text-[20px]">badge</span>
+<span class="font-headline-sm text-headline-sm font-bold text-primary">学员速览与竞技诊断</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-primary-container/20 text-primary-fixed font-label-sm text-label-sm font-semibold">LIVE HUD</span>
+</div>
+<div class="flex items-center gap-space-md pt-space-md">
+<div class="relative">
+<img class="w-16 h-16 rounded-2xl object-cover shadow-md" data-alt="High-contrast athletic studio portrait of a male tennis player in graphite athletic training gear with volt yellow details on deep obsidian backdrop." src="/assets/img/users-8c4f96.jpg"/>
+<span class="absolute -bottom-1 -right-1 p-1 bg-surface-container-lowest rounded-full text-primary-fixed">
+<span class="material-symbols-outlined text-[16px] block">verified</span>
+</span>
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-md text-headline-md font-extrabold text-primary truncate" id="drawer-user-name">张哲恒</h3>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container-high text-primary-fixed font-bold">NTRP 3.5+</span>
+</div>
+<p class="font-body-md text-body-md text-outline truncate" id="drawer-user-sub">Wilson Pro Staff 97 · 4年球龄 · 活跃</p>
+<div class="flex items-center gap-space-xs mt-1">
+<span class="w-2 h-2 rounded-full bg-primary-fixed"></span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">Apple Watch Ultra 2 正在回传</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-space-xs mt-space-md p-space-sm rounded-xl bg-surface-container">
+<div class="flex flex-col items-center justify-center p-2 text-center">
+<span class="font-label-sm text-label-sm text-outline">上周总时长</span>
+<span class="font-headline-sm text-headline-sm font-bold text-primary mt-0.5">8.4h</span>
+</div>
+<div class="flex flex-col items-center justify-center p-2 text-center bg-surface-container-high rounded-lg">
+<span class="font-label-sm text-label-sm text-outline">击球总数</span>
+<span class="font-headline-sm text-headline-sm font-bold text-primary-fixed mt-0.5">2,840</span>
+</div>
+<div class="flex flex-col items-center justify-center p-2 text-center">
+<span class="font-label-sm text-label-sm text-outline">技术评级</span>
+<span class="font-headline-sm text-headline-sm font-bold text-secondary mt-0.5">A-</span>
+</div>
+</div>
+<div class="mt-space-md flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">最近 30 天球速进阶曲线 (km/h)</span>
+<span class="font-label-sm text-label-sm text-primary-fixed font-semibold">正手均速 +12.4%</span>
+</div>
+<div class="p-space-sm rounded-xl bg-surface-container flex flex-col gap-2">
+<svg class="w-full h-20 overflow-visible" viewbox="0 0 320 85">
+<defs>
+<lineargradient id="curveVoltGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#c3f400" stop-opacity="0.35"></stop>
+<stop offset="100%" stop-color="#c3f400" stop-opacity="0.0"></stop>
+</lineargradient>
+</defs>
+<path d="M 0,70 Q 50,65 90,52 T 180,42 T 260,26 T 320,15 L 320,85 L 0,85 Z" fill="url(#curveVoltGrad)"></path>
+<path d="M 0,70 Q 50,65 90,52 T 180,42 T 260,26 T 320,15" fill="none" stroke="#c3f400" stroke-linecap="round" stroke-width="2.5"></path>
+<path d="M 0,78 Q 60,74 120,68 T 220,58 T 320,44" fill="none" stroke="#7bd0ff" stroke-dasharray="3,3" stroke-width="1.8"></path>
+<circle cx="320" cy="15" fill="#c3f400" r="4"></circle>
+<circle cx="180" cy="42" fill="#ffffff" r="3"></circle>
+</svg>
+<div class="flex items-center justify-between font-label-sm text-label-sm text-outline px-1">
+<span>30天前 (105 km/h)</span>
+<span>15天前 (112 km/h)</span>
+<span class="text-primary-fixed font-bold">今日 (118 km/h)</span>
+</div>
+</div>
+</div>
+<div class="mt-space-md flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">心率负荷安全指数 (Training Load)</span>
+<span class="font-label-sm text-label-sm text-primary font-bold">142 bpm · 安全区间</span>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="relative w-14 h-14 flex items-center justify-center">
+<svg class="w-14 h-14 -rotate-90" viewbox="0 0 36 36">
+<path class="text-surface-container-high" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
+<path class="text-primary-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="78, 100" stroke-linecap="round" stroke-width="3.5"></path>
+</svg>
+<span class="material-symbols-outlined absolute text-primary-fixed text-[18px]">favorite</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">Optimal</span>
+<span class="font-label-sm text-label-sm text-outline">无过载疲劳损伤风险</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-primary-container/20 text-primary-fixed font-semibold">ACWR: 1.12</span>
+<span class="text-[10px] text-outline">建议保持当前强度</span>
+</div>
+</div>
+</div>
+<div class="mt-space-lg flex flex-col gap-space-xs">
+<button class="w-full py-3 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all shadow-[0_0_20px_rgba(195,244,0,0.2)] flex items-center justify-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px]">analytics</span>
+<span>进入张哲恒专属 3D 击球模型与诊断</span>
+</button>
+<button class="w-full py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-colors flex items-center justify-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px]">compare</span>
+<span>与高水平数据库进行横向能力对比</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function selectUser(userKey) {
+    const profiles = {
+      zhang: {
+        name: "张哲恒",
+        sub: "Wilson Pro Staff 97 · 4年球龄 · 活跃"
+      },
+      li: {
+        name: "李思源",
+        sub: "Babolat Pure Aero · 2年球龄 · 昨日训练"
+      },
+      chen: {
+        name: "陈雨菲",
+        sub: "Head Speed MP · 6年球龄 · 高水平选手"
+      },
+      wang: {
+        name: "王浩然",
+        sub: "Yonex EZONE 98 · 5年球龄 · 稳定提升"
+      },
+      zhao: {
+        name: "赵明",
+        sub: "Wilson Clash 100 · 1.5年球龄 · 基础特训"
+      }
+    };
+
+    if (profiles[userKey]) {
+      const nameEl = document.getElementById('drawer-user-name');
+      const subEl = document.getElementById('drawer-user-sub');
+      if (nameEl && subEl) {
+        nameEl.innerText = profiles[userKey].name;
+        subEl.innerText = profiles[userKey].sub;
+      }
+    }
+  }
+</script>{% endblock %}

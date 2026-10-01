@@ -1,0 +1,694 @@
+{% extends "base.html" %}
+{#- 本文件由 scripts/build_pages.py 从设计稿自动生成，请勿手改；
+    修改请改设计稿后重新运行构建脚本。
+    功能扩展区块在 _training_extra.html，由脚本以 include 追加，不会被覆盖。 -#}
+{% set nav_active = "analytics-comparison" %}
+{% block title %}训练记录深度分析与横向对比{% endblock %}
+{% block main %}<div class="flex flex-col w-full">
+<!-- Content Area Wrapper -->
+<div class="p-space-lg md:p-space-xl lg:p-margin-desktop flex flex-col gap-space-xl">
+<!-- Top Meta Action Bar -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div class="flex flex-col gap-space-2xs">
+<div class="flex items-center gap-space-sm">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high text-primary-fixed font-label-sm text-label-sm uppercase tracking-wider font-bold">NTRP 3.5 Tier Analytics</span>
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Dual-Telemetry Mode</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">训练记录深度分析与横向对比</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">
+          支持单人全维度多场次纵向复盘，以及跨学员、同水平段 (NTRP Benchmark) 多维对比分析与智能战术诊断。
+        </p>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm">
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-md text-label-md transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px] text-secondary">tune</span>
+<span>选择对比基准 (Benchmark)</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-lg py-2.5 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all shadow-[0_0_24px_rgba(195,244,0,0.18)]">
+<span class="material-symbols-outlined text-[18px]">assessment</span>
+<span>生成横向对比报告</span>
+</button>
+</div>
+</div>
+<!-- Top Section: Player Comparison Selector Console -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Player A: Zhang Zheheng (Volt) -->
+<div class="relative bg-surface-container rounded-xl p-space-lg shadow-md overflow-hidden flex flex-col justify-between">
+<div class="absolute top-0 left-0 right-0 h-1 bg-primary-container"></div>
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container shadow-[0_0_8px_#c3f400]"></span>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-primary-fixed font-bold">对比选手 A</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-primary-container/15 text-primary-fixed font-label-sm text-label-sm font-semibold">主视标本</span>
+</div>
+<div class="flex items-center gap-space-md">
+<img class="w-14 h-14 rounded-full object-cover shadow-md" data-alt="Dynamic portrait of Chinese male tennis player in high contrast athletic neon dark room wearing moisture-wicking sportswear holding professional graphite tennis racket, cinematic moody rim lighting." src="/assets/img/training-b4240d.jpg"/>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-primary font-bold truncate">张哲恒</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-primary-fixed font-label-sm text-label-sm font-bold">NTRP 3.5</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant truncate">球龄 4年 · 右手单反 · 巡回赛拍模</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">发球极速 (Peak)</span>
+<div class="flex items-baseline gap-1">
+<span class="font-metric-digit text-headline-md text-primary font-bold">176</span>
+<span class="font-label-sm text-label-sm text-outline">km/h</span>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">正手均速 (Forehand)</span>
+<div class="flex items-baseline gap-1">
+<span class="font-metric-digit text-headline-md text-primary-fixed font-bold">122</span>
+<span class="font-label-sm text-label-sm text-outline">km/h</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm">近期采集：14 局对抗</span>
+<button class="font-label-sm text-label-sm text-primary hover:text-primary-fixed flex items-center gap-0.5">
+<span>切换学员</span>
+<span class="material-symbols-outlined text-[14px]">swap_horiz</span>
+</button>
+</div>
+</div>
+<!-- Player B: Li Siyuan (Blue) -->
+<div class="relative bg-surface-container rounded-xl p-space-lg shadow-md overflow-hidden flex flex-col justify-between">
+<div class="absolute top-0 left-0 right-0 h-1 bg-secondary-container"></div>
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary shadow-[0_0_8px_#7bd0ff]"></span>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary font-bold">对比选手 B</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-secondary/15 text-secondary font-label-sm text-label-sm font-semibold">对照组</span>
+</div>
+<div class="flex items-center gap-space-md">
+<img class="w-14 h-14 rounded-full object-cover shadow-md" data-alt="Close-up portrait of athletic Asian male tennis athlete tying wristband, deep obsidian locker room ambient light with soft blue sports neon highlights, clean confident expression." src="/assets/img/training-9815c2.jpg"/>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-primary font-bold truncate">李思源</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-secondary font-label-sm text-label-sm font-bold">NTRP 3.5</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant truncate">球龄 3年 · 右手双反 · 均衡控制型</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">发球极速 (Peak)</span>
+<div class="flex items-baseline gap-1">
+<span class="font-metric-digit text-headline-md text-primary font-bold">162</span>
+<span class="font-label-sm text-label-sm text-outline">km/h</span>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">正手均速 (Forehand)</span>
+<div class="flex items-baseline gap-1">
+<span class="font-metric-digit text-headline-md text-secondary font-bold">112</span>
+<span class="font-label-sm text-label-sm text-outline">km/h</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm">近期采集：11 局对抗</span>
+<button class="font-label-sm text-label-sm text-secondary hover:underline flex items-center gap-0.5">
+<span>切换学员</span>
+<span class="material-symbols-outlined text-[14px]">swap_horiz</span>
+</button>
+</div>
+</div>
+<!-- Benchmark C: Official NTRP 3.5 Benchmark -->
+<div class="relative bg-surface-container-low rounded-xl p-space-lg shadow-sm overflow-hidden flex flex-col justify-between">
+<div class="absolute top-0 left-0 right-0 h-1 bg-outline/40"></div>
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-outline"></span>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-outline font-bold">对比基准 C (Benchmark)</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">云端常模</span>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[28px]">sports_tennis</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-primary font-bold truncate">NTRP 3.5 官方基准</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant truncate">聚合样本量: 14,890 名注册学员</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<div class="p-space-sm rounded-lg bg-surface-container flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">段位常模均速</span>
+<div class="flex items-baseline gap-1">
+<span class="font-metric-digit text-headline-md text-primary font-bold">148</span>
+<span class="font-label-sm text-label-sm text-outline">km/h</span>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">甜区命中率标杆</span>
+<div class="flex items-baseline gap-1">
+<span class="font-metric-digit text-headline-md text-on-surface font-bold">68.2</span>
+<span class="font-label-sm text-label-sm text-outline">%</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm">算法版本: v4.2.8 Standard</span>
+<button class="font-label-sm text-label-sm text-on-surface hover:text-primary-fixed flex items-center gap-0.5">
+<span>重设分位值</span>
+<span class="material-symbols-outlined text-[14px]">tune</span>
+</button>
+</div>
+</div>
+</div>
+<!-- AI Targeted Comparison Diagnosis Banner -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container p-space-lg shadow-lg">
+<div class="absolute -right-16 -top-16 w-64 h-64 bg-primary-container/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-md relative z-10">
+<div class="flex items-start gap-space-md">
+<div class="w-10 h-10 rounded-xl bg-primary-container/20 text-primary-fixed flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[24px]">smart_toy</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm font-bold uppercase tracking-wider text-primary-fixed">系统 AI 战术对比诊断</span>
+<span class="text-outline">·</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">置信度 96.4%</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface leading-relaxed">
+<span class="font-semibold text-primary">张哲恒</span> 具有显著更强的主动进攻终结能力（正手进攻平均球速高出李思源 <span class="text-primary-fixed font-bold">10 km/h</span>，发球制胜分率高出同段位标杆 <span class="text-primary-fixed font-bold">24%</span>）；但在超过 <span class="text-secondary font-bold">8 拍以上</span> 的多拍相持对抗中，<span class="font-semibold text-secondary">李思源</span> 展现出更高的战术耐心，非受迫性失误率比张哲恒低 <span class="text-secondary font-bold">18%</span>，反手防守切削落点深区率达到 <span class="text-secondary font-bold">71%</span>。
+            </p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<button class="px-space-md py-2 rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-md text-label-md transition-colors">
+            导出战术切片
+          </button>
+<button class="px-space-md py-2 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all">
+            制定针对性训练计划
+          </button>
+</div>
+</div>
+</div>
+<!-- Main Analytics Visualizations: 2-Column Bento Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
+<!-- Visualization 1: Radar Chart Comparison (6-Dimension Technique Radar) -->
+<div class="lg:col-span-6 bg-surface-container rounded-xl p-space-lg shadow-md flex flex-col justify-between">
+<div class="flex items-center justify-between pb-space-md">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">六维技术雷达图对比</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">技术全面性与维度重叠</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+<span class="font-label-sm text-label-sm text-on-surface">张哲恒</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+<span class="font-label-sm text-label-sm text-on-surface">李思源</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-outline"></span>
+<span class="font-label-sm text-label-sm text-outline">基准值</span>
+</div>
+</div>
+</div>
+<!-- Radar Chart SVG Area -->
+<div class="relative w-full aspect-square max-h-[380px] flex items-center justify-center my-space-sm">
+<svg class="w-full h-full overflow-visible" viewbox="0 0 400 400">
+<defs>
+<radialgradient cx="50%" cy="50%" id="radarGlowA" r="50%">
+<stop offset="0%" stop-color="#c3f400" stop-opacity="0.35"></stop>
+<stop offset="100%" stop-color="#c3f400" stop-opacity="0.05"></stop>
+</radialgradient>
+<radialgradient cx="50%" cy="50%" id="radarGlowB" r="50%">
+<stop offset="0%" stop-color="#00a6e0" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#00a6e0" stop-opacity="0.03"></stop>
+</radialgradient>
+</defs>
+<!-- Concentric Grid Polygons (6 Axes) -->
+<!-- Axis angles: 90 (top), 30, 330, 270, 210, 150 -->
+<!-- 20% -->
+<polygon fill="none" points="200,168 228,184 228,216 200,232 172,216 172,184" stroke="#262b29" stroke-dasharray="2,2" stroke-width="1"></polygon>
+<!-- 40% -->
+<polygon fill="none" points="200,136 255,168 255,232 200,264 145,232 145,168" stroke="#262b29" stroke-width="1"></polygon>
+<!-- 60% -->
+<polygon fill="none" points="200,104 283,152 283,248 200,296 117,248 117,152" stroke="#262b29" stroke-dasharray="3,3" stroke-width="1"></polygon>
+<!-- 80% -->
+<polygon fill="none" points="200,72 311,136 311,264 200,328 89,264 89,136" stroke="#313633" stroke-width="1.2"></polygon>
+<!-- 100% Perimeter -->
+<polygon fill="none" points="200,40 338,120 338,280 200,360 62,280 62,120" stroke="#353a38" stroke-width="1.5"></polygon>
+<!-- Axis Rays -->
+<line stroke="#313633" stroke-width="1" x1="200" x2="200" y1="200" y2="40"></line>
+<line stroke="#313633" stroke-width="1" x1="200" x2="338" y1="200" y2="120"></line>
+<line stroke="#313633" stroke-width="1" x1="200" x2="338" y1="200" y2="280"></line>
+<line stroke="#313633" stroke-width="1" x1="200" x2="200" y1="200" y2="360"></line>
+<line stroke="#313633" stroke-width="1" x1="200" x2="62" y1="200" y2="280"></line>
+<line stroke="#313633" stroke-width="1" x1="200" x2="62" y1="200" y2="120"></line>
+<!-- Benchmark C (NTRP 3.5 Average ~ 65% across) -->
+<polygon fill="none" opacity="0.75" points="200,98 290,148 290,252 200,302 110,252 110,148" stroke="#8e9379" stroke-dasharray="4,4" stroke-width="1.5"></polygon>
+<!-- Player B: Li Siyuan Polygon (Balanced, Backhand strong, Serve lower) -->
+<!-- Serve: 62 (r=99->200,101), Forehand: 68 (r=108->293,146), Sweetspot: 84 (r=134->316,267), Stamina: 88 (r=140->200,340), Mobility: 76 (r=121->95,260), Backhand: 86 (r=137->81,121) -->
+<polygon fill="url(#radarGlowB)" points="200,101 293,146 316,267 200,340 95,260 81,121" stroke="#7bd0ff" stroke-width="2"></polygon>
+<circle cx="200" cy="101" fill="#7bd0ff" r="3"></circle>
+<circle cx="293" cy="146" fill="#7bd0ff" r="3"></circle>
+<circle cx="316" cy="267" fill="#7bd0ff" r="3"></circle>
+<circle cx="200" cy="340" fill="#7bd0ff" r="3"></circle>
+<circle cx="95" cy="260" fill="#7bd0ff" r="3"></circle>
+<circle cx="81" cy="121" fill="#7bd0ff" r="3"></circle>
+<!-- Player A: Zhang Zheheng Polygon (High Serve, High Forehand, Low Backhand) -->
+<!-- Serve: 94 (r=150->200,50), Forehand: 92 (r=147->327,126), Sweetspot: 78 (r=124->307,262), Stamina: 66 (r=105->200,305), Mobility: 82 (r=131->86,265), Backhand: 54 (r=86->125,150) -->
+<polygon fill="url(#radarGlowA)" points="200,50 327,126 307,262 200,305 86,265 125,150" stroke="#c3f400" stroke-width="2.5"></polygon>
+<circle cx="200" cy="50" fill="#c3f400" r="4"></circle>
+<circle cx="327" cy="126" fill="#c3f400" r="4"></circle>
+<circle cx="307" cy="262" fill="#c3f400" r="4"></circle>
+<circle cx="200" cy="305" fill="#c3f400" r="4"></circle>
+<circle cx="86" cy="265" fill="#c3f400" r="4"></circle>
+<circle cx="125" cy="150" fill="#c3f400" r="4"></circle>
+<!-- Axis Labels with Telemetry -->
+<text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="middle" x="200" y="24">发球威慑 (Serve 94/62)</text>
+<text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="start" x="350" y="118">正手上旋深度 (92/68)</text>
+<text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="start" x="350" y="286">甜区击球率 (78/84)</text>
+<text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="middle" x="200" y="380">体能恢复 (66/88)</text>
+<text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="end" x="50" y="286">跑动覆盖 (82/76)</text>
+<text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="end" x="50" y="118">反手稳定性 (54/86)</text>
+</svg>
+</div>
+<div class="grid grid-cols-3 gap-space-xs pt-space-sm bg-surface-container-low p-space-sm rounded-xl text-center">
+<div>
+<span class="font-label-sm text-label-sm text-outline">发球优势者</span>
+<p class="font-headline-sm text-body-lg font-bold text-primary-fixed">张哲恒 (+32%)</p>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-outline">反手防守者</span>
+<p class="font-headline-sm text-body-lg font-bold text-secondary">李思源 (+32%)</p>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-outline">段位契合度</span>
+<p class="font-headline-sm text-body-lg font-bold text-on-surface">94.1%</p>
+</div>
+</div>
+</div>
+<!-- Visualization 2: Shot Speed & Consistency Matrix -->
+<div class="lg:col-span-6 bg-surface-container rounded-xl p-space-lg shadow-md flex flex-col justify-between">
+<div class="flex items-center justify-between pb-space-md">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">每拍球速与出球分布对比</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">各击球类型均速与极速离散图 (km/h)</span>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container-low px-space-xs py-1 rounded-lg">
+<button class="px-2 py-0.5 rounded text-label-sm font-label-sm bg-surface-container-high text-primary font-semibold">均值对比</button>
+<button class="px-2 py-0.5 rounded text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface">极速区间</button>
+</div>
+</div>
+<!-- Custom Distribution Matrix Bars -->
+<div class="flex flex-col gap-space-md my-auto py-space-sm">
+<!-- Shot: 一发 (First Serve) -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between text-body-md">
+<span class="font-bold text-primary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-error">bolt</span>
+<span>一发最高速 (First Serve)</span>
+</span>
+<div class="flex items-center gap-space-md font-label-sm text-label-sm">
+<span class="text-primary-fixed font-bold">张: 176 km/h</span>
+<span class="text-secondary font-bold">李: 162 km/h</span>
+<span class="text-outline">基准: 148</span>
+</div>
+</div>
+<div class="relative h-4 bg-surface-container-low rounded-full overflow-hidden flex items-center">
+<div class="absolute left-[74%] top-0 bottom-0 w-0.5 bg-outline z-20" title="Benchmark: 148km/h"></div>
+<div class="h-full bg-secondary rounded-full" style="width: 81%;"></div>
+<div class="h-full bg-primary-container rounded-full -ml-[81%] opacity-85 shadow-[0_0_8px_rgba(195,244,0,0.5)]" style="width: 88%;"></div>
+</div>
+</div>
+<!-- Shot: 正手上旋 (Forehand Topspin) -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between text-body-md">
+<span class="font-bold text-primary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary-fixed">sports_baseball</span>
+<span>正手上旋进攻球 (Forehand Aggression)</span>
+</span>
+<div class="flex items-center gap-space-md font-label-sm text-label-sm">
+<span class="text-primary-fixed font-bold">张: 122 km/h</span>
+<span class="text-secondary font-bold">李: 112 km/h</span>
+<span class="text-outline">基准: 106</span>
+</div>
+</div>
+<div class="relative h-4 bg-surface-container-low rounded-full overflow-hidden flex items-center">
+<div class="absolute left-[53%] top-0 bottom-0 w-0.5 bg-outline z-20" title="Benchmark: 106km/h"></div>
+<div class="h-full bg-secondary rounded-full" style="width: 56%;"></div>
+<div class="h-full bg-primary-container rounded-full -ml-[56%] opacity-85 shadow-[0_0_8px_rgba(195,244,0,0.5)]" style="width: 61%;"></div>
+</div>
+</div>
+<!-- Shot: 反手抽球/切削 (Backhand) -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between text-body-md">
+<span class="font-bold text-primary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">swap_calls</span>
+<span>反手均速与深度 (Backhand Drive)</span>
+</span>
+<div class="flex items-center gap-space-md font-label-sm text-label-sm">
+<span class="text-primary-fixed font-bold">张: 98 km/h</span>
+<span class="text-secondary font-bold">李: 105 km/h</span>
+<span class="text-outline">基准: 99</span>
+</div>
+</div>
+<div class="relative h-4 bg-surface-container-low rounded-full overflow-hidden flex items-center">
+<div class="absolute left-[49%] top-0 bottom-0 w-0.5 bg-outline z-20" title="Benchmark: 99km/h"></div>
+<div class="h-full bg-secondary rounded-full" style="width: 52.5%;"></div>
+<div class="h-full bg-primary-container rounded-full -ml-[52.5%] opacity-85" style="width: 49%;"></div>
+</div>
+</div>
+<!-- Shot: 网前截击 (Volley) -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between text-body-md">
+<span class="font-bold text-primary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">pan_tool</span>
+<span>网前截击出球速度 (Net Volley)</span>
+</span>
+<div class="flex items-center gap-space-md font-label-sm text-label-sm">
+<span class="text-primary-fixed font-bold">张: 84 km/h</span>
+<span class="text-secondary font-bold">李: 81 km/h</span>
+<span class="text-outline">基准: 78</span>
+</div>
+</div>
+<div class="relative h-4 bg-surface-container-low rounded-full overflow-hidden flex items-center">
+<div class="absolute left-[39%] top-0 bottom-0 w-0.5 bg-outline z-20" title="Benchmark: 78km/h"></div>
+<div class="h-full bg-secondary rounded-full" style="width: 40.5%;"></div>
+<div class="h-full bg-primary-container rounded-full -ml-[40.5%] opacity-85" style="width: 42%;"></div>
+</div>
+</div>
+<!-- Shot: 高压球 (Overhead Smash) -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between text-body-md">
+<span class="font-bold text-primary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-tertiary-fixed-dim">expand</span>
+<span>高压球终结极速 (Overhead Smash)</span>
+</span>
+<div class="flex items-center gap-space-md font-label-sm text-label-sm">
+<span class="text-primary-fixed font-bold">张: 145 km/h</span>
+<span class="text-secondary font-bold">李: 130 km/h</span>
+<span class="text-outline">基准: 124</span>
+</div>
+</div>
+<div class="relative h-4 bg-surface-container-low rounded-full overflow-hidden flex items-center">
+<div class="absolute left-[62%] top-0 bottom-0 w-0.5 bg-outline z-20" title="Benchmark: 124km/h"></div>
+<div class="h-full bg-secondary rounded-full" style="width: 65%;"></div>
+<div class="h-full bg-primary-container rounded-full -ml-[65%] opacity-85" style="width: 72.5%;"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm pt-space-xs">
+<span>横轴刻度：0 km/h 至 200 km/h</span>
+<span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-outline"></span> 代表 NTRP 3.5 平均水平</span>
+</div>
+</div>
+</div>
+<!-- Cardio, Heart Rate & Rally Endurance Comparison -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
+<!-- Heart Rate & Cardio Load (Apple Health Fitness Aesthetic) -->
+<div class="lg:col-span-8 bg-surface-container rounded-xl p-space-lg shadow-md flex flex-col justify-between">
+<div class="flex items-center justify-between pb-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-error text-[18px]">favorite</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-error font-bold">心率负荷与相持体能恢复 (Heart Rate Recovery)</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">多拍相持后的心率峰值与 60s 间歇恢复梯度</span>
+</div>
+<span class="px-space-sm py-1 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">基于 Apple Watch 实时遥测</span>
+</div>
+<!-- Metric Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md my-space-sm">
+<div class="bg-surface-container-low p-space-md rounded-xl flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant">对局平均心率</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-metric-digit text-headline-lg font-extrabold text-primary-fixed">158</span>
+<span class="font-body-md text-body-md text-on-surface-variant">vs</span>
+<span class="font-metric-digit text-headline-lg font-extrabold text-secondary">144</span>
+<span class="font-label-sm text-label-sm text-outline">BPM</span>
+</div>
+<span class="font-label-sm text-label-sm text-error">张哲恒处无氧乳酸阈值区偏多</span>
+</div>
+<div class="bg-surface-container-low p-space-md rounded-xl flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant">局间 60秒 恢复心率 (HRR)</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-metric-digit text-headline-lg font-extrabold text-primary-fixed">-24</span>
+<span class="font-body-md text-body-md text-on-surface-variant">vs</span>
+<span class="font-metric-digit text-headline-lg font-extrabold text-secondary">-38</span>
+<span class="font-label-sm text-label-sm text-outline">BPM</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-semibold">李思源心肺耐力恢复更迅速 (+58%)</span>
+</div>
+<div class="bg-surface-container-low p-space-md rounded-xl flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant">高强度相持失误转折点</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-metric-digit text-headline-lg font-extrabold text-primary-fixed">第 7 拍</span>
+<span class="font-body-md text-body-md text-on-surface-variant">vs</span>
+<span class="font-metric-digit text-headline-lg font-extrabold text-secondary">第 13 拍</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">张哲恒相持后体能下降失误率剧增</span>
+</div>
+</div>
+<!-- Simulated Apple Health Cardio Chart Range -->
+<div class="relative w-full h-36 bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between overflow-hidden">
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>185 BPM (无氧极限)</span>
+<span>第 1 盘 (对攻期)</span>
+<span>第 2 盘 (决胜期)</span>
+<span>赛后放松</span>
+</div>
+<div class="relative w-full h-16 flex items-end">
+<!-- Simulated HR Curve Line Chart -->
+<svg class="w-full h-full overflow-visible" viewbox="0 0 700 80">
+<!-- Threshold Line -->
+<line opacity="0.3" stroke="#ffb4ab" stroke-dasharray="3,3" stroke-width="1" x1="0" x2="700" y1="20" y2="20"></line>
+<!-- Player B Curve (Blue) -->
+<path d="M 0,60 Q 70,55 140,45 T 280,35 T 420,40 T 560,30 T 700,55" fill="none" stroke="#7bd0ff" stroke-width="2.5"></path>
+<!-- Player A Curve (Volt) -->
+<path d="M 0,65 Q 70,30 140,15 T 280,10 T 420,25 T 560,8 T 700,60" fill="none" stroke="#c3f400" stroke-width="2.5"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>90 BPM (基线)</span>
+<div class="flex items-center gap-space-md">
+<span class="text-primary-fixed font-bold">● 张哲恒 (波动剧烈, 爆发消耗型)</span>
+<span class="text-secondary font-bold">● 李思源 (平稳持久, 巡航防守型)</span>
+</div>
+<span>时长 85 分钟</span>
+</div>
+</div>
+</div>
+<!-- Live Racket & Sweetspot Heatmap Snapshot -->
+<div class="lg:col-span-4 bg-surface-container rounded-xl p-space-lg shadow-md flex flex-col justify-between">
+<div class="flex items-center justify-between pb-space-sm">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">击球甜区散点重叠</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">拍面甜区集中率对比</span>
+</div>
+<span class="material-symbols-outlined text-outline">grain</span>
+</div>
+<!-- Isometric Tennis Racket Face Visualization -->
+<div class="relative w-full aspect-[4/3] bg-surface-container-low rounded-xl flex items-center justify-center p-space-sm">
+<svg class="w-full h-full" viewbox="0 0 240 180">
+<!-- Racket Head Rim -->
+<ellipse cx="120" cy="90" fill="none" rx="90" ry="70" stroke="#353a38" stroke-width="4"></ellipse>
+<!-- Racket String Grid Lines (Subtle) -->
+<line stroke="#262b29" stroke-width="0.8" x1="60" x2="60" y1="40" y2="140"></line>
+<line stroke="#262b29" stroke-width="0.8" x1="80" x2="80" y1="28" y2="152"></line>
+<line stroke="#262b29" stroke-width="0.8" x1="100" x2="100" y1="23" y2="157"></line>
+<line stroke="#353a38" stroke-width="1.2" x1="120" x2="120" y1="20" y2="160"></line>
+<line stroke="#262b29" stroke-width="0.8" x1="140" x2="140" y1="23" y2="157"></line>
+<line stroke="#262b29" stroke-width="0.8" x1="160" x2="160" y1="28" y2="152"></line>
+<line stroke="#262b29" stroke-width="0.8" x1="180" x2="180" y1="40" y2="140"></line>
+<line stroke="#262b29" stroke-width="0.8" x1="38" x2="202" y1="70" y2="70"></line>
+<line stroke="#353a38" stroke-width="1.2" x1="30" x2="210" y1="90" y2="90"></line>
+<line stroke="#262b29" stroke-width="0.8" x1="38" x2="202" y1="110" y2="110"></line>
+<!-- Sweetspot Target Ellipse -->
+<ellipse cx="120" cy="85" fill="none" rx="35" ry="28" stroke="#8e9379" stroke-dasharray="2,2" stroke-width="1"></ellipse>
+<!-- Player A Hits (Volt): Scattered towards the upper tip -->
+<circle cx="122" cy="72" fill="#c3f400" opacity="0.8" r="4.5"></circle>
+<circle cx="128" cy="80" fill="#c3f400" opacity="0.75" r="4"></circle>
+<circle cx="115" cy="65" fill="#c3f400" opacity="0.7" r="3.5"></circle>
+<circle cx="138" cy="95" fill="#c3f400" opacity="0.85" r="4"></circle>
+<circle cx="95" cy="55" fill="#c3f400" opacity="0.6" r="3"></circle> <!-- Edge misshit -->
+<circle cx="118" cy="88" fill="#c3f400" opacity="0.9" r="5"></circle>
+<!-- Player B Hits (Blue): Tightly grouped dead center -->
+<circle cx="120" cy="85" fill="#7bd0ff" opacity="0.85" r="5"></circle>
+<circle cx="122" cy="83" fill="#7bd0ff" opacity="0.8" r="4"></circle>
+<circle cx="117" cy="87" fill="#7bd0ff" opacity="0.8" r="4"></circle>
+<circle cx="124" cy="89" fill="#7bd0ff" opacity="0.85" r="4.5"></circle>
+<circle cx="114" cy="84" fill="#7bd0ff" opacity="0.75" r="3.5"></circle>
+<circle cx="119" cy="92" fill="#7bd0ff" opacity="0.8" r="3.5"></circle>
+</svg>
+</div>
+<div class="flex flex-col gap-space-xs pt-space-sm">
+<div class="flex items-center justify-between text-body-md">
+<span class="text-on-surface-variant font-label-sm text-label-sm">李思源 甜区聚集度 (Core Grouping)</span>
+<span class="text-secondary font-bold font-headline-sm text-headline-sm">84.2%</span>
+</div>
+<div class="flex items-center justify-between text-body-md">
+<span class="text-on-surface-variant font-label-sm text-label-sm">张哲恒 甜区聚集度 (Upper偏顶端)</span>
+<span class="text-primary-fixed font-bold font-headline-sm text-headline-sm">78.5%</span>
+</div>
+<p class="font-label-sm text-label-sm text-outline mt-1">
+            张哲恒击球点偏向球拍上部 1.5cm，获得更大击球杜杆但轻微牺牲容错率。
+          </p>
+</div>
+</div>
+</div>
+<!-- Bottom Section: Session Comparison Logs Table -->
+<div class="bg-surface-container rounded-xl p-space-lg shadow-md flex flex-col gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">历史训练对局与对抗详细日志</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-label-sm font-semibold">近 5 场对局遥测切片</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">展示两人近 30 天内直接对抗 (Head-to-Head) 及同条件发球机测试实测记录</p>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="relative">
+<input class="h-9 px-space-md bg-surface-container-low rounded-lg text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary-container" placeholder="过滤场地或拍型..." type="text"/>
+</div>
+<button class="h-9 px-space-md rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-bright flex items-center gap-1 font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[16px]">filter_list</span>
+<span>筛选</span>
+</button>
+</div>
+</div>
+<!-- Data Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left text-body-md">
+<thead>
+<tr class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider bg-surface-container-low/70">
+<th class="py-space-sm px-space-md rounded-l-lg">对局日期 / 场地类型</th>
+<th class="py-space-sm px-space-md">对局形式</th>
+<th class="py-space-sm px-space-md text-primary-fixed">张哲恒 (A) 得分/均速</th>
+<th class="py-space-sm px-space-md text-secondary">李思源 (B) 得分/均速</th>
+<th class="py-space-sm px-space-md">最长相持 (Rally)</th>
+<th class="py-space-sm px-space-md">胜负关键归因</th>
+<th class="py-space-sm px-space-md text-right rounded-r-lg">操作</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-high/40">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-high/50 transition-colors">
+<td class="py-space-md px-space-md font-semibold text-primary">
+<div>2024-10-24 16:30</div>
+<div class="font-label-sm text-label-sm text-outline">室外硬地 · Wilson US Open</div>
+</td>
+<td class="py-space-md px-space-md">
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface font-label-sm text-label-sm">单打实战 (抢七)</span>
+</td>
+<td class="py-space-md px-space-md font-semibold text-primary-fixed">
+<div class="text-headline-sm">7 <span class="text-body-md text-on-surface-variant font-normal">(124 km/h)</span></div>
+<div class="font-label-sm text-label-sm text-primary-fixed">Ace球 4 记 · 制胜分 9</div>
+</td>
+<td class="py-space-md px-space-md font-semibold text-secondary">
+<div class="text-headline-sm">5 <span class="text-body-md text-on-surface-variant font-normal">(114 km/h)</span></div>
+<div class="font-label-sm text-label-sm text-secondary">非受迫失误仅 2 次</div>
+</td>
+<td class="py-space-md px-space-md font-semibold text-on-surface">
+                14 拍
+                <span class="block font-label-sm text-label-sm text-secondary">李思源反手穿越得分</span>
+</td>
+<td class="py-space-md px-space-md text-on-surface-variant">
+                张哲恒抢七发球连续 2 记外角 Ace 终结比赛
+              </td>
+<td class="py-space-md px-space-md text-right">
+<button class="px-space-sm py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm transition-colors">回放切片</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-high/50 transition-colors">
+<td class="py-space-md px-space-md font-semibold text-primary">
+<div>2024-10-18 19:00</div>
+<div class="font-label-sm text-label-sm text-outline">室内红土 · Babolat Team</div>
+</td>
+<td class="py-space-md px-space-md">
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface font-label-sm text-label-sm">1盘常规对抗 (Set)</span>
+</td>
+<td class="py-space-md px-space-md font-semibold text-primary-fixed">
+<div class="text-headline-sm">4 <span class="text-body-md text-on-surface-variant font-normal">(118 km/h)</span></div>
+<div class="font-label-sm text-label-sm text-error">非受迫失误 16 次</div>
+</td>
+<td class="py-space-md px-space-md font-semibold text-secondary">
+<div class="text-headline-sm">6 <span class="text-body-md text-on-surface-variant font-normal">(116 km/h)</span></div>
+<div class="font-label-sm text-label-sm text-secondary">破发成功率 75%</div>
+</td>
+<td class="py-space-md px-space-md font-semibold text-on-surface">
+                22 拍
+                <span class="block font-label-sm text-label-sm text-secondary">张哲恒反手出界</span>
+</td>
+<td class="py-space-md px-space-md text-on-surface-variant">
+                红土降速后多拍相持拉长，李思源反手深球致胜
+              </td>
+<td class="py-space-md px-space-md text-right">
+<button class="px-space-sm py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm transition-colors">回放切片</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-high/50 transition-colors">
+<td class="py-space-md px-space-md font-semibold text-primary">
+<div>2024-10-12 10:15</div>
+<div class="font-label-sm text-label-sm text-outline">室外硬地 · 发球机特定深度巡回</div>
+</td>
+<td class="py-space-md px-space-md">
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-primary font-label-sm text-label-sm font-semibold">100球正手标定</span>
+</td>
+<td class="py-space-md px-space-md font-semibold text-primary-fixed">
+<div class="text-headline-sm">92% <span class="text-body-md text-on-surface-variant font-normal">入界率</span></div>
+<div class="font-label-sm text-label-sm text-primary-fixed">均速 126 km/h (顶尖)</div>
+</td>
+<td class="py-space-md px-space-md font-semibold text-secondary">
+<div class="text-headline-sm">96% <span class="text-body-md text-on-surface-variant font-normal">入界率</span></div>
+<div class="font-label-sm text-label-sm text-secondary">均速 113 km/h (平稳)</div>
+</td>
+<td class="py-space-md px-space-md font-semibold text-on-surface">
+                -- 
+                <span class="block font-label-sm text-label-sm text-outline">定点喂球测试</span>
+</td>
+<td class="py-space-md px-space-md text-on-surface-variant">
+                张哲恒爆发力更强，李思源击球散点落点更为密集
+              </td>
+<td class="py-space-md px-space-md text-right">
+<button class="px-space-sm py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm transition-colors">查看散点</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination & Table Footer -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-space-sm pt-space-xs text-on-surface-variant font-label-sm text-label-sm">
+<span>共检索到 18 条跨学员关联对抗记录</span>
+<div class="flex items-center gap-space-xs">
+<button class="p-1 rounded bg-surface-container-high text-on-surface disabled:opacity-40" disabled="">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+</button>
+<span class="px-space-sm py-1 rounded bg-primary-container text-on-primary-fixed font-bold">1</span>
+<button class="px-space-sm py-1 rounded hover:bg-surface-container-high text-on-surface">2</button>
+<button class="px-space-sm py-1 rounded hover:bg-surface-container-high text-on-surface">3</button>
+<button class="p-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface">
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>{% include "pages/_training_extra.html" %}
+{% endblock %}

@@ -1,0 +1,5 @@
+{
+  "name": "acemate-backend-web",
+  "python": ">=3.10",
+  "dependencies": ["fastapi>=0.110", "uvicorn[standard]>=0.27", "jinja2>=3.1"]
+}

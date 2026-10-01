@@ -1,0 +1,14 @@
+# AceMate 后端管理站 —— 运行时依赖
+#
+# 安装：
+#   python -m pip install -r requirements.txt
+#
+# Python 版本：>= 3.9（fastapi 0.110+ 的下限）
+# 本项目不在 Windows 上依赖编译工具链，纯 wheel 安装。
+
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.27,<1.0
+jinja2>=3.1,<4.0
+# 标注工作台的会话上传走 multipart/form-data（Form + File 字段），
+# FastAPI 解析这类请求体需要它，缺了会在**注册路由时**就抛 RuntimeError
+python-multipart>=0.0.9,<1.0

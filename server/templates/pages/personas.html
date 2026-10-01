@@ -1,0 +1,577 @@
+{% extends "base.html" %}
+{#- 本文件由 scripts/build_pages.py 从设计稿自动生成，请勿手改；
+    修改请改设计稿后重新运行构建脚本。
+    功能扩展区块在 _personas_extra.html，由脚本以 include 追加，不会被覆盖。 -#}
+{% set nav_active = "user-personas" %}
+{% block title %}用户画像与技术分群体系{% endblock %}
+{% block main %}<div class="flex flex-col w-full">
+<!-- Interactive Style Scoped Hooks -->
+<style>
+    @keyframes pulse-soft {
+      0%, 100% { opacity: 0.15; transform: scale(1); }
+      50% { opacity: 0.28; transform: scale(1.04); }
+    }
+    .ambient-glow {
+      animation: pulse-soft 6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+<!-- Ambient Volt Glow Gradient Behind Canvas -->
+<div class="relative w-full px-space-xl py-space-xl overflow-hidden">
+<div class="pointer-events-none absolute -top-40 right-20 w-96 h-96 rounded-full bg-primary-container/10 blur-[120px] ambient-glow"></div>
+<div class="pointer-events-none absolute top-96 -left-20 w-80 h-80 rounded-full bg-secondary-container/10 blur-[100px]"></div>
+<!-- Top Breadcrumb & Page Head -->
+<div class="relative z-10 flex flex-col xl:flex-row xl:items-end justify-between gap-space-lg pb-space-xl">
+<div class="flex flex-col gap-space-xs max-w-4xl">
+<div class="flex items-center gap-space-sm">
+<span class="inline-flex items-center gap-1.5 px-space-sm py-0.5 rounded-full bg-surface-container-high text-primary-fixed font-label-sm text-label-sm tracking-widest uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+            AI Telemetry Clustering Engine v4.2
+          </span>
+<span class="font-label-sm text-label-sm text-outline">· 累计分析击球 142,890,200 次</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight font-extrabold flex items-center gap-space-sm">
+          用户画像与技术分群体系
+        </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed max-w-3xl">
+          基于千万级击球传感器、心率负荷与球迹追踪数据的多维用户画像聚类、打法风格标签及成长路径预测。
+        </p>
+</div>
+<!-- Action Cluster -->
+<div class="flex items-center gap-space-md self-start xl:self-end shrink-0">
+<button class="flex items-center gap-space-xs px-space-lg py-2.5 rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-md text-label-md font-semibold transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+<span>自定义分群规则</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-lg py-2.5 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all shadow-md">
+<span class="material-symbols-outlined text-[18px]">download_for_offline</span>
+<span>导出画像报表 (PDF/XLSX)</span>
+</button>
+</div>
+</div>
+<!-- Section 1: 4 Key Cluster Archetype Metric Cards (Bento Style) -->
+<div class="relative z-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-lg pb-space-2xl">
+<!-- Archetype 1 -->
+<div class="group relative p-space-lg rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all flex flex-col justify-between shadow-md overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-container/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500"></div>
+<div class="relative flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-primary-fixed font-bold">Archetype #01</span>
+<span class="px-2 py-0.5 rounded-full bg-primary-container/20 text-primary-fixed font-label-sm text-label-sm font-bold">34.2%</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold">底线进攻重炮型</h3>
+<span class="font-label-md text-label-md text-on-surface-variant">Baseline Power Attacker</span>
+</div>
+<div class="flex items-baseline gap-space-xs pt-space-xs">
+<span class="font-metric-digit text-metric-digit font-black text-primary tracking-tight">14,650</span>
+<span class="font-label-md text-label-md text-outline">人 · 全平台最大群组</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant pt-space-xs">
+            正手击球占比 >60%，平均球速 >120 km/h。偏好 98-100 平方英寸中厚度拍框及高弹力多角硬线。
+          </p>
+</div>
+<div class="relative pt-space-lg mt-space-md flex flex-col gap-space-xs">
+<div class="flex justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span>正手主动得分率</span>
+<span class="font-bold text-primary">76.4%</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full rounded-full bg-primary-container" style="width: 76.4%"></div>
+</div>
+</div>
+</div>
+<!-- Archetype 2 -->
+<div class="group relative p-space-lg rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all flex flex-col justify-between shadow-md overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-secondary-container/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500"></div>
+<div class="relative flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary font-bold">Archetype #02</span>
+<span class="px-2 py-0.5 rounded-full bg-secondary/15 text-secondary font-label-sm text-label-sm font-bold">28.5%</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold">稳定防守反击型</h3>
+<span class="font-label-md text-label-md text-on-surface-variant">Counter-Puncher / Grinder</span>
+</div>
+<div class="flex items-baseline gap-space-xs pt-space-xs">
+<span class="font-metric-digit text-metric-digit font-black text-primary tracking-tight">12,210</span>
+<span class="font-label-md text-label-md text-outline">人</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant pt-space-xs">
+            回合相持中位数 >7.4 拍。心率监测显示有氧耐力与高阶混氧区间 (Z3/Z4) 覆盖达 80% 训练时长。
+          </p>
+</div>
+<div class="relative pt-space-lg mt-space-md flex flex-col gap-space-xs">
+<div class="flex justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span>跑动防守回位速度</span>
+<span class="font-bold text-secondary">88.2%</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full rounded-full bg-secondary-container" style="width: 88.2%"></div>
+</div>
+</div>
+</div>
+<!-- Archetype 3 -->
+<div class="group relative p-space-lg rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all flex flex-col justify-between shadow-md overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500"></div>
+<div class="relative flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface font-bold">Archetype #03</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface font-label-sm text-label-sm font-bold">18.1%</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold">全场进攻与发球上网</h3>
+<span class="font-label-md text-label-md text-on-surface-variant">All-Court & S&V Specialist</span>
+</div>
+<div class="flex items-baseline gap-space-xs pt-space-xs">
+<span class="font-metric-digit text-metric-digit font-black text-primary tracking-tight">7,750</span>
+<span class="font-label-md text-label-md text-outline">人</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant pt-space-xs">
+            切削滑步与网前截击比例高出大盘 240%。发球落点极度分散，追求击球节奏转换与网前下压截击。
+          </p>
+</div>
+<div class="relative pt-space-lg mt-space-md flex flex-col gap-space-xs">
+<div class="flex justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span>网前截击成功率</span>
+<span class="font-bold text-on-surface">69.8%</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full rounded-full bg-on-surface" style="width: 69.8%"></div>
+</div>
+</div>
+</div>
+<!-- Archetype 4 -->
+<div class="group relative p-space-lg rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all flex flex-col justify-between shadow-md overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-tertiary-container/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500"></div>
+<div class="relative flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-tertiary-fixed-dim font-bold">Archetype #04</span>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-container/20 text-tertiary-fixed-dim font-label-sm text-label-sm font-bold">19.2%</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold">休闲健身与进阶新手</h3>
+<span class="font-label-md text-label-md text-on-surface-variant">Beginner & Casual Fitness</span>
+</div>
+<div class="flex items-baseline gap-space-xs pt-space-xs">
+<span class="font-metric-digit text-metric-digit font-black text-primary tracking-tight">8,240</span>
+<span class="font-label-md text-label-md text-outline">人</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant pt-space-xs">
+            球龄小于 2 年，核心驱动力为有氧卡路里消耗、周末社交与基本击球动力链的稳定性训练。
+          </p>
+</div>
+<div class="relative pt-space-lg mt-space-md flex flex-col gap-space-xs">
+<div class="flex justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span>甜区击球命中一致性</span>
+<span class="font-bold text-tertiary-fixed-dim">51.2%</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full rounded-full bg-tertiary-fixed-dim" style="width: 51.2%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 2: Deep Dive Persona Explorer (Split Panels) -->
+<div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-space-xl">
+<!-- LEFT PANEL: Demographic & Athletic Attributes (5 cols) -->
+<div class="lg:col-span-5 flex flex-col gap-space-xl">
+<!-- Module Header -->
+<div class="p-space-lg rounded-2xl bg-surface-container-low shadow-sm flex flex-col gap-space-lg">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[22px]">bar_chart</span>
+<h2 class="font-headline-sm text-headline-sm text-primary font-bold">属性聚类分析</h2>
+</div>
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Demographic Stats</span>
+</div>
+<!-- Age Distribution Bar Visual -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex justify-between items-baseline">
+<span class="font-body-md text-body-md font-semibold text-on-surface">年龄段聚类分布</span>
+<span class="font-label-sm text-label-sm text-primary-fixed font-bold">25-35 岁占据核心主力 (54%)</span>
+</div>
+<!-- Custom CSS Chart Bars -->
+<div class="flex items-end gap-3 h-32 pt-space-sm px-space-sm bg-surface-container-lowest rounded-xl">
+<!-- Bar 1: <18 -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end group cursor-pointer">
+<span class="font-label-sm text-label-sm text-outline opacity-0 group-hover:opacity-100 transition-opacity">6%</span>
+<div class="w-full bg-surface-container-highest rounded-t-md hover:bg-surface-bright transition-all" style="height: 12%"></div>
+<span class="font-label-sm text-label-sm text-outline"><18</span>
+</div>
+<!-- Bar 2: 18-24 -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end group cursor-pointer">
+<span class="font-label-sm text-label-sm text-outline opacity-0 group-hover:opacity-100 transition-opacity">18%</span>
+<div class="w-full bg-surface-container-highest rounded-t-md hover:bg-surface-bright transition-all" style="height: 35%"></div>
+<span class="font-label-sm text-label-sm text-outline">18-24</span>
+</div>
+<!-- Bar 3: 25-35 (Highlight) -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end group cursor-pointer">
+<span class="font-label-sm text-label-sm text-primary-fixed font-bold opacity-100">54%</span>
+<div class="w-full bg-primary-container rounded-t-md shadow-md" style="height: 88%"></div>
+<span class="font-label-sm text-label-sm text-primary-fixed font-bold">25-35</span>
+</div>
+<!-- Bar 4: 36-45 -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end group cursor-pointer">
+<span class="font-label-sm text-label-sm text-outline opacity-0 group-hover:opacity-100 transition-opacity">16%</span>
+<div class="w-full bg-surface-container-highest rounded-t-md hover:bg-surface-bright transition-all" style="height: 31%"></div>
+<span class="font-label-sm text-label-sm text-outline">36-45</span>
+</div>
+<!-- Bar 5: 45+ -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end group cursor-pointer">
+<span class="font-label-sm text-label-sm text-outline opacity-0 group-hover:opacity-100 transition-opacity">6%</span>
+<div class="w-full bg-surface-container-highest rounded-t-md hover:bg-surface-bright transition-all" style="height: 12%"></div>
+<span class="font-label-sm text-label-sm text-outline">45+</span>
+</div>
+</div>
+</div>
+<!-- Tennis Age & Grip Hand Distribution (Donut & Proportion Split) -->
+<div class="grid grid-cols-2 gap-space-md pt-space-xs">
+<!-- Donut Visual Component for Tennis Experience -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest flex flex-col justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">球龄结构分布</span>
+<div class="flex items-center justify-center py-space-sm relative">
+<!-- Inline SVG Donut Chart -->
+<svg class="w-24 h-24 transform -rotate-90" viewbox="0 0 36 36">
+<!-- Background Circle -->
+<path class="text-surface-container-high" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="4.5"></path>
+<!-- 3-5 Years (42% Primary Volt) -->
+<path class="text-primary-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="42, 100" stroke-linecap="round" stroke-width="4.5"></path>
+<!-- 1-2 Years (35% Secondary Sky) -->
+<path class="text-secondary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="35, 100" stroke-dashoffset="-42" stroke-linecap="round" stroke-width="4.5"></path>
+</svg>
+<div class="absolute flex flex-col items-center">
+<span class="font-headline-sm text-headline-sm font-bold text-primary">42%</span>
+<span class="font-label-sm text-label-sm text-outline">3-5年</span>
+</div>
+</div>
+<div class="flex flex-col gap-1 font-label-sm text-label-sm">
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1 text-on-surface-variant"><span class="w-2 h-2 rounded-full bg-primary-container"></span>3-5 年熟练者</span>
+<span class="font-bold text-on-surface">42%</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1 text-on-surface-variant"><span class="w-2 h-2 rounded-full bg-secondary"></span>1-2 年成长者</span>
+<span class="font-bold text-on-surface">35%</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1 text-on-surface-variant"><span class="w-2 h-2 rounded-full bg-surface-container-highest"></span>5年+ 资深高手</span>
+<span class="font-bold text-on-surface">23%</span>
+</div>
+</div>
+</div>
+<!-- Handedness Proportion Split -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest flex flex-col justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">持拍手结构</span>
+<div class="flex flex-col justify-center gap-space-sm py-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md font-bold text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary-fixed">pan_tool</span>右手持拍
+                  </span>
+<span class="font-headline-sm text-headline-sm font-bold text-primary-fixed">88%</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden flex">
+<div class="h-full bg-primary-container rounded-l-full" style="width: 88%"></div>
+<div class="h-full bg-secondary-container rounded-r-full" style="width: 12%"></div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-body-md text-body-md font-medium text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-secondary">back_hand</span>左手持拍
+                  </span>
+<span class="font-body-md text-body-md font-bold text-secondary">12%</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-outline">左手持拍者在反手位发球得分率高 14.6%</span>
+</div>
+</div>
+<!-- Tension & Racket Head Size Preferences -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md font-semibold text-on-surface">网球拍线磅数与框型偏好</span>
+<span class="font-label-sm text-label-sm text-primary-fixed">50-54 lbs (主流 64%)</span>
+</div>
+<!-- Segmented horizontal tracker -->
+<div class="flex flex-col gap-space-xs">
+<div class="w-full h-3 rounded-full bg-surface-container-highest flex overflow-hidden">
+<div class="h-full bg-surface-bright" style="width: 18%" title="<48 lbs (18%)"></div>
+<div class="h-full bg-primary-container" style="width: 64%" title="50-54 lbs (64%)"></div>
+<div class="h-full bg-secondary-container" style="width: 18%" title=">55 lbs (18%)"></div>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm text-outline pt-1">
+<span><48 lbs (低磅增弹 18%)</span>
+<span class="text-primary-fixed font-bold">50-54 lbs (兼顾控球 64%)</span>
+<span>55+ lbs (极限控制 18%)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Telemetry Insights Banner -->
+<div class="p-space-lg rounded-2xl bg-surface-container-low shadow-sm flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-xl bg-primary-container/15 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary-fixed text-[24px]">insights</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md font-bold text-primary">分群洞察小结</span>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">
+              重炮型与防守型用户周均消耗达 2,100 kcal，且超过 71% 配备了 Apple Watch 或 AceMate 智能球拍传感器。
+            </p>
+</div>
+</div>
+</div>
+<!-- CENTER / RIGHT PANEL: Deep Archetype Profile Card (7 cols) -->
+<div class="lg:col-span-7 flex flex-col gap-space-xl">
+<div class="relative p-space-xl rounded-2xl bg-surface-container-low shadow-md overflow-hidden flex flex-col gap-space-xl">
+<!-- Subtle Card Ambient Ring -->
+<div class="pointer-events-none absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-primary-container/5 blur-3xl"></div>
+<!-- Card Header & Representative Trainee Profile -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md pb-space-md">
+<div class="flex items-center gap-space-md">
+<div class="relative">
+<img class="w-16 h-16 rounded-2xl object-cover shadow-md" data-alt="Editorial close-up athletic portrait of Alex Zhang, a 28-year-old Asian tennis player wearing dark charcoal athletic apparel and a titanium Apple Watch Ultra, focused expression with intense court lighting, cinematic obsidian dark gym mood." src="/assets/img/personas-50f800.jpg"/>
+<span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[12px] text-on-primary-container font-black">bolt</span>
+</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-sm flex-wrap">
+<h3 class="font-headline-md text-headline-md text-primary font-bold">张哲恒 (Alex Zhang)</h3>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-highest text-primary-fixed font-label-sm text-label-sm font-semibold">
+                    典型样本 · PTR 4.0
+                  </span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant">
+                  28 岁 · 科技互联网总监 · 球龄 4.5 年 · 归属「底线进攻重炮型」
+                </span>
+</div>
+</div>
+<!-- Status Indicator -->
+<div class="flex items-center gap-space-xs px-space-md py-1.5 rounded-full bg-surface-container-highest self-start sm:self-center">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-ping"></span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">近24小时击球活跃</span>
+</div>
+</div>
+<!-- Trainee Persona Tags Mosaic -->
+<div class="flex flex-wrap gap-space-xs">
+<span class="px-space-md py-1 rounded-full bg-primary-container/15 text-primary-fixed font-label-md text-label-md font-semibold">
+              #底线重炮手
+            </span>
+<span class="px-space-md py-1 rounded-full bg-surface-container-highest text-on-surface font-label-md text-label-md">
+              #正手暴力上旋 (3200rpm)
+            </span>
+<span class="px-space-md py-1 rounded-full bg-surface-container-highest text-on-surface font-label-md text-label-md">
+              #夜间高频球手
+            </span>
+<span class="px-space-md py-1 rounded-full bg-secondary-container/20 text-secondary font-label-md text-label-md">
+              #发球进阶攻坚期
+            </span>
+<span class="px-space-md py-1 rounded-full bg-surface-container-highest text-on-surface-variant font-label-md text-label-md">
+              #AppleWatch深度用户
+            </span>
+</div>
+<!-- Radar Chart & Key Strengths Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-lg items-center p-space-lg rounded-2xl bg-surface-container-lowest">
+<!-- Radar SVG (5 cols) -->
+<div class="md:col-span-6 flex flex-col items-center justify-center">
+<span class="font-label-md text-label-md text-on-surface-variant pb-space-sm font-semibold">能力雷达与打法维度</span>
+<div class="relative w-56 h-56 flex items-center justify-center">
+<!-- SVG Hexagonal Radar -->
+<svg class="w-full h-full" viewbox="0 0 200 200">
+<!-- Radar Polygons Background Grid -->
+<polygon class="text-surface-bright" fill="none" points="100,20 170,60 170,140 100,180 30,140 30,60" stroke="currentColor" stroke-dasharray="2,2" stroke-width="1"></polygon>
+<polygon class="text-surface-bright" fill="none" points="100,45 145,72 145,128 100,155 55,128 55,72" stroke="currentColor" stroke-dasharray="2,2" stroke-width="1"></polygon>
+<polygon class="text-surface-container-high" fill="none" points="100,70 120,83 120,117 100,130 80,117 80,83" stroke="currentColor" stroke-width="1"></polygon>
+<!-- Axes -->
+<line class="text-surface-bright" stroke="currentColor" stroke-width="1" x1="100" x2="100" y1="20" y2="180"></line>
+<line class="text-surface-bright" stroke="currentColor" stroke-width="1" x1="30" x2="170" y1="60" y2="140"></line>
+<line class="text-surface-bright" stroke="currentColor" stroke-width="1" x1="30" x2="170" y1="140" y2="60"></line>
+<!-- Trainee Performance Polygon -->
+<!-- Points: 正手(100, 24), 一发(162, 65), 耐力(152, 130), 截击(100, 150-weak), 反手(50, 126), 步伐(42, 68) -->
+<polygon fill="rgba(195, 244, 0, 0.2)" points="100,26 158,68 150,132 100,148 55,122 45,66" stroke="#c3f400" stroke-width="2.5"></polygon>
+<!-- Dots -->
+<circle cx="100" cy="26" fill="#c3f400" r="3.5"></circle>
+<circle cx="158" cy="68" fill="#c3f400" r="3.5"></circle>
+<circle cx="150" cy="132" fill="#c3f400" r="3.5"></circle>
+<circle cx="100" cy="148" fill="#ffb4ab" r="3.5"></circle>
+<circle cx="55" cy="122" fill="#c3f400" r="3.5"></circle>
+<circle cx="45" cy="66" fill="#c3f400" r="3.5"></circle>
+</svg>
+<!-- Floating Axis Labels -->
+<span class="absolute top-0 text-[11px] font-bold text-primary-fixed">正手爆发 (94)</span>
+<span class="absolute top-8 -right-2 text-[11px] font-semibold text-on-surface">一发球速 (86)</span>
+<span class="absolute bottom-6 -right-2 text-[11px] font-semibold text-on-surface">心肺耐力 (85)</span>
+<span class="absolute -bottom-2 text-[11px] font-bold text-error">截击细腻 (61)</span>
+<span class="absolute bottom-6 -left-3 text-[11px] font-semibold text-on-surface">反手加压 (74)</span>
+<span class="absolute top-8 -left-2 text-[11px] font-semibold text-on-surface">步法覆盖 (82)</span>
+</div>
+</div>
+<!-- Breakdown & Diagnostics (6 cols) -->
+<div class="md:col-span-6 flex flex-col gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">技术特长与核心指标</span>
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low">
+<span class="font-body-md text-body-md text-on-surface">正手平均球速</span>
+<span class="font-headline-sm text-headline-sm text-primary-fixed font-black">128 <span class="font-label-md text-label-md text-outline">km/h</span></span>
+</div>
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low">
+<span class="font-body-md text-body-md text-on-surface">发球旋转度指标</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">82 <span class="font-label-md text-label-md text-outline">/100</span></span>
+</div>
+</div>
+<div class="flex flex-col gap-space-xs pt-1">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-error">技术短板检测 (瓶颈点)</span>
+<div class="p-space-sm rounded-lg bg-error-container/20 flex flex-col gap-0.5">
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md font-bold text-error">截击细腻度 & 网前下压</span>
+<span class="font-label-sm text-label-sm font-bold text-error">仅 61分</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-error-container">截击落点深区率仅 32%，网前迎球拍面角度常出现后仰。</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Training Habit Timeline & Calorie Telemetry -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md">
+<div class="p-space-md rounded-xl bg-surface-container-lowest flex flex-col justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant">周均出勤频次</span>
+<div class="flex items-baseline gap-1 py-1">
+<span class="font-metric-digit text-metric-digit font-black text-primary">3.5</span>
+<span class="font-body-md text-body-md text-outline">次 / 周</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary-fixed">超过 89% 平台学员</span>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container-lowest flex flex-col justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant">高发训练时段</span>
+<div class="flex flex-col py-1">
+<span class="font-headline-sm text-headline-sm font-bold text-primary">周中 19:30</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">及周日上午 09:00</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">夜间打卡占比 72%</span>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container-lowest flex flex-col justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant">单次平均消耗</span>
+<div class="flex items-baseline gap-1 py-1">
+<span class="font-metric-digit text-metric-digit font-black text-primary">540</span>
+<span class="font-body-md text-body-md text-outline">kcal</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary">平均心率 148 bpm</span>
+</div>
+</div>
+<!-- AI Next-step Prescription & Bottleneck Prediction -->
+<div class="p-space-lg rounded-2xl bg-surface-container-high flex flex-col md:flex-row items-start md:items-center justify-between gap-space-lg shadow-sm">
+<div class="flex items-start gap-space-md">
+<div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-on-primary-fixed text-[22px]">smart_toy</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm font-bold uppercase tracking-wider text-primary-fixed">AI 瓶颈诊断与处方推荐</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-outline font-label-sm text-label-sm">推荐置信度 96.8%</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface pt-1">
+                  该学员正处于 PTR 4.0 突破至 4.5 的平台期。受限于二发入界率 (58%) 与反拍变线失误，建议定向推送专属进阶包：
+                </p>
+<div class="flex flex-wrap items-center gap-space-xs pt-space-xs">
+<span class="font-body-md text-body-md font-bold text-primary-fixed">《双手反拍深度加压》</span>
+<span class="text-outline">与</span>
+<span class="font-body-md text-body-md font-bold text-primary-fixed">《二发侧上旋入界率专项特训》</span>
+</div>
+</div>
+</div>
+<button class="shrink-0 flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all">
+<span class="material-symbols-outlined text-[18px]">send</span>
+<span>向该群组推送训练计划</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 3: Cluster Comparison Drill-down Table -->
+<div class="relative z-10 pt-space-2xl">
+<div class="p-space-xl rounded-2xl bg-surface-container-low shadow-md flex flex-col gap-space-lg">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md">
+<div class="flex flex-col gap-1">
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold">四大打法群组关键物理与技战术指标横向对比</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">基于穿戴式传感器采样与高精度发球雷达实测统计均值</p>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold hover:bg-surface-bright transition-colors">
+              筛选拍型
+            </button>
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold hover:bg-surface-bright transition-colors">
+              切换时间跨度
+            </button>
+</div>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-md text-body-md">
+<thead>
+<tr class="bg-surface-container-lowest text-outline font-label-sm text-label-sm uppercase tracking-wider">
+<th class="py-space-md px-space-lg rounded-l-xl">用户分群模型</th>
+<th class="py-space-md px-space-md">均分/人均球龄</th>
+<th class="py-space-md px-space-md">平均一发时速</th>
+<th class="py-space-md px-space-md">正手平均转速 (RPM)</th>
+<th class="py-space-md px-space-md">心率耐力主区间</th>
+<th class="py-space-md px-space-md">常见拍面尺寸</th>
+<th class="py-space-md px-space-lg rounded-r-xl text-right">活跃健康度</th>
+</tr>
+</thead>
+<tbody class="text-on-surface">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-space-md px-space-lg font-bold text-primary flex items-center gap-space-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+<span>底线进攻重炮型</span>
+</td>
+<td class="py-space-md px-space-md">PTR 3.8 / 3.8 年</td>
+<td class="py-space-md px-space-md font-bold text-primary-fixed">152 km/h</td>
+<td class="py-space-md px-space-md">2,850 rpm</td>
+<td class="py-space-md px-space-md text-on-surface-variant">Zone 3 (62%)</td>
+<td class="py-space-md px-space-md">98 - 100 sq.in</td>
+<td class="py-space-md px-space-lg text-right font-bold text-primary-fixed">94.2% 高频</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-space-md px-space-lg font-bold text-primary flex items-center gap-space-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+<span>稳定防守反击型</span>
+</td>
+<td class="py-space-md px-space-md">PTR 4.1 / 5.2 年</td>
+<td class="py-space-md px-space-md">138 km/h</td>
+<td class="py-space-md px-space-md">2,620 rpm</td>
+<td class="py-space-md px-space-md text-secondary">Zone 4 (58%)</td>
+<td class="py-space-md px-space-md">100 sq.in</td>
+<td class="py-space-md px-space-lg text-right font-bold text-secondary">88.6% 稳定</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-space-md px-space-lg font-bold text-primary flex items-center gap-space-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-on-surface"></span>
+<span>全场进攻与发球上网</span>
+</td>
+<td class="py-space-md px-space-md">PTR 4.3 / 6.4 年</td>
+<td class="py-space-md px-space-md font-bold text-primary">164 km/h</td>
+<td class="py-space-md px-space-md">2,310 rpm</td>
+<td class="py-space-md px-space-md text-on-surface-variant">Zone 2-3 (50%)</td>
+<td class="py-space-md px-space-md">97 - 98 sq.in</td>
+<td class="py-space-md px-space-lg text-right font-bold text-on-surface">81.4% 进阶</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-space-md px-space-lg font-bold text-primary flex items-center gap-space-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary-fixed-dim"></span>
+<span>休闲健身与进阶新手</span>
+</td>
+<td class="py-space-md px-space-md">PTR 2.5 / 1.1 年</td>
+<td class="py-space-md px-space-md text-outline">108 km/h</td>
+<td class="py-space-md px-space-md">1,480 rpm</td>
+<td class="py-space-md px-space-md text-on-surface-variant">Zone 2 (70%)</td>
+<td class="py-space-md px-space-md">102 - 105 sq.in</td>
+<td class="py-space-md px-space-lg text-right font-bold text-tertiary-fixed-dim">68.5% 需唤醒</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>{% endblock %}

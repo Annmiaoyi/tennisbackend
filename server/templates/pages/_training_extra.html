@@ -1,0 +1,580 @@
+{#- 训练页功能扩展区块（功能层）
+    由 scripts/build_pages.py 以 {% include %} 追加在设计稿主体（保真层）之后。
+    设计稿主体保持逐字节不变，本文件只做功能：筛选 / 个人纵向分析 / 横向排行。
+    ⚠️ 颜色只允许用 tailwind.config 里的设计令牌，不得引入 Tailwind 默认色板。 -#}
+{%- set KPI_TONE = {
+  'primary': 'text-primary',
+  'primary-fixed': 'text-primary-fixed',
+  'secondary': 'text-secondary',
+  'tertiary-fixed-dim': 'text-tertiary-fixed-dim',
+  'error': 'text-error'
+} -%}
+{%- set TONE = {
+  'good': {'text': 'text-primary-fixed', 'chip': 'bg-primary-container/15', 'icon': 'text-primary-fixed'},
+  'warn': {'text': 'text-tertiary-fixed-dim', 'chip': 'bg-tertiary-container/10', 'icon': 'text-tertiary-fixed-dim'},
+  'info': {'text': 'text-secondary', 'chip': 'bg-secondary/10', 'icon': 'text-secondary'},
+  'error': {'text': 'text-error', 'chip': 'bg-error-container/20', 'icon': 'text-error'}
+} -%}
+
+<div class="p-space-lg md:p-space-xl lg:p-margin-desktop pt-0 flex flex-col gap-space-xl">
+
+<!-- ==================== ① 分析台：学员 + 时间区间 ==================== -->
+<div class="rounded-xl bg-surface-container shadow-md overflow-hidden">
+<div class="p-space-lg flex flex-col gap-space-lg">
+<div class="flex flex-col lg:flex-row lg:items-start justify-between gap-space-md">
+<div class="flex flex-col gap-space-2xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-bold">Analysis Console</span>
+<h2 class="font-headline-sm text-headline-sm text-primary font-bold">分析与对比控制台</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">
+        选择学员与时间区间做<span class="text-on-surface font-semibold">个人纵向分析</span>；下方排行榜自动跟随同一区间，对全体学员做<span class="text-on-surface font-semibold">横向对比</span>。
+        筛选条件全部落在 URL 上，可直接分享或收藏当前视图。
+      </p>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm">
+<div class="px-space-md py-2 rounded-xl bg-surface-container-low flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px] text-primary-fixed">date_range</span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">当前区间 · {{ rng.label }}</span>
+<span class="font-label-md text-label-md text-on-surface font-bold">{{ rng.display }}</span>
+</div>
+</div>
+<div class="px-space-md py-2 rounded-xl bg-surface-container-low flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px] text-secondary">fact_check</span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">区间内平台训练场次</span>
+<span class="font-label-md text-label-md text-on-surface font-bold">{{ boards.total_sessions }} 场</span>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 学员选择 -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-outline">group</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-bold">选择学员（全部 {{ selector|length }} 名）</span>
+</div>
+<div class="flex flex-wrap gap-space-sm">
+{% for s in student_links %}
+<a class="flex items-center gap-space-sm pl-1.5 pr-space-md py-1.5 rounded-xl transition-all
+   {% if s.active %}bg-primary-container text-on-primary-fixed font-bold shadow-[0_0_20px_rgba(195,244,0,0.18)]{% else %}bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface{% endif %}"
+   href="{{ s.href }}">
+{% if s.avatar_url %}
+<img alt="{{ s.name }}" class="w-8 h-8 rounded-full object-cover" src="{{ s.avatar_url }}"/>
+{% else %}
+<span class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center font-label-md text-label-md {% if s.active %}text-on-primary-fixed{% else %}text-on-surface{% endif %}">{{ s.initial }}</span>
+{% endif %}
+<span class="flex flex-col leading-tight">
+<span class="font-label-md text-label-md">{{ s.name }}</span>
+<span class="font-label-sm text-label-sm {% if s.active %}text-on-primary-container{% else %}text-outline{% endif %}">{{ s.nt_label }} · {{ s.tier }}</span>
+</span>
+</a>
+{% endfor %}
+</div>
+</div>
+
+<!-- 时间筛选 -->
+<div class="flex flex-col xl:flex-row xl:items-end justify-between gap-space-md pt-space-sm border-t border-surface-container-high/30">
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-outline">schedule</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-bold">时间筛选</span>
+</div>
+<div class="flex flex-wrap gap-space-xs">
+{% for r in range_links %}
+<a class="px-space-md py-1.5 rounded-lg font-label-md text-label-md transition-colors
+   {% if r.active %}bg-primary-container text-on-primary-fixed font-bold{% else %}bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface{% endif %}"
+   href="{{ r.href }}">{{ r.label }}</a>
+{% endfor %}
+</div>
+</div>
+<form action="/training" class="flex flex-wrap items-end gap-space-sm" method="get">
+<input name="student" type="hidden" value="{{ active_student }}"/>
+<input name="metric" type="hidden" value="{{ boards.active }}"/>
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-outline" for="dtFrom">自定义起始日</label>
+<input class="h-9 px-space-sm rounded-lg bg-surface-container-low text-body-md text-on-surface font-label-md border border-surface-container-high focus:outline-none focus:ring-1 focus:ring-primary-container [color-scheme:dark]"
+       id="dtFrom" name="from" type="date" value="{{ rng.from_input }}"/>
+</div>
+<span class="font-label-md text-label-md text-outline pb-2">~</span>
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-outline" for="dtTo">结束日</label>
+<input class="h-9 px-space-sm rounded-lg bg-surface-container-low text-body-md text-on-surface font-label-md border border-surface-container-high focus:outline-none focus:ring-1 focus:ring-primary-container [color-scheme:dark]"
+       id="dtTo" name="to" type="date" value="{{ rng.to_input }}"/>
+</div>
+<button class="h-9 px-space-md rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface flex items-center gap-1 font-label-md text-label-md transition-colors" type="submit">
+<span class="material-symbols-outlined text-[16px]">filter_alt</span><span>应用区间</span>
+</button>
+</form>
+</div>
+</div>
+</div>
+
+{% if analysis %}
+<!-- ==================== ② 个人单项分析（纵向） ==================== -->
+<div class="rounded-xl bg-surface-container shadow-md overflow-hidden">
+<div class="p-space-lg flex flex-col gap-space-lg">
+
+<!-- 学员档案头 -->
+<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+{% if analysis.student.avatar_url %}
+<img alt="{{ analysis.student.name }}" class="w-16 h-16 rounded-full object-cover shadow-md" src="{{ analysis.student.avatar_url }}"/>
+{% else %}
+<span class="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center font-headline-sm text-headline-sm text-on-surface">{{ analysis.student.initial }}</span>
+{% endif %}
+<div class="flex flex-col min-w-0">
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">{{ analysis.student.name }}</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-primary-fixed font-label-sm text-label-sm font-bold">{{ analysis.student.nt_level and 'NTRP ' + analysis.student.nt_level }}</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">{{ analysis.student.tier }}</span>
+{% for t in analysis.tags %}
+<span class="px-space-xs py-0.5 rounded font-label-sm text-label-sm font-bold {{ TONE[t.tone].chip }} {{ TONE[t.tone].text }}">{{ t.label }}</span>
+{% endfor %}
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant">
+              {{ analysis.student.hand_label }} · 球龄 {{ analysis.student.years_playing or '—' }} · {{ analysis.student.racket or '未登记战拍' }}
+            </span>
+<span class="font-label-sm text-label-sm text-outline">
+              {{ analysis.student.location or '—' }} · {{ analysis.student.watch_model or '—' }} · {{ analysis.student.device_id or '—' }}
+            </span>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm">
+<div class="px-space-md py-2 rounded-xl bg-surface-container-low flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">同侪位置（发球最高速）</span>
+<span class="font-label-md text-label-md text-on-surface font-bold">
+            {% if analysis.peer.serve_rank %}第 {{ analysis.peer.serve_rank }} / {{ analysis.peer.total }} 名{% else %}—{% endif %}
+          </span>
+</div>
+<div class="px-space-md py-2 rounded-xl bg-surface-container-low flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">段位常模 · 发球 / 正手 / 甜区</span>
+<span class="font-label-md text-label-md text-on-surface font-bold whitespace-nowrap">
+            {% if analysis.bm_disp.has %}{{ analysis.bm_disp.serve }} / {{ analysis.bm_disp.forehand }} / {{ analysis.bm_disp.sweet }}%
+            {%- else %}无该段位基准{% endif %}
+          </span>
+</div>
+</div>
+</div>
+
+{% if analysis.empty %}
+<!-- 空态：区间内无记录 -->
+<div class="p-space-xl rounded-xl bg-surface-container-low border border-dashed border-outline/40 flex flex-col items-center justify-center gap-space-sm text-center">
+<span class="material-symbols-outlined text-[40px] text-outline">event_busy</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">该区间没有训练记录</span>
+<span class="font-body-md text-body-md text-on-surface-variant max-w-xl">{{ analysis.empty_hint }}</span>
+<a class="mt-space-xs px-space-md py-2 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all"
+   href="{{ range_links[2].href }}">切到近 30 天</a>
+</div>
+{% else %}
+
+<!-- AI 结论摘要 -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-low p-space-md">
+<div class="absolute -right-16 -top-16 w-56 h-56 bg-primary-container/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="relative z-10 flex items-start gap-space-md">
+<span class="w-9 h-9 rounded-xl bg-primary-container/20 text-primary-fixed flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">auto_awesome</span>
+</span>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm font-bold uppercase tracking-wider text-primary-fixed">区间摘要</span>
+<p class="font-body-md text-body-md text-on-surface leading-relaxed">{{ analysis.headline }}</p>
+</div>
+</div>
+</div>
+
+<!-- KPI 网格 -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-space-sm">
+{% for k in analysis.kpi %}
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">{{ k.label }}</span>
+<span class="material-symbols-outlined text-[16px] text-outline">{{ k.icon }}</span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="font-metric-digit text-headline-md font-bold {{ KPI_TONE[k.tone] }}">{{ k.value }}</span>
+<span class="font-label-sm text-label-sm text-outline">{{ k.unit }}</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">{{ k.sub }}</span>
+</div>
+{% endfor %}
+</div>
+
+<!-- 击球构成 -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg pt-space-xs">
+<div class="xl:col-span-5 flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">区间击球构成（逐拍样本）</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">{{ analysis.total_strokes }} 拍样本</span>
+</div>
+<div class="flex h-3 w-full rounded-full overflow-hidden bg-surface-container-low">
+{% for m in analysis.mix %}{% if m.count %}
+<span style="width: {{ m.pct }}%; background: {{ m.color }};" title="{{ m.label }} {{ m.pct }}%"></span>
+{% endif %}{% endfor %}
+</div>
+<div class="grid grid-cols-2 gap-space-xs pt-space-xs">
+{% for m in analysis.mix %}
+<div class="flex items-center justify-between px-space-sm py-1.5 rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full shrink-0" style="background: {{ m.color }};"></span>
+<span class="font-label-sm text-label-sm text-on-surface truncate">{{ m.label }}</span>
+</div>
+<div class="flex items-baseline gap-1 shrink-0">
+<span class="font-label-md text-label-md text-on-surface font-bold">{{ m.count }}</span>
+<span class="font-label-sm text-label-sm text-outline">次 · {{ m.pct }}%</span>
+</div>
+</div>
+{% endfor %}
+</div>
+<p class="font-label-sm text-label-sm text-outline leading-relaxed pt-space-2xs">
+            口径：逐拍明细在库中是<span class="text-on-surface font-semibold">抽样存储</span>（本节分母＝样本数 {{ analysis.total_strokes }}），
+            而「累计击球量」是手表统计的完整计数（{{ analysis.totals.strokes }} 次）。
+            两者分母不同，占比一律以样本数为准；球速类不取样本，避免抽样导致的峰值偏低。
+          </p>
+</div>
+
+<!-- 技术分析结论 -->
+<div class="xl:col-span-7 flex flex-col gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-primary-fixed">psychology</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">专属技术分析（规则引擎 · 逐条可复算）</span>
+</div>
+{% if analysis.insights %}
+<div class="flex flex-col gap-space-sm">
+{% for it in analysis.insights %}
+<div class="p-space-md rounded-xl bg-surface-container-low flex items-start gap-space-sm">
+<span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 {{ TONE[it.tone].chip }}">
+<span class="material-symbols-outlined text-[18px] {{ TONE[it.tone].icon }}">{{ it.icon }}</span>
+</span>
+<div class="flex flex-col gap-0.5 min-w-0">
+<span class="font-label-md text-label-md font-bold {{ TONE[it.tone].text }}">{{ it.title }}</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ it.body }}</span>
+</div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="p-space-lg rounded-xl bg-surface-container-low border border-dashed border-outline/40 flex flex-col items-center gap-space-xs text-center">
+<span class="material-symbols-outlined text-[28px] text-outline">rule</span>
+<span class="font-label-md text-label-md text-on-surface-variant">该区间数据不足以生成结论</span>
+<span class="font-label-sm text-label-sm text-outline">至少需要一场训练，且球速样本与心率记录存在时可给出有效条目。</span>
+</div>
+{% endif %}
+</div>
+</div>
+
+<!-- 历史训练记录 -->
+<div class="flex flex-col gap-space-sm pt-space-xs">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-outline">history</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">区间历史训练记录（{{ analysis.sessions|length }} 场）</span>
+</div>
+<div class="flex flex-wrap items-center gap-space-md font-label-sm text-label-sm text-outline">
+<span>实战 {{ analysis.totals.match_count }} 场 · 跨度 {{ analysis.totals.span_days or '—' }} 天</span>
+<span>球速 / 时长 / 心率 = 该场会话汇总</span>
+<span>击球构成 = 逐拍抽样</span>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-body-md">
+<thead>
+<tr class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider bg-surface-container-low/70">
+<th class="py-space-sm px-space-md rounded-l-lg">日期 / 训练内容</th>
+<th class="py-space-sm px-space-md">时长 / 击球量</th>
+<th class="py-space-sm px-space-md">消耗 / 平均心率</th>
+<th class="py-space-sm px-space-md text-primary-fixed">发球极速</th>
+<th class="py-space-sm px-space-md text-secondary">正手 / 反手均速</th>
+<th class="py-space-sm px-space-md">甜区 / 最长相持</th>
+<th class="py-space-sm px-space-md rounded-r-lg">击球构成（逐拍样本）</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-high/40">
+{% for s in analysis.sessions %}
+<tr class="hover:bg-surface-container-high/50 transition-colors">
+<td class="py-space-md px-space-md">
+<div class="font-semibold text-primary">{{ s.date_label }} <span class="text-outline font-normal">{{ s.time_label }}</span></div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">{{ s.title }} · {{ s.type_label }}</div>
+<div class="font-label-sm text-label-sm text-outline">{{ s.court_label }} · {{ s.location }}</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="font-semibold text-on-surface">{{ s.duration_label }}</div>
+<div class="font-label-sm text-label-sm text-primary-fixed">{{ s.stroke_label }}</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="font-semibold text-tertiary-fixed-dim">{{ s.calorie_label }}</div>
+<div class="font-label-sm text-label-sm text-error">{{ s.hr_label }}<span class="text-outline"> / 峰值 {{ s.peak_hr_label }}</span></div>
+</td>
+<td class="py-space-md px-space-md font-semibold text-primary-fixed">{{ s.serve_peak_label }}</td>
+<td class="py-space-md px-space-md">
+<div class="font-semibold text-secondary">{{ s.forehand_label }}</div>
+<div class="font-label-sm text-label-sm text-outline">{{ s.backhand_label }}</div>
+</td>
+<td class="py-space-md px-space-md">
+<div class="font-semibold text-on-surface">{{ s.sweet_label }}</div>
+<div class="font-label-sm text-label-sm text-outline">最长 {{ s.rally_label }}</div>
+</td>
+<td class="py-space-md px-space-md">
+{% if s.mix %}
+<div class="flex flex-wrap gap-1">
+{% for p in s.mix %}
+<span class="px-1.5 py-0.5 rounded bg-surface-container-low font-label-sm text-label-sm text-on-surface-variant">{{ p.label }} {{ p.count }}</span>
+{% endfor %}
+</div>
+{% else %}
+<span class="font-label-sm text-label-sm text-outline">无逐拍样本</span>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+{% endif %}
+
+<!-- ==================== ③ 横向对比（全体学员） ==================== -->
+<div class="rounded-xl bg-surface-container shadow-md overflow-hidden">
+<div class="p-space-lg flex flex-col gap-space-lg">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div class="flex flex-col gap-space-2xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-bold">Cross-Player Leaderboard</span>
+<h2 class="font-headline-sm text-headline-sm text-primary font-bold">全体学员横向对比与排行榜</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">
+        同一时间区间（{{ rng.display }}）内，对全部 {{ selector|length }} 名学员逐指标统计<span class="text-on-surface font-semibold">最大值</span>与<span class="text-on-surface font-semibold">平均值</span>。
+        每张榜都把「个人最好一次」和「整体平均水位」分开排，避免一次爆发掩盖长期水位。
+      </p>
+</div>
+<span class="px-space-md py-2 rounded-xl bg-surface-container-low font-label-sm text-label-sm text-on-surface-variant self-start">
+        数据源：training_sessions + stroke_records（现算，非缓存）
+      </span>
+</div>
+
+{% if boards.empty %}
+<div class="p-space-xl rounded-xl bg-surface-container-low border border-dashed border-outline/40 flex flex-col items-center gap-space-sm text-center">
+<span class="material-symbols-outlined text-[40px] text-outline">leaderboard</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">该区间没有任何学员产生训练记录</span>
+<span class="font-body-md text-body-md text-on-surface-variant">排行榜需要至少一条落库的击球样本或训练会话。</span>
+</div>
+{% else %}
+
+<!-- 全指标矩阵 -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-primary-fixed">grid_on</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">全指标对比矩阵（单元格 = 最大值 / 平均值）</span>
+</div>
+<div class="overflow-x-auto rounded-xl bg-surface-container-low">
+<table class="w-full text-left text-body-md">
+<thead>
+<tr class="text-on-surface font-label-sm text-label-sm uppercase tracking-wider bg-surface-container-high/60">
+<th class="py-space-sm px-space-md sticky left-0 bg-surface-container-high/60">学员</th>
+{% for m in boards.metrics %}
+<th class="py-space-sm px-space-md whitespace-nowrap text-center">
+<div class="flex flex-col items-center gap-0.5">
+<span class="material-symbols-outlined text-[16px] text-outline">{{ m.icon }}</span>
+<span class="text-on-surface-variant">{{ m.label }}</span>
+<span class="normal-case text-outline">({{ m.unit }}) · {{ m.basis }}</span>
+</div>
+</th>
+{% endfor %}
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-high/40">
+{% for row in boards.matrix_rows %}
+<tr class="hover:bg-surface-container-high/50 transition-colors">
+<td class="py-space-md px-space-md sticky left-0 bg-surface-container-low whitespace-nowrap">
+<div class="flex items-center gap-space-xs">
+{% if row.student.avatar_url %}
+<img alt="{{ row.student.name }}" class="w-8 h-8 rounded-full object-cover" src="{{ row.student.avatar_url }}"/>
+{% else %}
+<span class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center font-label-md text-label-md text-on-surface">{{ row.student.initial }}</span>
+{% endif %}
+<div class="flex flex-col leading-tight">
+<span class="font-label-md text-label-md font-bold whitespace-nowrap {% if row.selected %}text-primary-fixed{% else %}text-on-surface{% endif %}">
+                      {{ row.student.name }}{% if row.selected %} ◀{% endif %}
+                    </span>
+<span class="font-label-sm text-label-sm text-outline whitespace-nowrap">{{ row.student.nt_level and 'NTRP ' + row.student.nt_level }} · {{ row.sessions }} 场</span>
+</div>
+</div>
+</td>
+{% for c in row.cells %}
+<td class="py-space-md px-space-md text-center whitespace-nowrap {% if row.selected %}bg-primary-container/5{% endif %}">
+{% if c.empty %}
+<span class="font-label-sm text-label-sm text-outline">—</span>
+{% else %}
+<div class="flex flex-col leading-tight">
+<span class="font-label-md text-label-md font-bold text-primary-fixed">{{ c.max_display }}</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">{{ c.avg_display }}</span>
+</div>
+{% endif %}
+</td>
+{% endfor %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+<p class="font-label-sm text-label-sm text-outline leading-relaxed">
+          上排＝该学员区间内<span class="text-on-surface font-semibold">最大值</span>；下排＝<span class="text-on-surface font-semibold">平均值</span>。
+          球速类与会话类指标都取自训练记录（training_sessions）的会话汇总字段 ——
+          最大值＝个人区间内最好一场的该指标，平均值＝各场该指标的均值。
+          唯一的例外是「切削球速」：会话表没有对应列，只能取自逐拍抽样样本（列头已标注）。
+          「—」表示该区间内无对应数据。
+        </p>
+</div>
+
+<!-- 指标切换 + 双榜 -->
+<div class="flex flex-col gap-space-md pt-space-xs">
+<div class="flex flex-col gap-space-sm">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">单项排行榜 · 选择指标</span>
+<div class="flex flex-wrap gap-space-xs">
+{% for m in metric_links %}
+<a class="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg transition-colors
+   {% if m.active %}bg-primary-container text-on-primary-fixed font-bold{% else %}bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface{% endif %}"
+   href="{{ m.href }}">
+<span class="material-symbols-outlined text-[16px]">{{ m.icon }}</span>
+<span class="font-label-md text-label-md">{{ m.label }}</span>
+<span class="font-label-sm text-label-sm {% if m.active %}text-on-primary-container{% else %}text-outline{% endif %}">{{ m.count }}</span>
+</a>
+{% endfor %}
+</div>
+<p class="font-label-sm text-label-sm text-outline">{{ boards.active_metric.note }}</p>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-space-lg">
+<!-- 最大值榜 -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-primary-fixed">emoji_events</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-primary-fixed font-bold">最大值排行</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">{{ boards.active_metric.label }} · {{ boards.active_metric.basis }}</span>
+</div>
+{% if boards.max_board %}
+<div class="flex flex-col gap-space-xs">
+{% for it in boards.max_board %}
+<div class="p-space-sm rounded-xl bg-surface-container-low flex items-center gap-space-sm {% if it.selected %}ring-1 ring-primary-fixed/40{% endif %}">
+<span class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 font-label-md text-label-md font-bold
+  {% if it.rank == 1 %}bg-primary-container text-on-primary-fixed{% else %}bg-surface-container-high text-on-surface-variant{% endif %}">{{ it.rank }}</span>
+{% if it.avatar_url %}
+<img alt="{{ it.name }}" class="w-8 h-8 rounded-full object-cover shrink-0" src="{{ it.avatar_url }}"/>
+{% else %}
+<span class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center shrink-0 font-label-md text-label-md text-on-surface">{{ it.initial }}</span>
+{% endif %}
+<div class="flex flex-col gap-1 flex-1 min-w-0">
+<div class="flex items-center justify-between gap-space-sm">
+<span class="font-label-md text-label-md font-bold truncate {% if it.selected %}text-primary-fixed{% else %}text-on-surface{% endif %}">{{ it.name }}</span>
+<span class="font-metric-digit text-label-md font-bold text-primary-fixed shrink-0">{{ it.display }}<span class="font-label-sm text-label-sm text-outline"> {{ boards.active_metric.unit }}</span></span>
+</div>
+<div class="h-1.5 w-full rounded-full bg-surface-container-high overflow-hidden">
+<span class="block h-full rounded-full bg-primary-container" style="width: {{ it.pct }}%;"></span>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm text-outline">
+<span>{{ it.nt_label }} · {{ it.tier }}</span>
+<span>{{ it.n }} {{ '次样本' if boards.active_metric.kind == 'stroke' else '场' }}</span>
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="p-space-lg rounded-xl bg-surface-container-low border border-dashed border-outline/40 flex flex-col items-center gap-space-xs text-center">
+<span class="material-symbols-outlined text-[28px] text-outline">sentiment_dissatisfied</span>
+<span class="font-label-md text-label-md text-on-surface-variant">该指标在所选区间内没有数据</span>
+</div>
+{% endif %}
+</div>
+
+<!-- 平均值榜 -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-secondary">leaderboard</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-bold">平均值排行</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">{{ boards.active_metric.label }} · {{ boards.active_metric.basis }}</span>
+</div>
+{% if boards.avg_board %}
+<div class="flex flex-col gap-space-xs">
+{% for it in boards.avg_board %}
+<div class="p-space-sm rounded-xl bg-surface-container-low flex items-center gap-space-sm {% if it.selected %}ring-1 ring-secondary/40{% endif %}">
+<span class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 font-label-md text-label-md font-bold
+  {% if it.rank == 1 %}bg-secondary text-on-secondary{% else %}bg-surface-container-high text-on-surface-variant{% endif %}">{{ it.rank }}</span>
+{% if it.avatar_url %}
+<img alt="{{ it.name }}" class="w-8 h-8 rounded-full object-cover shrink-0" src="{{ it.avatar_url }}"/>
+{% else %}
+<span class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center shrink-0 font-label-md text-label-md text-on-surface">{{ it.initial }}</span>
+{% endif %}
+<div class="flex flex-col gap-1 flex-1 min-w-0">
+<div class="flex items-center justify-between gap-space-sm">
+<span class="font-label-md text-label-md font-bold truncate {% if it.selected %}text-secondary{% else %}text-on-surface{% endif %}">{{ it.name }}</span>
+<span class="font-metric-digit text-label-md font-bold text-secondary shrink-0">{{ it.display }}<span class="font-label-sm text-label-sm text-outline"> {{ boards.active_metric.unit }}</span></span>
+</div>
+<div class="h-1.5 w-full rounded-full bg-surface-container-high overflow-hidden">
+<span class="block h-full rounded-full bg-secondary" style="width: {{ it.pct }}%;"></span>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm text-outline">
+<span>{{ it.nt_label }} · {{ it.tier }}</span>
+<span>{{ it.n }} {{ '次样本' if boards.active_metric.kind == 'stroke' else '场' }}</span>
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+<p class="font-label-sm text-label-sm text-outline leading-relaxed">
+          排名一律按数值降序。{% if boards.active_metric.better is none %}心率属于「越低越省力」指标，数值高不代表更好，请结合强度区间解读。{% endif %}
+        </p>
+{% else %}
+<div class="p-space-lg rounded-xl bg-surface-container-low border border-dashed border-outline/40 flex flex-col items-center gap-space-xs text-center">
+<span class="material-symbols-outlined text-[28px] text-outline">sentiment_dissatisfied</span>
+<span class="font-label-md text-label-md text-on-surface-variant">该指标在所选区间内没有数据</span>
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+
+<!-- ==================== 口径说明 ==================== -->
+<div class="p-space-lg rounded-xl bg-surface-container-low flex flex-col gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-outline">info</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">统计口径（可复核）</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-sm">
+<div class="p-space-md rounded-lg bg-surface-container flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-primary-fixed font-bold">① 会话汇总（主口径）</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">
+            球速类（发球 / 整体 / 正手 / 反手）与负荷类（时长 / 卡路里 / 心率 / 击球总数 / 甜区率）
+            全部取自 training_sessions 的会话字段，即手表对<span class="text-on-surface font-semibold">整场</span>的统计结果 ——
+            没有抽样偏差，且每条训练记录都齐全。个人明细表、技术分析、排行榜三处<span class="text-on-surface font-semibold">同源</span>，
+            同一学员同一指标不会出现两个数。
+          </span>
+</div>
+<div class="p-space-md rounded-lg bg-surface-container flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-secondary font-bold">② 逐拍抽样（仅补齐会话表没有的维度）</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">
+            stroke_records 在库中是<span class="text-on-surface font-semibold">抽样存储</span>（实测一场十几条，
+            而非该场全部击球）。因此它只用于会话表没有对应列的维度：<span class="text-on-surface font-semibold">击球构成占比</span>、
+            切削球速、转速、落点。这些位置都标注了「逐拍抽样」并给出样本量。
+            <span class="text-on-surface font-semibold">不要</span>拿样本峰值当整场峰值 —— 样本抽样会让峰值系统性偏低。
+          </span>
+</div>
+<div class="p-space-md rounded-lg bg-surface-container flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-tertiary-fixed-dim font-bold">③ 不使用档案汇总字段</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">
+            students 表的 sessions_count / strokes_total / serve_peak / forehand_avg 等为<span class="text-on-surface font-semibold">人工维护的展示值</span>，
+            与真实记录不一致（实测：某学员 serve_peak=179，但记录中该学员发球峰值仅 166.9；
+            sessions_count=124 而实际只有 8 场）。本页一律现算，保证任何数字都能用一条 SQL 复现。
+          </span>
+</div>
+</div>
+</div>
+
+</div>

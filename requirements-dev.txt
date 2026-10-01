@@ -1,0 +1,17 @@
+# AceMate 后端管理站 —— 开发/验收脚本依赖（跑网站本身不需要）
+#
+# 安装：
+#   python -m pip install -r requirements-dev.txt
+#
+# 用途：
+#   pillow     → scripts/prep-assets.py（图片本地化）、scripts/visual_diff.py（像素比对）、
+#                scripts/*.py 里所有图像裁切/差分
+#   fonttools  → scripts/ms_icons.py（解析 Material Symbols 连字、渲染图标核对图）
+#   brotli     → 读取 woff2 字体（fontTools 解压 woff2 必需）
+
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.27,<1.0
+jinja2>=3.1,<4.0
+pillow>=10.0
+fonttools>=4.45
+brotli>=1.1

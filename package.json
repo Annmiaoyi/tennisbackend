@@ -1,0 +1,12 @@
+{
+  "name": "acemate-backend-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AceMate 后端管理网站（构建工具链，仅用于编译 Tailwind CSS，不参与 iOS 打包）",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i ./src/tailwind.input.css -o ./web/assets/css/app.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

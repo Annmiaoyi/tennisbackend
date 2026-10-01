@@ -1,0 +1,185 @@
+/* AceMate 后端管理网站 —— Tailwind 输入样式
+ * ------------------------------------------------------------------
+ * 编译：npm run build:css
+ * 产出：web/assets/css/app.css（自包含，无运行时 CDN 依赖）
+ *
+ * 第 1 段：设计稿 HTML 内联 <style> 原样搬入（@layer base）
+ * 第 2 段：本项目外壳（侧边栏 / 顶栏 / 滚动条）样式
+ * 第 3 段：本地字体 @font-face（Inter / Material Symbols）
+ */
+
+/* ============ 1. 设计稿 base 层（逐字节照搬） ============ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    overscroll-behavior: none;
+  }
+  main > :first-child {
+    margin-top: 0 !important;
+  }
+  main > :last-child {
+    margin-bottom: 0 !important;
+  }
+
+  /* ---- Material Symbols 基础类 ----
+   * ⚠️ 必须放在 base 层（即层叠顺序上**早于** utilities），原因：
+   * 设计稿 HTML 里图标的写法是 `<span class="material-symbols-outlined text-[12px]">`，
+   * 靠 Tailwind 的 text-* 工具类**覆盖**这里的 font-size:24px。
+   * 如果本规则被写在整个样式表末尾（与工具类同优先级、后出现者胜），
+   * 就会反过来压掉 text-[12px]，导致全站图标被强制渲染成 24px，
+   * 含图标的徽章因 line-height:1 × 24px 整体高出 12px —— 曾导致整页垂直错位。
+   *
+   * 与 Google Fonts 下发的内容保持一致（scripts/fetch-fonts 抓取比对过）：
+   * 不含 font-variation-settings，因此 font-optical-sizing:auto 生效
+   * （opsz 随 font-size 自动取值），图形与设计稿一致。 */
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* 设计稿全局隐藏滚动条 */
+*::-webkit-scrollbar {
+  display: none;
+}
+* {
+  scrollbar-width: none;
+}
+
+/* ============ 2. 外壳（设计稿未含，按截图还原） ============ */
+@layer components {
+  /* ---- 应用骨架 ---- */
+  .app-shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    min-height: 100vh;
+    background: #0a0f0d; /* surface-container-lowest = 设计稿画布底色 */
+  }
+
+  /* ---- 侧边栏 ---- */
+  .side-nav {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #0a0f0d;
+    border-right: 1px solid rgba(38, 56, 47, 0.7);
+    overflow-y: auto;
+  }
+  .nav-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: 0.75rem;
+    color: #c4c9ac; /* on-surface-variant */
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .nav-item:hover {
+    background: #1c211e; /* surface-container */
+    color: #dfe4e0;
+  }
+  /* 选中态：电光绿实底 + 深色字（设计稿 primary-container / on-primary-fixed） */
+  .nav-item-active,
+  .nav-item-active:hover {
+    background: #c3f400;
+    color: #161e00;
+    font-weight: 700;
+  }
+  .nav-item-active .material-symbols-outlined {
+    color: #161e00;
+  }
+
+  /* ---- 顶栏（毛玻璃，与设计稿 header 一致） ---- */
+  .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 4rem;
+    padding: 0 1.5rem;
+    background: rgba(10, 15, 13, 0.8); /* surface-container-lowest/80 */
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+  }
+  /* 不支持毛玻璃时提亮底色，避免「半透不加模糊」的脏底 */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .top-bar {
+      background: rgba(10, 15, 13, 0.96);
+    }
+  }
+
+  /* ---- 表格 ---- */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .data-table tbody tr {
+    border-top: 1px solid rgba(38, 56, 47, 0.5);
+    transition: background-color 0.15s ease;
+  }
+  .data-table tbody tr:hover {
+    background: rgba(38, 43, 41, 0.4); /* surface-container-high/40 */
+  }
+}
+
+/* ============ 3. 本地字体 ============ */
+/* Inter 可变字体（wght 100..900），只取 latin / latin-ext 两个子集：
+   界面文案是中文，中文字形一律走系统字体（PingFang SC / 微软雅黑），
+   Inter 只负责拉丁字母与数字，因此无需其它语种子集。 */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../fonts/inter-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../fonts/inter-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Material Symbols Outlined（本地化，避免 cdn 与 Google Fonts 依赖）
+   ⚠️ 基础类 `.material-symbols-outlined` 定义在上方 @layer base 中，
+      不要移到这里 —— 放在 @tailwind utilities 之后会盖掉文字号工具类。 */
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url('../fonts/material-symbols-outlined.woff2') format('woff2');
+}

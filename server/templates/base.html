@@ -1,0 +1,112 @@
+{#- AceMate 后端管理网站 —— 基础外壳模板
+    外壳（<aside> 侧边栏 + <header> 顶栏）**逐字节取自设计稿**（_1/code.html 的 body..<main> 段），
+    5 个设计稿页面共用同一份外壳，唯一差异是「哪个导航项处于激活态」。
+
+    相对设计稿只做 4 处必要替换（其余原样保留）：
+      1. Google Fonts 的 3 个 <link> → 本地 @font-face（已编译进 app.css，无需 link）
+      2. 内联 <style> 的 base 层 → 已并入 app.css 的 @layer base
+      3. <script src="https://cdn.tailwindcss.com"> + #tailwind-config → app.css（CLI 预编译）
+      4. 远程图床头像 → /assets/img/ 本地文件
+-#}
+<!DOCTYPE html>
+<html class="dark" lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="web_dashboard" name="shell-type"/>
+<title>{% block title %}AceMate Console{% endblock %} · AceMate Analytics</title>
+<link href="/assets/css/app.css" rel="stylesheet"/>
+</head>
+<body class="bg-background font-body-md text-on-surface antialiased">
+<aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex flex-col justify-between shadow-[0_1px_12px_rgba(0,0,0,0.35)]">
+<div class="flex flex-col">
+<div class="h-20 px-space-lg flex items-center gap-space-sm bg-surface-container-lowest">
+<img alt="AceMate minimal tennis ball app logo icon with subtler, reduced curvature curved tennis seam lines on volt tennis ball with dark titanium rounded container." class="h-8 w-auto object-contain" src="/assets/img/brand-app-icon.jpg"/>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-primary tracking-tight font-bold">AceMate</span>
+<span class="px-space-xs py-0.5 rounded bg-primary-container text-on-primary-container font-label-sm text-label-sm uppercase font-bold">Pro</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant tracking-wider uppercase">v2.4 Enterprise</span>
+</div>
+</div>
+<div class="px-space-lg pt-space-md pb-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">平台运营与管理</span>
+</div>
+<nav class="flex flex-col gap-space-xs px-space-md" data-active-classes="bg-primary-container text-on-primary-fixed font-bold rounded-xl">
+{#- 导航项：顺序 / data-path / 图标 / 文案 / 路由 全部取自设计稿（第 6 项「系统与硬件设置」设计稿未提供页面，按设计系统另建） -#}
+{%- set NAV = [
+  ('overview',             'query_stats',    '概览看板',          '/'),
+  ('user-management',      'group',          '用户管理',          '/users'),
+  ('analytics-comparison', 'compare_arrows', '训练数据与横向对比', '/training'),
+  ('user-personas',        'psychology',     '用户画像与分群',     '/personas'),
+  ('feedback',             'rate_review',    '用户建议与反馈',     '/feedback'),
+  ('system-settings',      'sports_tennis',  '系统与硬件设置',     '/settings'),
+  ('data-annotation',      'graphic_eq',     '数据采集与标注',     '/annotation')
+] -%}
+{%- for path, icon, label, href in NAV %}
+{%- if path == nav_active %}
+<a aria-current="page" class="flex items-center gap-space-md px-space-md py-space-sm transition-all bg-primary-container text-on-primary-fixed font-bold rounded-xl" data-path="{{ path }}" href="{{ href }}"><span class="material-symbols-outlined text-[20px]">{{ icon }}</span><span>{{ label }}</span></a>
+{%- else %}
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-xl font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="{{ path }}" href="{{ href }}"><span class="material-symbols-outlined text-[20px]">{{ icon }}</span><span>{{ label }}</span></a>
+{%- endif %}
+{%- endfor %}
+</nav>
+</div>
+<div class="p-space-md m-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-pulse">
+</span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">Live Telemetry</span>
+</div>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-primary-fixed">99.8%</span>
+</div>
+<div class="flex items-center gap-space-sm pt-space-xs">
+<img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="/assets/img/avatar-analyst.jpg"/>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="font-body-md text-body-md font-semibold text-on-surface truncate">Carlos Rivera</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Head Analyst · Online</span>
+</div>
+<span class="material-symbols-outlined text-outline hover:text-on-surface cursor-pointer text-[20px]">more_vert</span>
+</div>
+</div>
+</aside>
+<div class="pl-72">
+<header class="fixed top-0 left-72 right-0 h-20 bg-surface/85 backdrop-blur-xl z-40 shadow-[0_1px_8px_rgba(0,0,0,0.25)] flex items-center justify-between px-space-xl">
+<div class="flex items-center gap-space-lg flex-1 max-w-2xl">
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md hidden xl:flex">
+<span class="hover:text-on-surface transition-colors cursor-pointer">AceMate Analytics</span>
+<span class="text-outline">/</span>
+<span class="text-primary font-semibold">Console</span>
+</div>
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-space-md top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full h-10 pl-10 pr-space-md bg-surface-container-low rounded-xl text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary-container transition-all" placeholder="搜索学员、击球数据、球拍型号或反馈标签..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="hidden md:flex items-center gap-space-xs px-space-md py-1.5 rounded-full bg-surface-container-low">
+<span class="font-label-md text-label-md text-primary-fixed">🎾 实时在线</span>
+<span class="font-label-md text-label-md font-bold text-on-surface">1,428</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">名学员</span>
+</div>
+<div class="hidden lg:flex items-center gap-space-xs px-space-md py-1.5 rounded-xl bg-surface-container-low text-on-surface-variant font-label-md text-label-md cursor-pointer hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span>近 7 天数据 (Live)</span>
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+</div>
+<button class="relative p-2 rounded-xl bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error">
+</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all shadow-[0_0_16px_rgba(195,244,0,0.15)]">
+<span class="material-symbols-outlined text-[18px]">ios_share</span>
+<span>快速导出</span>
+</button>
+</div>
+</header>
+<main class="relative pt-20 w-full min-h-screen bg-background">{% block main %}{% endblock %}</main></div>
+</body>
+</html>

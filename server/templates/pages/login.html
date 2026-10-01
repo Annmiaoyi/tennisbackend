@@ -1,0 +1,94 @@
+{#- 管理后台登录页 —— 独立页面，不套 console 外壳（未登录时不该看到侧边栏导航）
+    配色与设计系统一致：OLED 深底 + 电光绿强调（primary-fixed #c3f400）
+    注意：设计稿里 `primary` 是**纯白**，电光绿在 `primary-fixed`，两者不可互换。
+-#}
+<!DOCTYPE html>
+<html class="dark" lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>登录 · AceMate Console</title>
+<link href="/assets/css/app.css" rel="stylesheet"/>
+</head>
+<body class="bg-background font-body-md text-on-surface antialiased min-h-screen flex items-center justify-center px-space-lg">
+<main class="w-full max-w-md">
+<div class="flex flex-col items-center gap-space-sm mb-space-xl">
+<img alt="AceMate logo" class="h-12 w-auto object-contain" src="/assets/img/brand-app-icon.jpg"/>
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-primary tracking-tight font-bold">AceMate</span>
+<span class="px-space-xs py-0.5 rounded bg-primary-container text-on-primary-container font-label-sm text-label-sm uppercase font-bold">Pro</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant tracking-wider uppercase">Console · 需要登录</span>
+</div>
+
+<div class="rounded-xl bg-surface-container p-space-lg shadow-md border border-outline-variant">
+<h1 class="font-headline-sm text-headline-sm text-primary font-bold">登录管理后台</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-space-xs">
+登录后即可查看训练数据分析、用户档案、采集与标注工作台。
+</p>
+
+{% if error %}
+<div class="mt-space-md px-space-md py-space-sm rounded-lg bg-error-container text-on-error-container font-body-md text-body-md">
+{{ error }}
+</div>
+{% endif %}
+
+<form action="/login" class="mt-space-lg flex flex-col gap-space-md" method="post">
+<input name="next" type="hidden" value="{{ next_url }}"/>
+<label class="flex flex-col gap-space-xs">
+<span class="font-label-md text-label-md uppercase tracking-wider text-outline">用户名</span>
+<input autocomplete="username" autofocus
+       class="h-11 px-space-md bg-surface-container-low rounded-xl text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary-container transition-all"
+       name="username" placeholder="admin" required type="text"/>
+</label>
+<label class="flex flex-col gap-space-xs">
+<span class="font-label-md text-label-md uppercase tracking-wider text-outline">口令</span>
+<div class="relative">
+<input autocomplete="current-password" id="password-input"
+       class="h-11 w-full pl-space-md pr-11 bg-surface-container-low rounded-xl text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary-container transition-all"
+       name="password" placeholder="••••••••" required type="password"/>
+<button aria-label="显示口令" aria-pressed="false"
+        class="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-outline hover:text-on-surface transition-colors"
+        id="password-toggle" type="button">
+<span aria-hidden="true" class="material-symbols-outlined text-[20px]" id="password-toggle-icon" style="color:currentColor">visibility</span>
+</button>
+</div>
+</label>
+<button class="mt-space-xs h-11 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all"
+        type="submit">
+进入控制台
+</button>
+</form>
+</div>
+
+<p class="mt-space-lg text-center font-label-sm text-label-sm text-outline">
+初始账号与口令在首次启动时的控制台输出里，也保存在 <span class="text-on-surface-variant">backend-web/var/admin_initial_password.txt</span><br/>
+忘记了就重置：<span class="text-on-surface-variant">.venv/Scripts/python scripts/reset_admin_password.py</span>
+</p>
+</main>
+<script>
+/* 口令显示/隐藏切换。
+   用 material-symbols 字形而非内联 SVG：图标字体已随 app.css 本地化（见 base.html 的说明），
+   沿用同一套字形才能与其余页面的图标粗细/尺寸一致。
+   图标颜色用 style="color:currentColor" 显式跟随按钮文字色 —— app.css 里带有一条设计稿
+   遗留的 .material-symbols-outlined{color:#161e00}（近黑），在深底上会看不见。 */
+(function () {
+  var input = document.getElementById('password-input');
+  var btn = document.getElementById('password-toggle');
+  var icon = document.getElementById('password-toggle-icon');
+  if (!input || !btn || !icon) return;
+
+  btn.addEventListener('click', function () {
+    var show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    icon.textContent = show ? 'visibility_off' : 'visibility';
+    btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+    btn.setAttribute('aria-label', show ? '隐藏口令' : '显示口令');
+    input.focus();
+    var end = input.value.length;          // 切回明文后光标落到末尾，不从开头跳
+    try { input.setSelectionRange(end, end); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

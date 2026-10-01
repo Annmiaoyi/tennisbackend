@@ -1,0 +1,50 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+
+# ---- 数据库（本地数据，不入库）----
+var/*.db
+var/*.db-wal
+var/*.db-shm
+# 标注库与分析库并列，但位于子目录 var/annotation/ —— 上面的 var/*.db 匹配不到，需单列
+var/**/*.db
+var/**/*.db-wal
+var/**/*.db-shm
+
+# ---- 标注通道的上传数据（体积大且含个人运动数据）----
+var/annotation/raw/
+var/annotation/video/
+var/annotation/_backup/
+
+# ---- 清理/迁移前的手工备份（一次性回滚点，不入库）----
+var/_backup_*/
+
+# ---- L0 原始数据层（原始载荷 + 留档文件，含个人运动数据）----
+var/raw/
+
+# ---- 管理后台初始口令（首次启动生成，绝不能入库）----
+var/admin_initial_password.txt
+
+# ---- 前端构建产物（由 npm run build:css 生成）----
+node_modules/
+web/assets/css/app.css
+
+# ---- 验收/诊断产物 ----
+_shots/
+_chrome/
+_server.log
+_*.log
+
+# ---- 编辑器/系统 ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- 智能体工作区（本地记忆，不入库）----
+.workbuddy/
