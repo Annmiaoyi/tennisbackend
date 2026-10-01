@@ -81,11 +81,15 @@ Windows 上可省事一些：`setup.cmd`（环境准备）→ `start.cmd --seed`
 
 | 文档 | 内容 | 什么时候看 |
 |---|---|---|
-| [OVERVIEW.md](OVERVIEW.md) | 三端职责边界 · 术语表 · 枚举 · 时间口径 · 身份模型 | **动手前** |
-| [CONTRACT.md](CONTRACT.md) | 接口契约 · 字段映射 · **对接参数速查表** · 变更流程 | 写对接代码 |
+| [OVERVIEW.md](OVERVIEW.md) | 三端职责边界 · 术语表 · 枚举 · 时间口径 · 身份模型 · **契约代码化说明** | **动手前** |
+| [CONTRACT.md](CONTRACT.md) | 接口契约 · 字段映射 · **对接参数速查表** · **契约变更流程** | 写对接代码 |
 | [WATCH_CHANNEL.md](WATCH_CHANNEL.md) | Watch→WCSession→Phone→Server 通道设计 | 改通信层 |
 | [RAW_LAYER_DECISION.md](RAW_LAYER_DECISION.md) | 原始波形采不采的论证与决策建议 | 决策前 |
-| [ROADMAP.md](ROADMAP.md) | 三端统一开发规划（M0–M4）与验收清单 | 排期 |
+| [ROADMAP.md](ROADMAP.md) | 三端统一开发规划（M0–M4）与验收清单 · **待拍板开放项 §7.1** | 排期 |
+
+> 📌 **契约真源不是文档，是代码**：`contract/TennisContract.swift`。
+> 两个 App 里的 `Shared/TennisContract.swift` 是同步副本。
+> 流程与脚本见 [../contract/README.md](../contract/README.md) 与 [CONTRACT.md](CONTRACT.md) §0.6。
 
 ### 3.2 后端细节
 
@@ -125,10 +129,15 @@ npm run build:css
 .venv/bin/python run.py --port 8787 --seed   # 启动前重建库 + 灌演示数据
 
 # 回归（提交前都该跑一遍）
+.venv/bin/python scripts/verify_contract.py  # 契约 ↔ 后端一致性（38 项对账）
 .venv/bin/python scripts/test_sync.py        # 同步协议端到端（54 项断言）
 .venv/bin/python scripts/verify_layers.py    # L0–L3 + 鉴权端到端（73 项断言）
 .venv/bin/python scripts/visual_diff.py      # 5 页与设计稿逐像素比对
 .venv/bin/python scripts/check_css_coverage.py
+
+# 契约同步（改过 contract/TennisContract.swift 之后）
+bash scripts/sync_contract.sh                # 真源 → 两个 App 工程
+bash scripts/sync_contract.sh --check        # 只查漂移（sha256）
 
 # 工具
 .venv/bin/python scripts/build_pages.py        # 从设计稿重新生成页面模板
@@ -150,6 +159,7 @@ Tennisbackend/
 ├── run.py                   启动器：切工作目录 + 启动前环境预检查
 ├── requirements.txt         运行依赖（fastapi / uvicorn / jinja2 / python-multipart）
 ├── requirements-dev.txt     开发脚本依赖（pillow / fonttools / brotli）
+├── contract/                **三端共享契约真源**（TennisContract.swift）
 ├── docs/                    文档（三端统一文档在本目录）
 ├── server/                  FastAPI 应用
 │   ├── app.py               入口（挂载路由与静态资源 + 登录守卫）

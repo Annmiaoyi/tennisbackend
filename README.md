@@ -23,11 +23,41 @@
 | **[docs/OVERVIEW.md](docs/OVERVIEW.md)** | 三端职责边界 · 术语表 · 枚举 · 时间口径 · 身份模型 —— **动手前必读** |
 | **[docs/CONTRACT.md](docs/CONTRACT.md)** | 接口契约 · **字段映射** · 对接参数速查表 |
 
-> ⚠️ **最容易踩的坑**：三端各自可能定义同名不同义的模型
-> （`TrainingSession`）。字段名不一致时**接口不会报错**，
-> 只会静默写出空值。命名规范见 OVERVIEW §3.1。
+> ⚠️ **最容易踩的坑**：三端各自可能定义同名不同义的模型，
+> 或字段名与后端不一致 —— 这类问题**接口不会报错**，只会静默写出空值。
+> 命名规范见 OVERVIEW §3.1，字段契约见 CONTRACT.md。
 
 完整的文档地图见 **[docs/README.md](docs/README.md)**。
+
+---
+
+## 契约真源（**跨端改动前必看**）
+
+三端共享的字段定义只有一处真源：
+
+```
+contract/TennisContract.swift      ← 唯一真源（Swift，被两个 App target 编译）
+```
+
+两个 App 仓库里的 `Shared/TennisContract.swift` 是**同步副本**。改契约的完整流程：
+
+```bash
+# 1. 改真源（记得递增文件头 version）
+vim contract/TennisContract.swift
+
+# 2. 同步到两个 App 工程
+bash scripts/sync_contract.sh
+
+# 3. 对账：契约 ↔ 后端（枚举 / 上行字段 / 白名单 / 幂等 / 时间 / 下行字段）
+.venv/bin/python scripts/verify_contract.py
+
+# 4. 两端编译，然后三个仓库各自提交
+```
+
+`bash scripts/sync_contract.sh --check` 只比对 sha256，用于提交前 / CI 查漂移。
+
+> 契约文件同时被 Watch 与 Phone 两个 target 编译 —— **任何一端自行定义同名类型会立刻编译冲突**，
+> 这是有意设计的护栏。详见 [contract/README.md](contract/README.md)。
 
 ---
 
@@ -108,6 +138,7 @@ L3 终端展示层   /api/prod/*        只读 L2，给 Phone / 小程序看
 ## 回归测试（提交前都该跑）
 
 ```bash
+.venv/bin/python scripts/verify_contract.py  # 契约 ↔ 后端一致性（38 项对账）
 .venv/bin/python scripts/test_sync.py        # 同步协议端到端（54 项断言）
 .venv/bin/python scripts/verify_layers.py    # L0–L3 + 鉴权端到端（73 项断言）
 ```

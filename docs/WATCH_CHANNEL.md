@@ -110,11 +110,11 @@ Phone:  WCSessionDelegate.session(_:didReceive:) → onRawFile(fileURL, metadata
 
 | # | 条件 | 现状 | 要做什么 |
 |---|---|---|---|
-| 1 | Watch App 必须是 Phone App 的**伴生 App** | ❌ WatchTennis 是**独立** watchOS App（`TARGETED_DEVICE_FAMILY=4`、无 `WKCompanionAppBundleIdentifier`），ATennis 未内嵌 watch target | 把 watchOS target 并入 Phone 工程，或确保两 target 同属一个 App ID 前缀并配对 |
-| 2 | 两端 `WCSession.isSupported()` 且 `activate()` | ❌ 两端均无 `WatchConnectivity` 代码 | 各加一个 `WCSessionDelegate` 封装 |
+| 1 | Watch App 必须是 Phone App 的**伴生 App** | ❌ WatchTennis 是**独立** watchOS App（`TARGETED_DEVICE_FAMILY=4`、无 `WKCompanionAppBundleIdentifier`），ATennis 未内嵌 watch target | 把 watchOS target 并入 Phone 工程，或确保两 target 同属一个 App ID 前缀并配对。**当前唯一的头号阻塞（M1-1）** |
+| 2 | 两端 `WCSession.isSupported()` 且 `activate()` | ❌ 两端均无 `WatchConnectivity` 代码 | 各加一个 `WCSessionDelegate` 封装。消息类型已在契约里定义好（`WatchToPhoneMessage` / `PhoneToWatchMessage`），直接编解码即可 |
 | 3 | 两端 **Capabilities** | Watch 有 HealthKit；Phone 无 | Phone 开 **Watch Connectivity**（后台数据接收）；两端同开 HealthKit |
-| 4 | 双端共享模型文件 | ❌ 各自定义同名不同义的 `TrainingSession` | 建 `Shared/Models.swift` **同时加入两个 target**（见 [OVERVIEW.md](OVERVIEW.md) §3.1） |
-| 5 | Watch 侧独立 DTO | ❌ 采集模型直接编码 | 产出 `MatchSession` DTO，字段名对齐 [CONTRACT.md](CONTRACT.md) §3 |
+| 4 | 双端共享模型文件 | ✅ **已建** `Shared/TennisContract.swift`，同时加入两个 target（Watch 端已登记进 `project.pbxproj`；Phone 端为文件夹自动同步） | 已解决。见 [OVERVIEW.md](OVERVIEW.md) §3.1.1 · [CONTRACT.md](CONTRACT.md) §0.6 |
+| 5 | Watch 侧独立 DTO | ✅ **已产出** `WatchSession.toMatchSession()`，6 处字段口径全修；`SwingDetector` 补 `confidence` | 已解决。见 [CONTRACT.md](CONTRACT.md) §3.3 |
 
 ---
 
@@ -181,11 +181,15 @@ Phone:  WCSessionDelegate.session(_:didReceive:) → onRawFile(fileURL, metadata
 
 ## 7. 落地清单（按顺序）
 
-- [ ] P0：Phone 工程内嵌 / 配对 watchOS target，两端开 Watch Connectivity capability
-- [ ] P0：建 `Shared/Models.swift`，同时加入两个 target（模型命名见 [OVERVIEW.md](OVERVIEW.md) §3.1）
-- [ ] P0：Watch 侧产出 `MatchSession` DTO（字段对齐 [CONTRACT.md](CONTRACT.md) §3）
-- [ ] P0：两端实现 `WCSessionDelegate` 封装（消息 + 文件）
+- [ ] P0：Phone 工程内嵌 / 配对 watchOS target，两端开 Watch Connectivity capability ← **唯一的头号阻塞**
+- [x] P0：建 `Shared/TennisContract.swift`，同时加入两个 target ← 2026-10-01 完成
+- [x] P0：Watch 侧产出 `MatchSession` DTO（字段对齐 [CONTRACT.md](CONTRACT.md) §3）← 2026-10-01 完成
+- [ ] P0：两端实现 `WCSessionDelegate` 封装（消息 + 文件）← 消息类型已在契约里，只剩接线
 - [ ] P0：Phone 侧 `onSessionEnded` → 本地缓存 + 入队 → `POST /api/prod/sessions`
 - [ ] P1：Phone 侧本地库 + 待同步队列 + 指数退避重试
 - [ ] P1：补 `finishWorkout()`
 - [ ] P2：原始波形（`CMBatchedSensorManager` + `transferFile` + `/api/raw/sessions`）
+
+> **Watch 侧已经"只需要接线"**：`WorkoutManager.finishedMatchSession` 就是将来
+> `sessionEnded` 消息要带的载荷（类型是契约的 `MatchSession`），
+> 且已落盘在 `Documents/sessions/match_<id>.json` —— 真机上可直接核对内容。

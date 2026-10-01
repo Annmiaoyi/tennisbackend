@@ -92,40 +92,49 @@
 
 ### 3.1 三个「会话」名字不能混用
 
-现状里 `TrainingSession` 这个名字在 Watch 和 Phone 上**指的是完全不同的东西**。
-这是当前最大的架构隐患，本文定义新命名，新代码一律按此执行：
+`TrainingSession` 这个名字曾经在 Watch 和 Phone 上**指的是完全不同的东西**，
+是当时最大的架构隐患。2026-10-01 已按下面这套命名完成改名（27 处），
+**新代码一律按此执行**：
 
-| 术语 | 归属 | 含义 | 现有代码里的名字 |
+| 术语 | 归属 | 含义 | 现状 |
 |---|---|---|---|
-| **`WatchSession`** | Watch 内部 | 采集域模型：一场训练 + `swings[]` + `heartRates[]` | 现名 `TrainingSession`（待改名） |
-| **`MatchSession`** | 传输契约 | **上行 DTO**，字段名 = 后端入参字段名 | 参照实现 `Shared/Models.swift` |
-| **`TrainingRecord`** | Phone UI | 列表里的一行展示数据（标题 / 日期 / 分数） | 现名 `TrainingSession`（待改名） |
-| **`SessionRow`** | Phone UI | 上面那条记录的 **SwiftUI 行视图**（已是 View，**不改**） | 已存在，`Views/HomeView.swift` |
+| **`WatchSession`** | Watch 内部 | 采集域模型：一场训练 + `swings[]` + `heartRates[]` + 原始波形 | ✅ 已改名（原 `TrainingSession`） |
+| **`MatchSession`** | 传输契约 | **上行 DTO**，字段名 = 后端入参字段名 | ✅ 已是 `contract/TennisContract.swift` 里的真实类型 |
+| **`TrainingRecord`** | Phone UI | 列表里的一行展示数据（标题 / 日期 / 分数） | ✅ 已改名（原 `TrainingSession`） |
+| **`SessionRow`** | Phone UI | 上面那条记录的 **SwiftUI 行视图** | 已存在（`Views/HomeView.swift`），保持不变 |
 | **`training_sessions`** | Server | L2 表名，一场训练一行 | — |
 
-> 📌 **落地要求**：Phone 侧的 UI 模型改名 `TrainingRecord`，
-> Watch 侧的采集模型改名 `WatchSession`，
-> 把 `TrainingSession` 这个词**只留给后端表概念**。
-> 见 [ROADMAP.md](ROADMAP.md) 的 M1-3。
->
-> ⚠️ **改名目标名已于 2026-10-01 修正**：上一版文档写的是 Phone 模型改名 `SessionRow`，
-> 这是错的。`ATennis/Views/HomeView.swift:530` 已经有一个 `struct SessionRow: View`
-> （首页与全部记录页共用的行视图），照那个方案改名会直接**编译冲突**。
-> 现改为 `TrainingRecord`（与 `Models.swift` 里 `// MARK: - 训练记录` 的既有命名意图一致），
-> `SessionRow` 保持为 View 名不动。
+> 📌 **`TrainingSession` 现在只留给后端表概念**。Swift 侧任何一端都不应再出现这个名字。
 
-### 3.1.1 另有一组同名但**不需要改**的类型
+### 3.1.1 契约是代码，不是文档
+
+三端共享的字段定义现在**只有一处真源**：`Tennisbackend/contract/TennisContract.swift`。
+两个 App 工程里的 `Shared/TennisContract.swift` 是**同步副本**，不要手改。
+
+```
+改契约：  bash scripts/sync_contract.sh          # 真源 → 两端副本
+查漂移：  bash scripts/sync_contract.sh --check  # sha256 比对
+验一致：  .venv/bin/python scripts/verify_contract.py   # 38 项对账
+```
+
+它同时被 Watch 与 Phone 两个 target 编译，所以：
+
+- **任何一端自行定义一个同名的契约类型，会立刻编译冲突。**
+  （`SwingType` 就是这么被发现重复定义的。）
+- 一次改动必须同步提交三个仓库，否则一端编译不过。
+
+### 3.1.2 另有一组同名但**不需要改**的类型
 
 `HomeView`、`ContentView` 在两个工程里都存在，但它们是 SwiftUI 的常规入口名，
 且各自在独立模块内，**不构成隐患**——除非将来把某个文件同时加进两个 target。
-真正要防的是「一个文件进两个 target」的场景，届时凡是重名类型都会立刻编译失败，
-所以新增共享文件后要立刻跑一次双 target 编译。
+契约文件就是"同时进两个 target"的第一个例子，加进去后必须立刻跑一次双端编译。
 
 ### 3.2 其他统一术语
 
 | 术语 | 定义 |
 |---|---|
-| **球速** | 对外文案统一叫「球速」，实际物理量是**拍头线速度**（`峰值角速度 × 0.685m × 3.6`）。手腕单点 IMU **测不到真实球速**，文案沿用但不另立名称。字段名保持 `speed_kmh` / `peak_speed_kmh`。 |
+| **球速** | 对外文案统一叫「球速」，实际物理量是**拍头线速度**（`峰值角速度 × r × 3.6`）。手腕单点 IMU **测不到真实球速**，文案沿用但不另立名称。字段名保持 `speed_kmh` / `peak_speed_kmh`。 |
+| **换算半径 `r`** | ⚠️ **口径待拍板**：本文原写 `0.685m`（球拍长度），而后端 `ingest.py` 注释同此；但 Watch 采集端长期实现用 `1.05m`（拍臂等效半径：手臂 + 球拍）。**两者差 35%，会让全部已展示的球速数字变化。** 现已把值收敛进 `TennisContract.Biomechanics.racketRadiusMeters`（暂取现有实现值 `1.05`，保证线上数字不变）。**改这个常量前必须先拍板**，见 [ROADMAP.md](ROADMAP.md) §7.1 D1。 |
 | **缺失 ≠ 0** | 采不到、没权限、旧机型不支持的字段**必须留空**，绝不填 0。填 0 会拉低均值、污染门禁，且与"真的消耗了 0 卡"无法区分。 |
 | **未识别拍** | 分类置信度不足、归类 `unknown` 的拍。它**计入** `stroke_count`，但**不入** `stroke_records` 明细，也不计入六类分项。 |
 | **配平** | `六类之和 ≤ stroke_count`，差额 = 未识别拍数。差额 > 5% 判 `suspect`，不进排行榜。 |
@@ -145,11 +154,14 @@ volley    截击
 smash     高压（预留位，现有启发式不产出）
 ```
 
-| 端 | 现状 | 目标 |
+| 端 | 现状 | 说明 |
 |---|---|---|
-| Watch | 只有 4 类（缺 `volley` / `smash`），且用 `case slice = "slice"` 显式 rawValue | 补齐 6 类 + `unknown` |
-| Phone | UI 里只有 4 类中文名（正手/反手/切削/发球） | 展示层可只展示 4 类，但**解析层必须能接受 6 类** |
-| Server | 6 类（`server/ingest.py` 的 `STROKE_TYPES`） | 不变，作为基准 |
+| Watch | ✅ **已补齐 6 类 + `unknown`**（2026-10-01） | 枚举来自共享契约 `SwingType`；但**启发式分类器目前只产出发球/切削/正手/反手 4 类**，`volley` / `smash` / `unknown` 要等 CoreML（M4-5） |
+| Phone | ✅ **同一份枚举**（来自契约文件） | 展示层用 `SwingType.classifiedCases`（六类，不含 `unknown`）；UI 分段条另有自己的展示顺序常量 `swingDisplayOrder`，与线上口径解耦 |
+| Server | 6 类（`server/ingest.py` 的 `STROKE_TYPES`） | **作为基准，不变**。`verify_contract.py` 会断言契约的六类与它逐字一致 |
+
+> `unknown` 不进 `classifiedCases`：它**计入 `stroke_count`**，但不写 `stroke_records` 明细、
+> 也不进六类分项。所以「六类之和 ≤ `stroke_count`」是正常口径，差额就是未识别拍。
 
 > `smash` 是**预留位**：高压与发球在单拍窗口内都是「过顶下压」，仅靠手腕 IMU 难以区分，
 > 强行输出只会制造假数据。等模型升级后自然有值。

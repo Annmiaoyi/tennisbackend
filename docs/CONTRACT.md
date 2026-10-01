@@ -69,6 +69,52 @@ RawUploader.shared.keepLocalAfterUpload = false // 上传成功即删本地留�
 
 ---
 
+## 0.6 契约是代码，不是文档（**2026-10-01 起**）
+
+本文是**人读的说明**；机器读的真源是：
+
+```
+Tennisbackend/contract/TennisContract.swift        ← 唯一真源
+ATennis/ATennis/Shared/TennisContract.swift        ← 同步副本（勿手改）
+WatchTennis/WatchTennis/Shared/TennisContract.swift ← 同步副本（勿手改）
+```
+
+里面包含：上行 DTO（`MatchSession` / `MatchSwing`）、下行 DTO（`SessionListItem` /
+`StrokeCounts` / `SessionListResponse`）、WCSession 消息类型、枚举
+（`SwingType` 6+`unknown` / `SessionType` / `Wrist`）、接口路径与请求头常量、
+以及生物力学口径常量。
+
+### 改契约的四步
+
+```bash
+# 1. 改真源（并递增文件头的 version，同步记入本文 §8）
+vim contract/TennisContract.swift
+
+# 2. 同步到两个 App 工程
+bash scripts/sync_contract.sh
+
+# 3. 对账（38 项：枚举 / 上行字段 / 白名单 / 幂等 / 时间 / 下行字段）
+.venv/bin/python scripts/verify_contract.py
+
+# 4. 两端编译验证，然后三个仓库各自提交
+```
+
+`bash scripts/sync_contract.sh --check` 只比对 sha256，CI 或提交前用。
+
+### 为什么这样设计
+
+| 隐患 | 现在的挡法 |
+|---|---|
+| 字段名不一致 → 接口 200 但指标全 NULL | 类型编译不过；`verify_contract.py` 还会从 `ingest.py` 源码抠出后端实际读取的键做**双向**对账 |
+| 契约加了字段、`SYNCABLE` 白名单没加 → 被静默丢弃 | 对账脚本把契约字段真跑一遍 `build_operations`，断言 payload 键全在白名单里 |
+| 日期发成数字 → 后端 400 | `MatchSession` **手写 Codable**，强制 ISO8601，与调用方配的 encoder 无关 |
+| 两端各定义一个同名类型 | 共享文件进两个 target，重名立刻编译冲突 |
+| 同步副本悄悄漂移 | `--check` 比 sha256 |
+
+> ⚠️ 契约文件**同时被 Watch 与 Phone 两个 target 编译**。新增共享类型前先确认两端都没有同名类型。
+
+---
+
 ## 1. 上行 A：会话结论（**主通道**）
 
 ```
@@ -237,20 +283,31 @@ Apple 的 `NSData.compressed(using: .zlib)` 产出的是 **RFC1951 裸 DEFLATE**
 > 契约里没有它们的位置，传了也会被白名单过滤掉。
 > 若确实需要保留，走 L0 原始层，不要塞进 `MatchSession`。
 
-### 3.3 ⚠️ 当前 Watch 代码与本契约的差异（**必须修**）
+### 3.3 ✅ 与 Watch 代码的差异（**2026-10-01 已全部修复**）
 
-| Watch 现有字段 | 契约要求 | 后果 |
-|---|---|---|
-| `estimatedSpeed` | `racketHeadSpeedKmh` | 球速全维度为空 |
-| `timestamp`（Date → ISO 字符串） | `impactTime`（相对秒，number） | `impact_ms` 与 `rally_max` 丢失 |
-| `heartRates[]`（采样数组） | `avgHeartRate` / `maxHeartRate`（标量） | `avg_hr`、`max_hr` 为空 |
-| 无 | `confidence` | G3 门禁失效 |
-| 无 | `distanceKm` | 记为缺失（可接受） |
-| `SwingType` 仅 4 类 | 6 类 | 缺 `volley` / `smash` |
+上一版这一节列的是 6 处"接口 200 但指标全 NULL"的口径差异。现在 Watch 侧
+**不再直接把采集模型编码上行**，而是经 `WatchSession.toMatchSession()`
+产出契约类型 `MatchSession`：
 
-**这两处不会报错**：接口返回 200、库里也有行，但关键指标全是 NULL。
-必须由 Watch 侧产出一个**独立的 `MatchSession` DTO**，而不是把采集模型直接编码上行。
-见 [ROADMAP.md](ROADMAP.md) P0-1。
+| 原差异 | 现在怎么处理 |
+|---|---|
+| `estimatedSpeed` | → `MatchSwing.racketHeadSpeedKmh` |
+| `timestamp`（绝对 `Date`） | → `MatchSwing.impactTime` = `timestamp.timeIntervalSince(startedAt)`，**相对秒数** |
+| `heartRates[]` 采样数组 | → `avgHeartRate` / `maxHeartRate` 两个标量（`scalarAvgHeartRate` / `scalarMaxHeartRate`，**无采样时是 nil 不是 0**） |
+| 无 `confidence` | → `SwingDetector` 输出启发式置信度并上行（接入 CoreML 后换成模型概率） |
+| 无 `distanceKm` | 仍缺（未采集 HealthKit 距离），保持留空 |
+| `SwingType` 仅 4 类 | → 枚举已扩到 **6 + `unknown`**，与后端 `STROKE_TYPES` 逐字一致 |
+
+**两处仍存在的真实边界（不是缺陷）**：
+
+1. **启发式分类器只产出 4 类**（发球/切削/正手/反手）。`volley` / `smash` / `unknown`
+   需要 CoreML 模型才能产出 —— 枚举已就位，缺的是模型能力（M4-5）。
+   因此「六类之和 < `stroke_count`」的差额目前恒为 0。
+2. **`distanceKm` 未采集**（HealthKit 距离订阅未加）。留空符合「缺失 ≠ 0」，可接受。
+
+> ⚠️ **不要再把 `SwingEvent` / `WatchSession` 直接编码上行。**
+> 它们是采集端内部模型，`peakRotation` / `peakAccel` / `estimatedSpeed` / `timestamp`
+> 在契约里没有位置，传了会被白名单静默过滤。上行只有 `MatchSession` 一个入口。
 
 ---
 
@@ -302,7 +359,13 @@ Apple 的 `NSData.compressed(using: .zlib)` 产出的是 **RFC1951 裸 DEFLATE**
 > ⚠️ Phone 的 UI 模型与这个响应**不是一一对应**：UI 需要的是
 > `ShotSegment` / `metrics[]` / `timeline.pulses` 这类**成品展示结构**。
 > 中间必须有一层 **`Response → UI 模型` 的装配层**，不要让 View 直接读接口 JSON。
-> 见 [ROADMAP.md](ROADMAP.md) P1-2。
+> 见 [ROADMAP.md](ROADMAP.md) M2-2。
+>
+> 📌 这个响应的类型已在契约里定义好：`SessionListResponse` / `SessionListItem` /
+> `StrokeCounts`。Phone 侧**直接解码这几个类型**即可，不要自己再写一份 Codable 结构 ——
+> 字段名不一致会静默变 null，这与上行是同一类坑。
+> 注意 `startedAt` / `endedAt` 在响应里是**带毫秒**的字符串，用
+> `startedAtDate` / `endedAtDate` 取 `Date`（`.iso8601` 解码策略不认毫秒）。
 
 ### 4.2 后端**没有**数据源的维度（不要再期待）
 
@@ -312,6 +375,20 @@ Apple 的 `NSData.compressed(using: .zlib)` 产出的是 **RFC1951 裸 DEFLATE**
 原因：手腕单点 IMU 测不到。落点需要看到球的飞行轨迹，甜区需要拍面振动传感器。
 Phone UI 里对应的展示项（甜区占比、旋转、落点分布）**要么标注为暂不实现，要么删掉**，
 不要用随机数/Mock 撑场面后当成真实数据展示。
+
+### 4.3 ⚠️ 单场详情接口的字段风格不一致（**已知，待清理**）
+
+`GET /api/prod/sessions` 返回 camelCase 业务字段（如上表）；
+但 `GET /api/prod/sessions/{sid}` 的 `session` 段是**直接 `dict(row)` dump 数据库行**：
+
+- 字段名是 **snake_case**（`started_at` / `avg_hr` / `stroke_count` …）
+- 还会带出 `user_id` / `deleted_at` / `version` / `sync_status` 等**内部列**
+
+影响：同一套 API 两种风格；且把内部列暴露给了终端用户。
+
+**处置**：这是需要后端清理的项，已登记为 [ROADMAP.md](ROADMAP.md) §7.1 D2。
+在清理成 camelCase 显式字段之前，**不给它写契约类型** —— 不把有问题的形状固化下来。
+`verify_contract.py` 的 G 段把现状固定成一条断言，清理时会提醒补契约。
 
 ---
 
@@ -359,20 +436,41 @@ X-Device-Id: xxx
 
 ## 7. 契约变更流程（**必读**）
 
-1. 改本文（`CONTRACT.md`），说明字段、类型、必填、兼容策略
-2. 若涉及枚举或术语 → 同步改 [OVERVIEW.md](OVERVIEW.md)
-3. **三端同时改**：Watch 侧 DTO + Phone 侧装配层 + Server 侧白名单
-   （Server 白名单在 `server/sync.py` 的 `SYNCABLE`，新增字段不加白名单会被静默丢弃）
-4. 跑回归：`python scripts/test_sync.py`（54 项）+ `python scripts/verify_layers.py`（73 项）
-5. 在 [CHANGELOG 段落](#8-契约变更记录) 追加一行
+自 2026-10-01 起，**先改代码真源，再改文档**（顺序反了容易漏）：
+
+```bash
+# 1. 改真源，并递增文件头的 version
+vim contract/TennisContract.swift
+
+# 2. 若涉及枚举 / 术语 / 口径 → 同步改 OVERVIEW.md
+#    若涉及服务端可写字段 → 同步改 server/sync.py 的 SYNCABLE
+#    （白名单是静默的：漏了不报错，只丢字段）
+
+# 3. 同步到两个 App
+bash scripts/sync_contract.sh
+
+# 4. 对账 + 三套回归
+.venv/bin/python scripts/verify_contract.py     # 38 项：契约 ↔ 后端
+.venv/bin/python scripts/test_sync.py           # 54 项：同步协议
+.venv/bin/python scripts/verify_layers.py       # 73 项：L0–L3 + 鉴权
+
+# 5. 两端编译验证后，三个仓库各自提交
+# 6. 本文 §8 追加一行，并把「最后的契约版本」写在上表
+```
 
 > ⚠️ **服务端字段白名单是静默的**：客户端多传的字段会被直接忽略，不报错。
 > 新增可写字段必须同时改 `SYNCABLE[...]['fields']`。
+> 第 4 步的 `verify_contract.py` D 段会自动抓这条 —— 契约字段没进白名单就会 FAIL。
 
 ---
 
 ## 8. 契约变更记录
 
-| 日期 | 变更 | 影响端 |
-|---|---|---|
-| 2026-10-01 | 建立三端统一契约文档；确认通道为 Watch→WCSession→Phone→Server；记录 Watch 字段差异 6 项 | 三端 |
+| 日期 | 契约版本 | 变更 | 影响端 |
+|---|---|---|---|
+| 2026-10-01 | — | 建立三端统一契约文档；确认通道为 Watch→WCSession→Phone→Server；记录 Watch 字段差异 6 项 | 三端 |
+| 2026-10-01 | **v1.0.0** | **契约代码化**：`contract/TennisContract.swift` 成为唯一真源（上行 `MatchSession` / `MatchSwing`、下行 `SessionListItem` / `StrokeCounts` / `SessionListResponse`、`WatchToPhoneMessage` / `PhoneToWatchMessage`、`SwingType` 6+`unknown`、`SessionType`、`Wrist`、路径与请求头常量、生物力学常量）；`MatchSession` 手写 Codable 强制 ISO8601 | 三端 |
+| 2026-10-01 | **v1.0.0** | **命名统一**：Watch `TrainingSession`→`WatchSession`（15 处）；Phone `TrainingSession`→`TrainingRecord`（12 处）；`SessionRow` 保持为 View 名 | Watch + Phone |
+| 2026-10-01 | **v1.0.0** | **Watch 产出 DTO**：`WatchSession.toMatchSession()`，修掉 6 处字段口径；`SwingDetector` 补启发式 `confidence`；`SessionStore` 双写本地全量 + 上行契约包 | Watch |
+| 2026-10-01 | **v1.0.0** | 新增 `scripts/sync_contract.sh`（同步 / `--check` 查漂移）与 `scripts/verify_contract.py`（38 项对账） | 三端 |
+| 2026-10-01 | **v1.0.0** | 球速换算半径收敛为 `TennisContract.Biomechanics.racketRadiusMeters`（暂取实现值 `1.05`，**待拍板**，见 ROADMAP §7.1 D1） | 三端 |
