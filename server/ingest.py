@@ -94,8 +94,8 @@ def summarize_swings(swings):
       · rally_max    —— 最长连续回合长度
 
     ⚠️ 这里的「球速」取自采集端的 `racketHeadSpeedKmh`。该物理量的真实
-       含义是**拍头线速度**（由腕部峰值角速度 × 球拍长度估算），并非球体
-       飞行速度。产品文案统一沿用「球速」，此处不另立名称 —— 见
+       含义是**拍头线速度**（由腕部峰值角速度 × 拍臂等效半径 1.05m 估算），
+       并非球体飞行速度。产品文案统一沿用「球速」，此处不另立名称 —— 见
        docs/INTEGRATION.md「口径约定」一节。
     """
     counts = {t: 0 for t in STROKE_TYPES}

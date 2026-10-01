@@ -473,4 +473,4 @@ bash scripts/sync_contract.sh
 | 2026-10-01 | **v1.0.0** | **命名统一**：Watch `TrainingSession`→`WatchSession`（15 处）；Phone `TrainingSession`→`TrainingRecord`（12 处）；`SessionRow` 保持为 View 名 | Watch + Phone |
 | 2026-10-01 | **v1.0.0** | **Watch 产出 DTO**：`WatchSession.toMatchSession()`，修掉 6 处字段口径；`SwingDetector` 补启发式 `confidence`；`SessionStore` 双写本地全量 + 上行契约包 | Watch |
 | 2026-10-01 | **v1.0.0** | 新增 `scripts/sync_contract.sh`（同步 / `--check` 查漂移）与 `scripts/verify_contract.py`（38 项对账） | 三端 |
-| 2026-10-01 | **v1.0.0** | 球速换算半径收敛为 `TennisContract.Biomechanics.racketRadiusMeters`（暂取实现值 `1.05`，**待拍板**，见 ROADMAP §7.1 D1） | 三端 |
+| 2026-10-01 | **v1.0.0** | 球速换算半径定为 `TennisContract.Biomechanics.racketRadiusMeters = 1.05`（拍臂等效半径：肩→拍头）；**已拍板**，否决 `0.685`（球拍长度 —— 会系统性偏低约 35%）。同步修正 `OVERVIEW.md` §3.2 / `INTEGRATION.md` §4.1 / `ingest.py` 注释。见 ROADMAP §7.1 D1 | 三端 |

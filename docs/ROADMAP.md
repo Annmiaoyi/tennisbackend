@@ -174,9 +174,25 @@
 
 ## 7.1 待拍板的开放项（**不是 bug，是需要产品决策**）
 
+> 编号 `D1` / `D2` / `D3` 保持稳定，便于既有引用不失效 —— D1 拍板后**不重排**编号。
+
+### ✅ D1 已拍板（2026-10-01）：球速换算半径定为 `1.05 m`
+
+结论：`TennisContract.Biomechanics.racketRadiusMeters = 1.05`（拍臂等效半径：肩→拍头）。
+否决 `0.685 m`（球拍长度）的依据：
+
+- **物理自洽性**：ω 取自腕部陀螺仪的**合成**角速度，主要成分是整条手臂带拍绕**肩**甩动；
+  配「肩→拍头」半径才自洽。0.685 是「腕→拍头」距离、隐含旋转中心在手腕，会丢掉手臂与躯干贡献。
+- **实测对照**：JSSM 正手综述的**拍头线速度**（不是球速）—— 俱乐部 21–24 m/s（76–86 km/h）、
+  职业 ~33 m/s（≈119 km/h）。r=1.05 在 ω≈20–23 rad/s 落进业余带、ω≈31 rad/s 落进职业带；
+  r=0.685 需 ω≈48 rad/s（≈2750°/s），已超出手部生理可信范围。即改用 0.685 会让
+  **全部球速数字系统性偏低约 35%**（100 km/h → 65 km/h）。
+
+已同步修正：`OVERVIEW.md` §3.2、`INTEGRATION.md` §4.1、`server/ingest.py` 注释、契约注释、
+`CONTRACT.md` 变更记录。线上球速**数字不变**（实现值与拍板值一致）。
+
 | # | 项 | 现状 | 影响 | 建议 |
 |---|---|---|---|---|
-| D1 | **球速换算半径**：`0.685 m` vs `1.05 m` | 文档（[OVERVIEW.md](OVERVIEW.md) §3.2）与后端 `ingest.py` 注释写 **0.685（球拍长度）**；Watch 采集端实现用 **1.05（拍臂等效半径）** | 差 **35%**，会让**全部已展示的球速数字变化**（100 km/h → 65 km/h） | 统一改造里**没有擅自改**：已把值收敛进 `TennisContract.Biomechanics.racketRadiusMeters = 1.05`（= 现有实现值，保证线上数字不变）。拍板后改这一处 + 同步文档 |
 | D2 | **单场详情接口字段风格不一致** | `GET /api/prod/sessions` 返回 camelCase 业务字段；`GET /api/prod/sessions/{sid}` 直接 `dict(row)` dump 数据库行（**snake_case，且含 `user_id` / `deleted_at` 等内部列**） | 同一套 API 两种风格；且把内部列暴露给终端用户 | 待清理成 camelCase 显式字段后再补契约类型；`verify_contract.py` G 段已把现状固定为一条断言，清理时会提醒 |
 | D3 | **原始波形采集策略** | `WorkoutManager` 收了 `rawSamples`（上限 3 万条）但 `finalizeSession()` **没把它放进会话**，会话结束即丢弃 | 影响 M4 全部（CoreML 训练数据的唯一来源） | 见 [RAW_LAYER_DECISION.md](RAW_LAYER_DECISION.md)，M4-1 |
 
