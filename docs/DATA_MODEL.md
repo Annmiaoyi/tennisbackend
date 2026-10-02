@@ -184,7 +184,7 @@ def metric(key, default=None):
 | 概览 | `overview_kpis` `online_now` `heatmap_24h_7d` `stroke_mix` `hardware_telemetry` `live_sessions` |
 | NTRP | `ntrp_distribution` `ntrp_insight` `ntrp_radar` `ntrp_benchmark` |
 | 反馈 | `feedback_digest` `feedback_hot_tags` `feedback_positive_rate` `feedback_kpis` `feedback_status_filters` `feedback_hardware_split` `feedback_categories` `feedback_timeline` `feedback_nextgen` |
-| 训练对比 | `ai_diagnosis` `compare_radar` `compare_speed_bars` `compare_multi_rally` `compare_landing_quadrant` `training_history` `training_history_total` |
+| 训练对比 | `ai_diagnosis` `compare_radar` `compare_speed_bars` `compare_multi_rally` `training_history` `training_history_total` |
 | 画像 | `persona_total_users` `persona_skill_histogram` `persona_donuts` `persona_insight` `persona_spotlight` `persona_recommendations` `persona_comparison` |
 
 ---
@@ -200,7 +200,10 @@ def metric(key, default=None):
 `nt_level` `nt_score`
 
 累计统计：`sessions_count` `hours_total` `strokes_total` `forehand_avg` `serve_peak`
-`sweet_spot` `spin_rate` `hit_rate`
+`hit_rate`
+
+> 硬件准入（2026-10-02）：`sweet_spot` / `spin_rate` 列**暂留但恒为 NULL**
+> （腕部单点 IMU 测不到），已停止写入、不再出现在任何接口与页面。
 
 负荷：`training_load`(Optimal/High) `acwr`
 
@@ -218,15 +221,19 @@ def metric(key, default=None):
 心率：`avg_hr` `max_hr` `hr_zone`（区间分布 JSON）
 球速：`avg_speed_kmh` `peak_speed_kmh` `forehand_avg_kmh` `backhand_avg_kmh`
 　　　`serve_avg_kmh` `serve_peak_kmh`
-技术：`spin_rpm` `sweet_spot_rate` `unforced_errors` `winners` `notes`
+技术：`unforced_errors` `winners` `notes`
+（`spin_rpm` / `sweet_spot_rate` 列暂留恒 NULL，见 `server/datasources.py` 的 `REMOVED`）
 
 ### `stroke_records`（击球样本）
 
 关联：`session_id` `seq_in_session`
 分类：`stroke_type`(forehand/backhand/serve/slice/volley/smash) `is_slice`
-物理：`speed_kmh` `spin_rpm` `spin_type`(top/back/flat)
-　　　`depth_m` `landing_zone`(deep/mid/short) `lateral_offset_m` `net_clearance_m`
-质量：`sweet_spot` `impact_ms` `confidence` `anomaly`
+物理：`speed_kmh`
+质量：`impact_ms` `confidence` `anomaly`
+
+> 硬件准入（2026-10-02）：`spin_rpm` / `spin_type` / `sweet_spot` / `depth_m` /
+> `landing_zone` / `lateral_offset_m` / `net_clearance_m` 列暂留恒 NULL，
+> 已停止写入 —— 均需拍面传感器或球的飞行轨迹，腕部单点 IMU 测不到。
 
 > 这张表是**高频写入**主体（一次训练几百条），也是同步协议压力的主要来源。
 > 单次 push 上限 500 条，客户端建议批 200。

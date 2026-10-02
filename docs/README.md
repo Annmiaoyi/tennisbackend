@@ -56,9 +56,13 @@ Windows 上可省事一些：`setup.cmd`（环境准备）→ `start.cmd --seed`
 | `/training` | 训练记录深度分析与横向对比 |
 | `/personas` | 用户画像与技术分群 |
 | `/feedback` | 用户建议与需求工单 |
-| `/settings` | 同步协议水位 |
-| `/annotation` | 数据采集与标注工作台 |
+| `/settings` | 系统与硬件设置：同步水位、硬件、**数据源目录与采集口径**（字段目录 / 质量门禁 / 核查结论 / 接入须知） |
+| `/annotation` | **数据采集与标注 —— 这件事的唯一出口**：工作台 + 两条链路对照 + 标注状态机 + 标注逻辑 + 作业须知 + 标签空间 + 标注进度 |
 | `/docs` | OpenAPI 交互式接口文档 |
+
+> 📌 「数据采集与标注」原先在 `/settings` 里也渲染了一整块，与 `/annotation` 重复且各自查库。
+> 2026-10-01 起收敛到 `/annotation` 单一出口，`/settings` 只留一条带待办计数的入口块。
+> 改标注文案请只改 `server/annotation/stats.py`（唯一真源）。
 
 > 只要改过 `src/tailwind.input.css` 或模板里的 class，就要重跑 `npm run build:css`。
 > 若只改 Python，直接重启服务即可。
@@ -132,8 +136,15 @@ npm run build:css
 .venv/bin/python scripts/verify_contract.py  # 契约 ↔ 后端一致性（38 项对账）
 .venv/bin/python scripts/test_sync.py        # 同步协议端到端（54 项断言）
 .venv/bin/python scripts/verify_layers.py    # L0–L3 + 鉴权端到端（73 项断言）
-.venv/bin/python scripts/visual_diff.py      # 5 页与设计稿逐像素比对
 .venv/bin/python scripts/check_css_coverage.py
+.venv/bin/python scripts/verify_annotation_pages.py  # 两个模板离线渲染 + 无残留标记
+
+# 页面冒烟（需先起服务；脚本自行禁用代理，绕开 HTTP_PROXY 对回环的拦截）
+.venv/bin/python scripts/smoke_pages.py                    # 默认 127.0.0.1:8787
+.venv/bin/python scripts/smoke_pages.py --base http://127.0.0.1:9000
+
+# 视觉比对（需要本机装有 Chrome/Edge；脚本会自己找）
+.venv/bin/python scripts/visual_diff.py      # 5 页与设计稿逐像素比对
 
 # 契约同步（改过 contract/TennisContract.swift 之后）
 bash scripts/sync_contract.sh                # 真源 → 两个 App 工程
@@ -143,11 +154,17 @@ bash scripts/sync_contract.sh --check        # 只查漂移（sha256）
 .venv/bin/python scripts/build_pages.py        # 从设计稿重新生成页面模板
 .venv/bin/python scripts/fetch-assets.py       # 重新本地化设计稿里的远程图片
 .venv/bin/python scripts/reset_admin_password.py
+.venv/bin/python scripts/seed_annotation_demo.py         # 看会灌什么（dry-run）
+.venv/bin/python scripts/seed_annotation_demo.py --apply # 灌 3 场合成标注会话
 ```
 
-> ⚠️ `verify_layers.py` 会在独立端口起一个隔离实例。若你的环境设了 `HTTP_PROXY`，
-> 本机回环请求会被代理拦掉（表现为满屏 502），需要放行回环地址：
-> `no_proxy=127.0.0.1,localhost`。
+> ⚠️ `verify_layers.py` 与 `smoke_pages.py` 都会碰本机回环地址。若你的环境设了
+> `HTTP_PROXY`，回环请求会被代理拦掉（表现为满屏 502，与「服务没起来」现象一样），
+> `smoke_pages.py` 自己禁用了代理，其它脚本请加 `no_proxy=127.0.0.1,localhost`。
+
+> `seed_annotation_demo.py` 会**往标注库写数据**（3 行会话 + 若干标注），默认是 dry-run。
+> 想完全不碰真实库，把它重定向到临时目录：
+> `NETPULSE_DB=/tmp/demo/annotations.db NETPULSE_ANNOTATION_DIR=/tmp/demo NETPULSE_RAW_DIR=/tmp/demo/raw .venv/bin/python scripts/seed_annotation_demo.py --apply`
 
 ---
 

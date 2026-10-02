@@ -135,7 +135,7 @@ def student_detail(student_id: str):
     agg = db.query_one(
         'SELECT COUNT(*) AS sessions, COALESCE(SUM(stroke_count),0) AS strokes,'
         ' COALESCE(SUM(duration_sec),0) AS seconds, MAX(serve_peak_kmh) AS serve_peak,'
-        ' AVG(forehand_avg_kmh) AS forehand_avg, AVG(sweet_spot_rate) AS sweet_spot'
+        ' AVG(forehand_avg_kmh) AS forehand_avg'
         ' FROM training_sessions WHERE student_id = ? AND deleted_at IS NULL', (student_id,))
     return {'student': row, 'stats': agg, 'recent_sessions': sessions}
 
@@ -159,7 +159,7 @@ def training_compare(
         'radar': metric('compare_radar', {}),
         'speed_bars': metric('compare_speed_bars', []),
         'multi_rally': metric('compare_multi_rally', {}),
-        'landing_quadrant': metric('compare_landing_quadrant', {}),
+        # 硬件准入（2026-10-02）：landing_quadrant（落点象限）需球的飞行轨迹，已移除。
         'history': metric('training_history', []),
         'history_total': metric('training_history_total', 0),
     }
@@ -198,8 +198,7 @@ def strokes(session_id: str, limit: int = Query(500, ge=1, le=5000)):
                     ' ORDER BY seq_in_session LIMIT ?', (session_id, limit))
     by_type = db.query(
         'SELECT stroke_type, COUNT(*) AS n, AVG(speed_kmh) AS avg_speed,'
-        ' AVG(spin_rpm) AS avg_spin,'
-        ' SUM(CASE WHEN sweet_spot = 1 THEN 1 ELSE 0 END) AS sweet'
+        ' MAX(speed_kmh) AS peak_speed'
         ' FROM stroke_records WHERE session_id = ? AND deleted_at IS NULL'
         ' GROUP BY stroke_type', (session_id,))
     return {'session': session, 'count': len(rows), 'by_type': by_type, 'strokes': rows}
@@ -232,7 +231,7 @@ def leaderboards(
     date_to: Optional[str] = Query(None, alias='to'),
     student: Optional[str] = Query(None, description='高亮该学员在榜中的位置'),
     metric: Optional[str] = Query(None, description='激活指标：serve|forehand|backhand|slice|'
-                                                   'stroke_count|duration|calories|sweet_spot|avg_hr'),
+                                                   'stroke_count|duration|calories|avg_hr'),
     full: bool = Query(False, description='为 true 时同时返回全部指标的双榜，否则只返回激活指标'),
 ):
     rng = analytics.resolve_range(range, date_from, date_to)

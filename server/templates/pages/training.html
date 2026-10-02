@@ -147,7 +147,7 @@
 <span class="font-body-md text-body-md text-on-surface-variant truncate">聚合样本量: 14,890 名注册学员</span>
 </div>
 </div>
-<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<div class="grid grid-cols-1 gap-space-sm pt-space-xs">
 <div class="p-space-sm rounded-lg bg-surface-container flex flex-col">
 <span class="font-label-sm text-label-sm text-on-surface-variant">段位常模均速</span>
 <div class="flex items-baseline gap-1">
@@ -155,13 +155,8 @@
 <span class="font-label-sm text-label-sm text-outline">km/h</span>
 </div>
 </div>
-<div class="p-space-sm rounded-lg bg-surface-container flex flex-col">
-<span class="font-label-sm text-label-sm text-on-surface-variant">甜区命中率标杆</span>
-<div class="flex items-baseline gap-1">
-<span class="font-metric-digit text-headline-md text-on-surface font-bold">68.2</span>
-<span class="font-label-sm text-label-sm text-outline">%</span>
-</div>
-</div>
+{#- 硬件准入移除：原「甜区命中率标杆 68.2%」卡。
+    甜区 = 球在**拍面**上的撞击点，腕部单点 IMU 测不到（需拍面传感器或高速摄像）。 -#}
 </div>
 </div>
 <div class="mt-space-md pt-space-sm flex items-center justify-between text-on-surface-variant">
@@ -188,7 +183,7 @@
 <span class="font-label-sm text-label-sm text-on-surface-variant">置信度 96.4%</span>
 </div>
 <p class="font-body-md text-body-md text-on-surface leading-relaxed">
-<span class="font-semibold text-primary">张哲恒</span> 具有显著更强的主动进攻终结能力（正手进攻平均球速高出李思源 <span class="text-primary-fixed font-bold">10 km/h</span>，发球制胜分率高出同段位标杆 <span class="text-primary-fixed font-bold">24%</span>）；但在超过 <span class="text-secondary font-bold">8 拍以上</span> 的多拍相持对抗中，<span class="font-semibold text-secondary">李思源</span> 展现出更高的战术耐心，非受迫性失误率比张哲恒低 <span class="text-secondary font-bold">18%</span>，反手防守切削落点深区率达到 <span class="text-secondary font-bold">71%</span>。
+<span class="font-semibold text-primary">张哲恒</span> 具有显著更强的主动进攻终结能力（正手进攻平均球速高出李思源 <span class="text-primary-fixed font-bold">10 km/h</span>，发球制胜分率高出同段位标杆 <span class="text-primary-fixed font-bold">24%</span>）；但在超过 <span class="text-secondary font-bold">8 拍以上</span> 的多拍相持对抗中，<span class="font-semibold text-secondary">李思源</span> 展现出更高的战术耐心，非受迫性失误率比张哲恒低 <span class="text-secondary font-bold">18%</span>。
             </p>
 </div>
 </div>
@@ -261,7 +256,7 @@
 <!-- Benchmark C (NTRP 3.5 Average ~ 65% across) -->
 <polygon fill="none" opacity="0.75" points="200,98 290,148 290,252 200,302 110,252 110,148" stroke="#8e9379" stroke-dasharray="4,4" stroke-width="1.5"></polygon>
 <!-- Player B: Li Siyuan Polygon (Balanced, Backhand strong, Serve lower) -->
-<!-- Serve: 62 (r=99->200,101), Forehand: 68 (r=108->293,146), Sweetspot: 84 (r=134->316,267), Stamina: 88 (r=140->200,340), Mobility: 76 (r=121->95,260), Backhand: 86 (r=137->81,121) -->
+<!-- Serve: 62, Forehand: 68, Stroke volume: 84, Stamina: 88, Mobility: 76, Backhand: 86 -->
 <polygon fill="url(#radarGlowB)" points="200,101 293,146 316,267 200,340 95,260 81,121" stroke="#7bd0ff" stroke-width="2"></polygon>
 <circle cx="200" cy="101" fill="#7bd0ff" r="3"></circle>
 <circle cx="293" cy="146" fill="#7bd0ff" r="3"></circle>
@@ -270,7 +265,7 @@
 <circle cx="95" cy="260" fill="#7bd0ff" r="3"></circle>
 <circle cx="81" cy="121" fill="#7bd0ff" r="3"></circle>
 <!-- Player A: Zhang Zheheng Polygon (High Serve, High Forehand, Low Backhand) -->
-<!-- Serve: 94 (r=150->200,50), Forehand: 92 (r=147->327,126), Sweetspot: 78 (r=124->307,262), Stamina: 66 (r=105->200,305), Mobility: 82 (r=131->86,265), Backhand: 54 (r=86->125,150) -->
+<!-- Serve: 94, Forehand: 92, Stroke volume: 78, Stamina: 66, Mobility: 82, Backhand: 54 -->
 <polygon fill="url(#radarGlowA)" points="200,50 327,126 307,262 200,305 86,265 125,150" stroke="#c3f400" stroke-width="2.5"></polygon>
 <circle cx="200" cy="50" fill="#c3f400" r="4"></circle>
 <circle cx="327" cy="126" fill="#c3f400" r="4"></circle>
@@ -278,13 +273,14 @@
 <circle cx="200" cy="305" fill="#c3f400" r="4"></circle>
 <circle cx="86" cy="265" fill="#c3f400" r="4"></circle>
 <circle cx="125" cy="150" fill="#c3f400" r="4"></circle>
-<!-- Axis Labels with Telemetry -->
+{#- 六维轴均为**腕部 IMU + HealthKit 可得**的指标。
+    2026-10-02 前这里有三条腕上测不到的轴（正手上旋深度 / 甜区击球率 / 体能恢复），已换成可得指标。 -#}
 <text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="middle" x="200" y="24">发球威慑 (Serve 94/62)</text>
-<text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="start" x="350" y="118">正手上旋深度 (92/68)</text>
-<text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="start" x="350" y="286">甜区击球率 (78/84)</text>
-<text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="middle" x="200" y="380">体能恢复 (66/88)</text>
+<text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="start" x="350" y="118">正手球速 (92/68)</text>
+<text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="start" x="350" y="286">击球量 (78/84)</text>
+<text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="middle" x="200" y="380">训练时长 (66/88)</text>
 <text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="end" x="50" y="286">跑动覆盖 (82/76)</text>
-<text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="end" x="50" y="118">反手稳定性 (54/86)</text>
+<text fill="#dfe4e0" font-size="11" font-weight="700" text-anchor="end" x="50" y="118">反手球速 (54/86)</text>
 </svg>
 </div>
 <div class="grid grid-cols-3 gap-space-xs pt-space-sm bg-surface-container-low p-space-sm rounded-xl text-center">
@@ -335,12 +331,12 @@
 <div class="h-full bg-primary-container rounded-full -ml-[81%] opacity-85 shadow-[0_0_8px_rgba(195,244,0,0.5)]" style="width: 88%;"></div>
 </div>
 </div>
-<!-- Shot: 正手上旋 (Forehand Topspin) -->
+<!-- Shot: 正手进攻 (Forehand Aggression) -->
 <div class="flex flex-col gap-1.5">
 <div class="flex items-center justify-between text-body-md">
 <span class="font-bold text-primary flex items-center gap-1.5">
 <span class="material-symbols-outlined text-[16px] text-primary-fixed">sports_baseball</span>
-<span>正手上旋进攻球 (Forehand Aggression)</span>
+<span>正手进攻球 (Forehand Aggression)</span>
 </span>
 <div class="flex items-center gap-space-md font-label-sm text-label-sm">
 <span class="text-primary-fixed font-bold">张: 122 km/h</span>
@@ -359,7 +355,7 @@
 <div class="flex items-center justify-between text-body-md">
 <span class="font-bold text-primary flex items-center gap-1.5">
 <span class="material-symbols-outlined text-[16px] text-secondary">swap_calls</span>
-<span>反手均速与深度 (Backhand Drive)</span>
+<span>反手均速 (Backhand Drive)</span>
 </span>
 <div class="flex items-center gap-space-md font-label-sm text-label-sm">
 <span class="text-primary-fixed font-bold">张: 98 km/h</span>
@@ -421,7 +417,7 @@
 <!-- Cardio, Heart Rate & Rally Endurance Comparison -->
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
 <!-- Heart Rate & Cardio Load (Apple Health Fitness Aesthetic) -->
-<div class="lg:col-span-8 bg-surface-container rounded-xl p-space-lg shadow-md flex flex-col justify-between">
+<div class="lg:col-span-12 bg-surface-container rounded-xl p-space-lg shadow-md flex flex-col justify-between">
 <div class="flex items-center justify-between pb-space-md">
 <div class="flex flex-col">
 <div class="flex items-center gap-space-xs">
@@ -493,63 +489,9 @@
 </div>
 </div>
 </div>
-<!-- Live Racket & Sweetspot Heatmap Snapshot -->
-<div class="lg:col-span-4 bg-surface-container rounded-xl p-space-lg shadow-md flex flex-col justify-between">
-<div class="flex items-center justify-between pb-space-sm">
-<div class="flex flex-col">
-<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">击球甜区散点重叠</span>
-<span class="font-headline-sm text-headline-sm text-primary font-bold">拍面甜区集中率对比</span>
-</div>
-<span class="material-symbols-outlined text-outline">grain</span>
-</div>
-<!-- Isometric Tennis Racket Face Visualization -->
-<div class="relative w-full aspect-[4/3] bg-surface-container-low rounded-xl flex items-center justify-center p-space-sm">
-<svg class="w-full h-full" viewbox="0 0 240 180">
-<!-- Racket Head Rim -->
-<ellipse cx="120" cy="90" fill="none" rx="90" ry="70" stroke="#353a38" stroke-width="4"></ellipse>
-<!-- Racket String Grid Lines (Subtle) -->
-<line stroke="#262b29" stroke-width="0.8" x1="60" x2="60" y1="40" y2="140"></line>
-<line stroke="#262b29" stroke-width="0.8" x1="80" x2="80" y1="28" y2="152"></line>
-<line stroke="#262b29" stroke-width="0.8" x1="100" x2="100" y1="23" y2="157"></line>
-<line stroke="#353a38" stroke-width="1.2" x1="120" x2="120" y1="20" y2="160"></line>
-<line stroke="#262b29" stroke-width="0.8" x1="140" x2="140" y1="23" y2="157"></line>
-<line stroke="#262b29" stroke-width="0.8" x1="160" x2="160" y1="28" y2="152"></line>
-<line stroke="#262b29" stroke-width="0.8" x1="180" x2="180" y1="40" y2="140"></line>
-<line stroke="#262b29" stroke-width="0.8" x1="38" x2="202" y1="70" y2="70"></line>
-<line stroke="#353a38" stroke-width="1.2" x1="30" x2="210" y1="90" y2="90"></line>
-<line stroke="#262b29" stroke-width="0.8" x1="38" x2="202" y1="110" y2="110"></line>
-<!-- Sweetspot Target Ellipse -->
-<ellipse cx="120" cy="85" fill="none" rx="35" ry="28" stroke="#8e9379" stroke-dasharray="2,2" stroke-width="1"></ellipse>
-<!-- Player A Hits (Volt): Scattered towards the upper tip -->
-<circle cx="122" cy="72" fill="#c3f400" opacity="0.8" r="4.5"></circle>
-<circle cx="128" cy="80" fill="#c3f400" opacity="0.75" r="4"></circle>
-<circle cx="115" cy="65" fill="#c3f400" opacity="0.7" r="3.5"></circle>
-<circle cx="138" cy="95" fill="#c3f400" opacity="0.85" r="4"></circle>
-<circle cx="95" cy="55" fill="#c3f400" opacity="0.6" r="3"></circle> <!-- Edge misshit -->
-<circle cx="118" cy="88" fill="#c3f400" opacity="0.9" r="5"></circle>
-<!-- Player B Hits (Blue): Tightly grouped dead center -->
-<circle cx="120" cy="85" fill="#7bd0ff" opacity="0.85" r="5"></circle>
-<circle cx="122" cy="83" fill="#7bd0ff" opacity="0.8" r="4"></circle>
-<circle cx="117" cy="87" fill="#7bd0ff" opacity="0.8" r="4"></circle>
-<circle cx="124" cy="89" fill="#7bd0ff" opacity="0.85" r="4.5"></circle>
-<circle cx="114" cy="84" fill="#7bd0ff" opacity="0.75" r="3.5"></circle>
-<circle cx="119" cy="92" fill="#7bd0ff" opacity="0.8" r="3.5"></circle>
-</svg>
-</div>
-<div class="flex flex-col gap-space-xs pt-space-sm">
-<div class="flex items-center justify-between text-body-md">
-<span class="text-on-surface-variant font-label-sm text-label-sm">李思源 甜区聚集度 (Core Grouping)</span>
-<span class="text-secondary font-bold font-headline-sm text-headline-sm">84.2%</span>
-</div>
-<div class="flex items-center justify-between text-body-md">
-<span class="text-on-surface-variant font-label-sm text-label-sm">张哲恒 甜区聚集度 (Upper偏顶端)</span>
-<span class="text-primary-fixed font-bold font-headline-sm text-headline-sm">78.5%</span>
-</div>
-<p class="font-label-sm text-label-sm text-outline mt-1">
-            张哲恒击球点偏向球拍上部 1.5cm，获得更大击球杜杆但轻微牺牲容错率。
-          </p>
-</div>
-</div>
+{#- 硬件准入移除：「击球甜区散点重叠 / 拍面甜区集中率对比」整块卡片。
+    甜区是球在**拍面**上的撞击点，腕部单点 IMU 观测不到（需拍面传感器或高速摄像）；
+    原卡片的散点与聚集度 84.2%/78.5% 都是硬编码示例值。字段留档见 /settings#removed。 -#}
 </div>
 <!-- Bottom Section: Session Comparison Logs Table -->
 <div class="bg-surface-container rounded-xl p-space-lg shadow-md flex flex-col gap-space-md">
@@ -646,7 +588,7 @@
 <tr class="hover:bg-surface-container-high/50 transition-colors">
 <td class="py-space-md px-space-md font-semibold text-primary">
 <div>2024-10-12 10:15</div>
-<div class="font-label-sm text-label-sm text-outline">室外硬地 · 发球机特定深度巡回</div>
+<div class="font-label-sm text-label-sm text-outline">室外硬地 · 发球机定点往复</div>
 </td>
 <td class="py-space-md px-space-md">
 <span class="px-2 py-0.5 rounded bg-surface-container-highest text-primary font-label-sm text-label-sm font-semibold">100球正手标定</span>
@@ -664,10 +606,10 @@
                 <span class="block font-label-sm text-label-sm text-outline">定点喂球测试</span>
 </td>
 <td class="py-space-md px-space-md text-on-surface-variant">
-                张哲恒爆发力更强，李思源击球散点落点更为密集
+                张哲恒爆发力更强，李思源多拍相持更稳
               </td>
 <td class="py-space-md px-space-md text-right">
-<button class="px-space-sm py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm transition-colors">查看散点</button>
+<button class="px-space-sm py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm transition-colors">查看记录</button>
 </td>
 </tr>
 </tbody>

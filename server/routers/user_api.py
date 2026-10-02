@@ -240,7 +240,9 @@ _SESSION_COLS = (
     'slice_count', 'volley_count', 'smash_count', 'rally_max',
     'avg_hr', 'max_hr', 'calories_kcal', 'distance_km',
     'avg_speed_kmh', 'peak_speed_kmh', 'forehand_avg_kmh', 'backhand_avg_kmh',
-    'serve_avg_kmh', 'serve_peak_kmh', 'spin_rpm', 'sweet_spot_rate',
+    'serve_avg_kmh', 'serve_peak_kmh',
+    # 硬件准入（2026-10-02）：spin_rpm / sweet_spot_rate 需拍面传感器，腕部单点
+    # IMU 测不到，已从出口字段中移除（DB 列暂留、恒为 NULL）。
 )
 
 
@@ -302,7 +304,6 @@ def list_sessions(authorization: Optional[str] = Header(None),
             'peakSpeedKmh': r['peak_speed_kmh'],
             'servePeakKmh': r['serve_peak_kmh'],
             'rallyMax': r['rally_max'],
-            'sweetSpotRate': r['sweet_spot_rate'],
         })
 
     return {'count': len(out), 'range': rng['key'], 'studentId': sid, 'sessions': out}
@@ -324,9 +325,8 @@ def session_detail(sid: str,
         raise HTTPException(404, '找不到该场训练（或不属于当前账号）')
 
     strokes = db.query(
-        'SELECT seq_in_session, stroke_type, is_slice, speed_kmh, spin_rpm,'
-        ' spin_type, sweet_spot, depth_m, landing_zone, lateral_offset_m,'
-        ' net_clearance_m, impact_ms, confidence, anomaly'
+        'SELECT seq_in_session, stroke_type, is_slice, speed_kmh,'
+        ' impact_ms, confidence, anomaly'
         ' FROM stroke_records WHERE session_id=? AND deleted_at IS NULL'
         ' ORDER BY seq_in_session', (row['id'],))
 

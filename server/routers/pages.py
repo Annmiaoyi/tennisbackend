@@ -11,6 +11,7 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup, escape
 
 from server import analytics
 from server import datasources
@@ -21,6 +22,27 @@ TEMPLATES = os.path.join(HERE, 'templates')
 
 router = APIRouter(include_in_schema=False)
 templates = Jinja2Templates(directory=TEMPLATES)
+
+
+def _bold_filter(text):
+    """把正文里的 **强调** 渲染成粗体。
+
+    数据源目录、标注须知这些长文案统一用 `**…**` 圈出关键短语 —— 这样
+    /api/datasources 返回的纯文本也读得懂重点。但模板若直接 `{{ body }}`，
+    页面上会原样露出两对星号。所有非等宽正文列都应挂这个过滤器。
+    """
+    if not text:
+        return ''
+    segs = str(text).split('**')
+    out = []
+    for i, seg in enumerate(segs):
+        esc = str(escape(seg))
+        out.append('<strong class="font-bold text-on-surface">%s</strong>' % esc
+                   if i % 2 else esc)
+    return Markup(''.join(out))
+
+
+templates.env.filters['bold'] = _bold_filter
 
 # 管理站页面默认归属的演示用户（真实部署时由登录态注入）
 DEFAULT_PAGE_USER = os.environ.get('ACEMATE_USER', 'u_demo')
@@ -261,14 +283,14 @@ def settings(request: Request):
             {'name': '06 · 增量拉取', 'title': '服务器游标，不依赖客户端时间',
              'body': '全库单调递增的 seq 作为唯一游标，避开客户端时钟回拨与同毫秒并排的问题。'},
         ],
-        # 数据源目录：一次训练到底从 Apple Watch 采集哪些数据、怎么取、怎么判定。
-        # 目录本体在 server/datasources.py（页面与 /api/datasources 共用同一份，
-        # 避免文档与接口两处口径漂移）。
+        # 数据源目录：一次训练到底从 Apple Watch 采集哪些数据、怎么取、怎么算、
+        # 变成什么、在哪儿展示。目录本体在 server/datasources.py
+        # （页面与 /api/datasources 共用同一份，避免文档与接口两处口径漂移）。
         'ds': datasources.catalog(),
-        # 数据采集与标注：标注链路的真实水位（工作台在 /annotation）。
-        # 与 /api/annotation/overview 同源，避免页面与接口两处口径漂移。
-        'annot': annotation_stats.overview(),
-        'annot_sessions': annotation_stats.session_rows(limit=8),
+        # 标注侧只留一个「入口 + 待办计数」。2026-10-01 起「数据采集与标注」的
+        # 全部内容（标注进度、状态机、规范、须知）已收敛到 /annotation 单一出口，
+        # 本页不再重复渲染一份，避免同一件事在两个页面上各说一套。
+        'annot_pointer': annotation_stats.overview(),
     })
     return templates.TemplateResponse(request, 'pages/settings.html', ctx)
 
@@ -277,15 +299,26 @@ def settings(request: Request):
 def annotation_workspace(request: Request):
     """数据采集与标注工作台（原独立 :8000 服务，已并入本站）。
 
-    本页只渲染外壳与首屏统计数字；「视频 ↔ 波形」的全部交互由
-    `web/assets/js/annotation.js` 接管，数据接口见 `server/annotation/api.py`。
+    本页是「数据采集与标注」的**唯一出口**（2026-10-01 起）：
+    采集链路、标注逻辑、作业须知、标注进度与交互工作台都在这里，
+    /settings 只保留一条入口链接，避免同一件事两个页面各说一套。
+
+    「视频 ↔ 波形」的全部交互由 `web/assets/js/annotation.js` 接管，
+    数据接口见 `server/annotation/api.py`。
     拆开的好处是脚本能进 tailwind.config 的 content 扫描范围，
     动态生成的类名不会被 purge。
     """
     from server.annotation import stats
 
     ctx = _context(request, 'pages/annotation.html', 'data-annotation')
-    ctx.update({'ov': stats.overview()})
+    ctx.update({
+        'ov': stats.overview(),
+        # 标注规范（状态机 / 规则 / 须知 / 标签空间）的唯一真源
+        'spec': stats.annotation_spec(),
+        # 标注进度：最近若干场会话的人工介入情况
+        # （上限给到 50，避免历史采集数据一多就把在标的场次挤出视野）
+        'progress': stats.session_rows(limit=50),
+    })
     return templates.TemplateResponse(request, 'pages/annotation.html', ctx)
 
 

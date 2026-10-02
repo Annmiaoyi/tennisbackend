@@ -1,20 +1,26 @@
-{#- 数据采集与标注 —— 原独立 :8000 标注后端的工作台，已并入本站（:8787）。
+{#- 数据采集与标注 —— 本页是这件事的**唯一出口**（2026-10-01 起）。
 
-    处理方式：
-      · 外壳（侧边栏 / 顶栏）复用 base.html，与其余页面视觉同源；
-      · 页头 / 卡片 / 徽章严格沿用设计系统令牌（surface-container 卡片、
-        label-sm 大写标签、metric-digit 数值、电光绿主容器按钮），
-        不引入设计稿之外的新颜色；
-      · 中间的「视频 ↔ 波形同步标注」交互逻辑保持原实现，脚本从 static/
-        拆到 web/assets/js/annotation.js —— tailwind.config 的 content 已包含
-        ./web/assets/js/**/*.js，JS 里动态生成的类名不会被 purge。 -#}
+    为什么合并：原先 /settings 里也完整渲染了一份（概览数字 + 四段链路 + 进度表 +
+    标注口径），两处各自查库、口径会慢慢漂移。现在 /settings 只留一条带待办计数的入口。
+
+    本页内容顺序（也是阅读顺序）：
+      1) 顶部统计水位   2) 标注工作台（日常操作，靠上）
+      3) 两条链路对照    4) 采集到训练的四段链路
+      5) 标注状态机      6) 标注逻辑（规则）
+      7) 作业须知        8) 标签空间        9) 标注进度
+
+    区块 3~8 的全部文案来自 server/annotation/stats.py 的 SPEC_* 常量（唯一真源），
+    模板只负责排版；改文案请改那个文件，不要写死在本模板里。
+
+    外壳复用 base.html；卡片 / 徽章 / 数值一律沿用设计系统令牌，
+    不引入设计稿之外的新颜色。 -#}
 {% extends "base.html" %}
 {% set nav_active = "data-annotation" %}
 {% block title %}数据采集与标注{% endblock %}
 {% block main %}
 <div class="p-space-lg md:p-space-xl lg:p-margin-desktop flex flex-col gap-space-xl">
 
-<!-- 页头 -->
+<!-- ===================== 页头 ===================== -->
 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
 <div class="flex flex-col gap-space-2xs">
 <div class="flex items-center gap-space-sm">
@@ -26,22 +32,19 @@
 <p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">
 原始传感器会话在这里完成「视频 ↔ 波形」同步标注，产出 CoreML 训练集。
 Watch 的启发式结果会自动预标注（暗色虚线），标注者只需纠错与补漏 ——
-未被更正的预标注会直接成为训练标签。
+未被更正的预标注会直接成为训练标签。采集侧字段目录与质量门禁在
+<a class="text-primary-fixed font-semibold hover:underline" href="/settings#catalog">系统与硬件设置</a>。
 </p>
 </div>
 <div class="flex flex-wrap items-center gap-space-sm">
 <div class="px-space-md py-2 rounded-xl bg-surface-container flex flex-col">
-<span class="font-label-sm text-label-sm text-outline">会话 / 已标注</span>
+<span class="font-label-sm text-label-sm text-outline">会话 / 已介入</span>
 <span class="font-label-md text-label-md text-on-surface font-bold">{{ ov.sessions }} / {{ ov.sessions_touched }}</span>
 </div>
 <div class="px-space-md py-2 rounded-xl bg-surface-container flex flex-col">
 <span class="font-label-sm text-label-sm text-outline">待纠错预标注</span>
-<span class="font-label-md text-label-md text-primary-fixed font-bold">{{ ov.heuristic_proposed }}</span>
+<span class="font-label-md text-label-md font-bold {{ 'text-tertiary-fixed-dim' if ov.heuristic_proposed else 'text-outline' }}">{{ ov.heuristic_proposed }}</span>
 </div>
-<a class="flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high transition-all shadow-sm" href="/settings">
-<span class="material-symbols-outlined text-[18px] text-on-surface-variant">tune</span>
-<span class="font-label-md text-label-md">采集口径设置</span>
-</a>
 <a class="flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high transition-all shadow-sm" href="/api/export/dataset.csv">
 <span class="material-symbols-outlined text-[18px] text-on-surface-variant">download</span>
 <span class="font-label-md text-label-md">训练集 CSV</span>
@@ -49,7 +52,20 @@ Watch 的启发式结果会自动预标注（暗色虚线），标注者只需�
 </div>
 </div>
 
-<!-- 统计水位 -->
+<!-- 页内锚点：本页已经变成长文档，给一条跳转带，省得一路滚 -->
+<nav class="flex flex-wrap items-center gap-space-xs p-space-sm rounded-xl bg-surface-container-low border border-outline/15">
+<span class="material-symbols-outlined text-outline text-[18px] ml-1">toc</span>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#workbench">标注工作台</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#chains">两条链路</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#stages">四段链路</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#state">标注状态机</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#rules">标注逻辑</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#notes">作业须知</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#labels">标签空间</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#progress">标注进度</a>
+</nav>
+
+<!-- ===================== 统计水位 ===================== -->
 <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-space-sm">
 <div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
 <span class="font-label-sm text-label-sm text-outline">原始会话</span>
@@ -72,36 +88,19 @@ Watch 的启发式结果会自动预标注（暗色虚线），标注者只需�
 <span class="font-metric-digit text-headline-md text-error font-bold">{{ ov.heuristic_rejected }}</span>
 </div>
 <div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
-<span class="font-label-sm text-label-sm text-outline">标注者</span>
-<span class="font-metric-digit text-headline-md text-on-surface-variant font-bold">{{ ov.annotators }}</span>
+<span class="font-label-sm text-label-sm text-outline">难例率</span>
+<span class="font-metric-digit text-headline-md text-on-surface-variant font-bold">{{ (ov.hard_rate ~ '%') if ov.hard_rate is not none else '—' }}</span>
 </div>
 </div>
 
-<!-- 链路 -->
-<div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
-<div class="flex items-center justify-between">
+<!-- ===================== 标注工作台（日常操作） ===================== -->
+<div class="scroll-mt-24" id="workbench"></div>
 <div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-primary-fixed text-[22px]">account_tree</span>
-<span class="font-headline-sm text-headline-sm text-primary font-bold">采集到训练的四段链路</span>
-</div>
-<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">capture → upload → annotate → train</span>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-sm">
-{% for s in ov.stages %}
-<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
-<div class="flex items-center justify-between">
-<span class="material-symbols-outlined {{ 'text-primary-fixed' if loop.first else 'text-outline' }} text-[20px]">{{ s.icon }}</span>
-<span class="font-label-sm text-label-sm text-outline font-bold">{{ s.step }}</span>
-</div>
-<span class="font-body-md text-body-md text-on-surface font-semibold">{{ s.title }}</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ s.body }}</span>
-</div>
-{% endfor %}
-</div>
-<p class="font-label-sm text-label-sm text-outline">{{ ov.labels_note }}</p>
+<span class="material-symbols-outlined text-primary-fixed text-[22px]">draw</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">标注工作台</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">选择会话 → 对齐波形 → 纠错 → 保存</span>
 </div>
 
-<!-- ===================== 标注工作台 ===================== -->
 <div class="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)] gap-space-md items-start">
 
 <!-- 左：会话列表 + 上传 -->
@@ -128,6 +127,11 @@ Watch 的启发式结果会自动预标注（暗色虚线），标注者只需�
 <span class="font-label-sm text-label-sm text-on-surface-variant flex-1" id="vidName">选择视频（可选）</span>
 <input accept="video/*" class="hidden" id="vidFile" type="file"/>
 </label>
+{#- ⚠️ 腕别是整场标注的前提，放一条就地提示：填错在界面上看不出任何异常。 -#}
+<p class="font-label-sm text-label-sm text-tertiary-fixed-dim leading-relaxed">
+<span class="material-symbols-outlined text-[14px] align-middle">warning</span>
+会话的 wrist 决定波形符号与正/反手判定，上传前先确认这一项。
+</p>
 <button class="w-full flex items-center justify-center gap-space-xs px-space-md py-2.5 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all" id="uploadBtn">
 <span class="material-symbols-outlined text-[18px]">cloud_upload</span>
 <span>上传并预标注</span>
@@ -162,6 +166,11 @@ Watch 的启发式结果会自动预标注（暗色虚线），标注者只需�
 <span class="font-label-md text-label-md">dataset.csv</span>
 </button>
 </div>
+{#- 标注者名字是保存替换与一致性统计的分组键，就地提醒一次。 -#}
+<p class="font-label-sm text-label-sm text-outline leading-relaxed">
+保存按「标注者」维度整轮替换自己上一轮的结果，不影响他人；因此名字必须是稳定标识，
+不要一次写「老王」一次写「wang」。
+</p>
 
 <!-- 舞台（视频 + 波形 + 标注表，由 JS 渲染） -->
 <div id="stage" class="flex flex-col gap-space-md">
@@ -171,6 +180,258 @@ Watch 的启发式结果会自动预标注（暗色虚线），标注者只需�
 </div>
 </div>
 </section>
+</div>
+
+<!-- ===================== 两条链路（务必区分） ===================== -->
+<div class="scroll-mt-24" id="chains"></div>
+<div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[22px]">account_tree</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">两条链路，务必区分</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">同一批手表数据 · 产物与消费者完全不同</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-4xl">
+本站同时跑着两条链路，最容易混淆的一点是：它们
+<strong class="font-bold text-on-surface">采集的是同一批手表传感器数据</strong>，
+但一条是给人看分析结果、一条是拿去训练模型。看到「球速」「击球数」这类词时，
+先确认说的是哪条链路上的数。
+</p>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-space-sm">
+{% for c in spec.chains %}
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[20px] {{ c.tone }}">{{ c.icon }}</span>
+<span class="font-body-md text-body-md {{ c.tone }} font-bold">{{ c.name }}</span>
+</div>
+<div class="flex flex-col gap-1 mt-1">
+<div class="flex gap-space-xs">
+<span class="font-label-sm text-label-sm text-outline shrink-0 w-14">路径</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ c.route }}</span>
+</div>
+<div class="flex gap-space-xs">
+<span class="font-label-sm text-label-sm text-outline shrink-0 w-14">产物</span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold leading-relaxed">{{ c.product }}</span>
+</div>
+<div class="flex gap-space-xs">
+<span class="font-label-sm text-label-sm text-outline shrink-0 w-14">消费方</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ c.consumer | bold }}</span>
+</div>
+<div class="flex gap-space-xs">
+<span class="font-label-sm text-label-sm text-outline shrink-0 w-14">定义处</span>
+<span class="font-mono text-label-sm text-outline break-all leading-relaxed">{{ c.where }}</span>
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+
+<!-- ===================== 采集到训练的四段链路 ===================== -->
+<div class="scroll-mt-24" id="stages"></div>
+<div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[22px]">model_training</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">训练链的四个环节</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">capture → upload → annotate → train</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-sm">
+{% for s in spec.stages %}
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined {{ 'text-primary-fixed' if loop.first else 'text-outline' }} text-[20px]">{{ s.icon }}</span>
+<span class="font-label-sm text-label-sm text-outline font-bold">{{ s.step }}</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface font-semibold">{{ s.title }}</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ s.body }}</span>
+</div>
+{% endfor %}
+</div>
+</div>
+
+<!-- ===================== 标注状态机 ===================== -->
+<div class="scroll-mt-24" id="state"></div>
+<div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[22px]">toggle_on</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">标注状态机</span>
+</div>
+{#- ⚠️ 这一条是最容易误解的实现细节，写在标题旁而不是正文里，避免被略过。 -#}
+<span class="px-space-xs py-0.5 rounded bg-tertiary-fixed-dim/15 text-tertiary-fixed-dim font-label-sm text-label-sm font-bold">状态由 (标注者, 来源, 状态) 三元组共同决定，不能只看 status</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-4xl">
+一条标注记录落库时的样子，由三个字段一起决定。注意被纠错的记录
+<strong class="font-bold text-on-surface">并没有变成一条「人工新写的」</strong>，
+而是原来那条启发式行被就地改了状态 —— 所以「作者是谁」与「标签是谁给的」是两回事。
+</p>
+<div class="flex flex-col gap-space-sm">
+{% for m in spec.status_machine %}
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col lg:flex-row lg:items-start gap-space-md">
+<div class="flex flex-col gap-space-xs lg:w-[300px] shrink-0">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] {{ m.tone }}">{{ m.icon }}</span>
+<span class="font-body-md text-body-md {{ m.tone }} font-bold">{{ m.label }}</span>
+</div>
+<div class="flex flex-wrap items-center gap-1">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono text-label-sm text-on-surface-variant">annotator=<span class="text-on-surface">{{ m.annotator }}</span></span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono text-label-sm text-on-surface-variant">source=<span class="text-on-surface">{{ m.source }}</span></span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-mono text-label-sm text-on-surface-variant">status=<span class="text-on-surface">{{ m.status }}</span></span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ m.body | bold }}</span>
+</div>
+{% endfor %}
+</div>
+</div>
+
+<!-- ===================== 标注逻辑（规则） ===================== -->
+<div class="scroll-mt-24" id="rules"></div>
+<div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[22px]">rule_settings</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">标注逻辑</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">{{ spec.rules | length }} 条 · 与上面的状态机一一对应</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-space-sm">
+{% for r in spec.rules %}
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] {{ r.tone }}">{{ r.icon }}</span>
+<span class="font-label-sm text-label-sm text-outline font-bold">{{ r.step }}</span>
+<span class="font-body-md text-body-md {{ r.tone }} font-bold">{{ r.title }}</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ r.body | bold }}</span>
+</div>
+{% endfor %}
+</div>
+</div>
+
+<!-- ===================== 作业须知 ===================== -->
+<div class="scroll-mt-24" id="notes"></div>
+<div class="p-space-lg rounded-xl bg-surface-container-low flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-outline">integration_instructions</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">作业须知</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">{{ spec.notes | length }} 条 · 逐条来自真实踩坑</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-space-sm">
+{% for n in spec.notes %}
+<div class="p-space-md rounded-lg bg-surface-container flex flex-col gap-1">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] {{ n.tone }}">{{ n.icon }}</span>
+<span class="font-label-sm text-label-sm {{ n.tone }} font-bold">{{ n.title }}</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ n.body | bold }}</span>
+</div>
+{% endfor %}
+</div>
+</div>
+
+<!-- ===================== 标签空间 ===================== -->
+<div class="scroll-mt-24" id="labels"></div>
+<div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[22px]">label</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">标签空间</span>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">{{ spec.labels | length }} 类标注 · {{ spec.labels | selectattr('baseline') | list | length }} 类进 CoreML 基线</span>
+</div>
+<div class="flex flex-wrap items-center gap-space-xs">
+{% for l in spec.labels %}
+<span class="flex items-center gap-space-xs px-space-md py-2 rounded-xl {{ 'bg-primary-container text-on-primary-fixed' if l.baseline else 'bg-surface-container-low text-on-surface' }}">
+<span class="font-label-md text-label-md font-bold">{{ l.cn }}</span>
+<span class="font-mono text-label-sm {{ 'text-on-primary-container' if l.baseline else 'text-outline' }}">{{ l.key }}</span>
+{% if not l.baseline %}<span class="px-1 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">富标签</span>{% endif %}
+</span>
+{% endfor %}
+</div>
+<p class="font-label-sm text-label-sm text-outline leading-relaxed">{{ spec.label_note }}</p>
+</div>
+
+<!-- ===================== 标注进度 ===================== -->
+<div class="scroll-mt-24" id="progress"></div>
+<div class="rounded-xl bg-surface-container shadow-md overflow-hidden">
+<div class="p-space-lg pb-space-sm flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[22px]">playlist_play</span>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">标注进度</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">最近 {{ progress | length }} 场会话的人工介入情况（预标注需逐条纠错或确认）</span>
+</div>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">{{ ov.sessions_touched }} / {{ ov.sessions }} 场已介入 · 未介入 {{ ov.sessions_pending }} 场</span>
+</div>
+{% if progress %}
+<div class="overflow-x-auto">
+<table class="w-full text-left text-body-md">
+<thead>
+<tr class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider bg-surface-container-low/70">
+<th class="py-space-sm px-space-md whitespace-nowrap">会话</th>
+<th class="py-space-sm px-space-md whitespace-nowrap">学员</th>
+<th class="py-space-sm px-space-md whitespace-nowrap">持拍</th>
+<th class="py-space-sm px-space-md whitespace-nowrap">开始时间</th>
+<th class="py-space-sm px-space-md whitespace-nowrap">时长</th>
+<th class="py-space-sm px-space-md whitespace-nowrap">标注总数</th>
+<th class="py-space-sm px-space-md whitespace-nowrap">待纠错</th>
+<th class="py-space-sm px-space-md whitespace-nowrap">人工标注数</th>
+<th class="py-space-sm px-space-md">人工介入占比</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-high/40">
+{% for s in progress %}
+<tr class="hover:bg-surface-container-high/50 transition-colors">
+<td class="py-space-md px-space-md">
+<span class="font-semibold text-on-surface whitespace-nowrap">{{ s.id }}</span>
+{% if s.has_video %}<span class="ml-1 px-1 rounded bg-secondary/15 text-secondary font-label-sm text-label-sm">有视频</span>{% endif %}
+</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface whitespace-nowrap">{{ s.player_name }}</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">{{ s.wrist }}</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">{{ (s.started_at or '—')[:16] }}</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">{{ s.duration_label }}</td>
+<td class="py-space-md px-space-md font-label-md text-label-md text-on-surface whitespace-nowrap">{{ s.n_total }}</td>
+<td class="py-space-md px-space-md font-label-md text-label-md whitespace-nowrap {{ 'text-tertiary-fixed-dim font-bold' if s.n_proposed else 'text-outline' }}">{{ s.n_proposed }}</td>
+<td class="py-space-md px-space-md font-label-md text-label-md whitespace-nowrap {{ 'text-primary-fixed font-bold' if s.n_human else 'text-outline' }}">{{ s.n_human }}</td>
+<td class="py-space-md px-space-md">
+<div class="flex items-center gap-space-xs">
+<div class="w-24 h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full rounded-full bg-primary-container" style="width: {{ s.progress }}%"></div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">{{ s.progress | int }}%</span>
+</div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{#- ⚠️ 「人工介入占比」= 人工标注行数 / 该场标注总数，只说明动过手，
+    不等于「已标注完成」。这一条是交付时最容易误读的数字，必须就地写清。 -#}
+<p class="px-space-lg pb-space-lg pt-space-sm font-label-sm text-label-sm text-outline leading-relaxed">
+「人工介入占比」是<strong class="font-bold text-on-surface-variant">动过手的比例</strong>，不是完成度：
+未被更正的预标注会被直接当作训练标签导出，所以交付前应当看「待纠错」是否归零。
+</p>
+{% else %}
+<div class="px-space-lg pb-space-lg">
+<div class="py-space-xl rounded-xl border border-dashed border-outline/30 flex flex-col items-center gap-space-xs">
+<span class="material-symbols-outlined text-[32px] text-outline">inbox</span>
+<span class="font-body-md text-body-md text-on-surface-variant">还没有采集到会话</span>
+<span class="font-label-sm text-label-sm text-outline">把手表导出的 raw_*.json 上传到上面的工作台即可开始</span>
+<a class="mt-space-xs flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all" href="#workbench">
+<span class="material-symbols-outlined text-[18px]">upload</span>
+<span>去上传</span>
+</a>
+</div>
+</div>
+{% endif %}
 </div>
 </div>
 

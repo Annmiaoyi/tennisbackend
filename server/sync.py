@@ -40,7 +40,7 @@ SYNCABLE = {
             'name', 'avatar_url', 'avatar_initial', 'tier', 'device_id', 'watch_model',
             'batch', 'years_playing', 'hand', 'backhand', 'racket', 'racket_tension',
             'nt_level', 'nt_score', 'sessions_count', 'hours_total', 'strokes_total',
-            'forehand_avg', 'serve_peak', 'sweet_spot', 'spin_rate', 'hit_rate',
+            'forehand_avg', 'serve_peak', 'hit_rate',
             'training_load', 'acwr', 'last_training_at', 'last_training_note',
             'location', 'is_online',
         ],
@@ -53,7 +53,7 @@ SYNCABLE = {
             'started_at', 'ended_at', 'duration_sec', 'stroke_count', 'rally_max',
             'distance_km', 'calories_kcal', 'avg_hr', 'max_hr', 'avg_speed_kmh',
             'peak_speed_kmh', 'forehand_avg_kmh', 'backhand_avg_kmh', 'serve_avg_kmh',
-            'serve_peak_kmh', 'spin_rpm', 'sweet_spot_rate', 'unforced_errors',
+            'serve_peak_kmh', 'unforced_errors',
             'winners', 'hr_zone', 'notes',
             # 采集侧元数据与击球分项计数（Apple Watch 接入新增）
             'worn_wrist', 'source', 'external_id',
@@ -66,8 +66,7 @@ SYNCABLE = {
         'table': 'stroke_records',
         'fields': [
             'session_id', 'seq_in_session', 'stroke_type', 'is_slice', 'speed_kmh',
-            'spin_rpm', 'spin_type', 'sweet_spot', 'depth_m', 'landing_zone',
-            'lateral_offset_m', 'net_clearance_m', 'impact_ms', 'confidence', 'anomaly',
+            'impact_ms', 'confidence', 'anomaly',
         ],
         'required': ['session_id', 'stroke_type'],
     },

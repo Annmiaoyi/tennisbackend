@@ -306,10 +306,10 @@
 </div>
 <div class="pl-space-xs space-y-1">
 <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">
-            建议训练报告中增加底线切削专项的球速与旋转度统计
+            建议训练报告中增加底线切削专项的球速与击球类型统计
           </h3>
 <p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">
-            当前系统在反手切削（Backhand Slice）时只记录了触球与落点，但切削产生的强烈下旋转速（RPM）和出球弧度对破网战术评估至关重要，希望能以雷达图展示。
+            当前系统在反手切削（Backhand Slice）时只记录了触球与击球类型，但切削的挥拍节奏与出球初速对破网战术评估至关重要，希望能以雷达图展示。
           </p>
 </div>
 <div class="pl-space-xs pt-space-xs flex items-center justify-between text-label-sm font-label-sm text-outline">
@@ -449,7 +449,7 @@
 <div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent"></div>
 <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between text-label-sm font-label-sm">
 <span class="px-2 py-0.5 rounded bg-surface-container/80 backdrop-blur-md text-on-surface font-semibold">
-              高频采样 · 120 FPS 轨迹捕捉
+              高频采样 · 腕部 IMU 逐拍捕捉
             </span>
 <span class="px-2 py-0.5 rounded bg-surface-container/80 backdrop-blur-md text-primary-fixed font-bold">
               反手下旋 (Backhand Slice)
@@ -463,11 +463,11 @@
 <span class="font-headline-sm text-headline-sm text-on-surface font-bold mt-0.5">88 <span class="text-label-sm font-label-sm text-outline font-normal">km/h</span></span>
 </div>
 <div class="flex flex-col">
-<span class="font-label-sm text-label-sm text-outline">切削旋转转速</span>
-<span class="font-headline-sm text-headline-sm text-primary-fixed font-bold mt-0.5">2,140 <span class="text-label-sm font-label-sm text-outline font-normal">RPM</span></span>
+<span class="font-label-sm text-label-sm text-outline">切削击球量占比</span>
+<span class="font-headline-sm text-headline-sm text-primary-fixed font-bold mt-0.5">62 <span class="text-label-sm font-label-sm text-outline font-normal">%</span></span>
 </div>
 <div class="flex flex-col">
-<span class="font-label-sm text-label-sm text-outline">甜区击球率</span>
+<span class="font-label-sm text-label-sm text-outline">击球类型识别置信度</span>
 <span class="font-headline-sm text-headline-sm text-on-surface font-bold mt-0.5">91%</span>
 </div>
 </div>
@@ -513,7 +513,7 @@
 <span class="font-label-sm text-label-sm text-outline">昨天 16:45</span>
 </div>
 <p class="font-body-md text-body-md text-on-surface-variant mt-0.5">
-                算法专家 @Dr. Zhao 确认现有 Apple Watch 陀螺仪采样率已具备切削下旋角度识别精度，可直接调用 IMU Raw Data 输出。
+                算法专家 @Dr. Zhao 确认现有 Apple Watch 陀螺仪采样率已具备切削挥拍模式识别精度，可直接调用 IMU Raw Data 输出。
               </p>
 </div>
 </div>
@@ -540,7 +540,7 @@
 <button class="text-secondary hover:underline">加载回复模板</button>
 </div>
 <div class="relative">
-<textarea class="w-full p-space-sm bg-surface-container-lowest rounded-xl font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary-container resize-none" placeholder="感谢你的建议！切削旋转与球速分析已列入 v2.5 排期..." rows="3"></textarea>
+<textarea class="w-full p-space-sm bg-surface-container-lowest rounded-xl font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary-container resize-none" placeholder="感谢你的建议！切削识别与球速分析已列入 v2.5 排期..." rows="3"></textarea>
 </div>
 <div class="flex items-center justify-between gap-space-sm">
 <label class="flex items-center gap-1.5 text-label-sm font-label-sm text-on-surface-variant cursor-pointer">

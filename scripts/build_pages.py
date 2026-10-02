@@ -26,10 +26,32 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-DESIGN = os.path.join(ROOT, '..', 'stitch_acemate_tennis_tracker_ui',
-                      'stitch_acemate_tennis_tracker_backend', 'stitch_acemate_tennis_tracker_ui')
+sys.path.insert(0, HERE)
+from hardware_gate import scrub as hardware_gate_scrub  # noqa: E402
+
+# 设计稿根目录：优先环境变量 DESIGN_ROOT，其次按已知位置探测。
+# （历史上这里硬编码过 `../stitch_acemate_tennis_tracker_ui/...`，该相对路径在某次
+#  目录搬迁后已失效；现在改成「候选列表 + 明确报错」，避免静默失败。）
+DESIGN_CANDIDATES = [
+    os.environ.get('DESIGN_ROOT', ''),
+    os.path.join(ROOT, '..', 'stitch_acemate_tennis_tracker_ui',
+                 'stitch_acemate_tennis_tracker_backend', 'stitch_acemate_tennis_tracker_ui'),
+    os.path.join(ROOT, '..', '..', 'Resources', 'BTennis', 'stitch_acemate_tennis_tracker_ui',
+                 'stitch_acemate_tennis_tracker_backend', 'stitch_acemate_tennis_tracker_ui'),
+]
 TPL_DIR = os.path.join(ROOT, 'server', 'templates', 'pages')
 IMG_MANIFEST = os.path.join(ROOT, 'web', 'assets', 'img', 'manifest.json')
+
+
+def resolve_design():
+    """返回可用的设计稿根目录；找不到则返回 None。"""
+    for c in DESIGN_CANDIDATES:
+        if c and os.path.isdir(os.path.join(c, '_1')):
+            return os.path.abspath(c)
+    return None
+
+
+DESIGN = None  # 由 main() 通过 resolve_design() 填充
 
 # 设计稿目录 -> (路由名, 页面标题, 导航 data-path)
 PAGES = [
@@ -90,6 +112,9 @@ def build_one(folder, name, title, nav_active, img_map):
 
     stats = {'img': 0}
     inner = localize(inner, img_map, stats)
+    # 硬件准入清洗：把腕上测不到的量（甜区/球旋转/落点/弹道…）从页面主体移除。
+    # 规则见 scripts/hardware_gate.py，幂等，可重复运行。
+    inner, gate_hits = hardware_gate_scrub(name, inner)
 
     extra = ''.join('{%% include "%s" %%}\n' % inc
                     for inc in EXTRA_MAIN.get(name, []))
@@ -106,17 +131,29 @@ def build_one(folder, name, title, nav_active, img_map):
     out = os.path.join(TPL_DIR, name + '.html')
     if '--check' not in sys.argv:
         os.makedirs(TPL_DIR, exist_ok=True)
-        io.open(out, 'w', encoding='utf-8').write(tpl)
+        # 保持与仓库既有约定一致的 CRLF（设计稿是 LF，历史生成结果均为 CRLF）
+        with io.open(out, 'w', encoding='utf-8', newline='\r\n') as fh:
+            fh.write(tpl)
     rel = []
     if stats.get('leftover'):
         rel.append('残留远程图 %d' % len(stats['leftover']))
     if extra:
         rel.append('追加扩展 %d 块' % len(EXTRA_MAIN[name]))
+    if gate_hits:
+        rel.append('硬件准入清洗 %d 处' % sum(n for _, n in gate_hits))
     print('%-10s main=%6d B  本地化图片 %2d  %s' % (name, len(inner), stats['img'], ' '.join(rel)))
     return inner
 
 
 def main():
+    global DESIGN
+    DESIGN = resolve_design()
+    if DESIGN is None:
+        print('❌ 找不到设计稿根目录。请设置环境变量 DESIGN_ROOT 指向包含 _1.._5 的目录，例如：\n'
+              '   DESIGN_ROOT=/path/to/stitch_acemate_tennis_tracker_ui python scripts/build_pages.py\n'
+              '   （只清洗已生成模板可用：python scripts/hardware_gate.py）')
+        return 2
+    print('设计稿：%s' % DESIGN)
     img_map = load_img_map()
     os.makedirs(TPL_DIR, exist_ok=True)
     inners = {}

@@ -38,31 +38,31 @@ STUDENTS = [
     dict(name='张哲恒', initial='张', tier='VIP', device='AC-88204', watch='Watch Ultra 2',
          years='4年', hand='右手', backhand='双反', racket='Wilson Pro Staff 97',
          tension='52 lbs', nt='3.5', score=78.4, sessions=124, hours=142, strokes=48200,
-         forehand=118, serve=168, sweet=74.2, last_at='今天 16:40',
+         forehand=118, serve=168, last_at='今天 16:40',
          last_note='刚结束 · 截击专项', online=1, batch='2024 春季班',
          location='北京 · 朝阳', img='training-b4240d.jpg'),
     dict(name='李思源', initial='李', tier='Club', device='AC-79102', watch='Series 9',
          years='2年', hand='右手', backhand='单反', racket='Babolat Pure Aero',
          tension='50 lbs', nt='3.0', score=69.1, sessions=78, hours=88, strokes=29400,
-         forehand=96, serve=132, sweet=63.8, last_at='昨天 19:15',
+         forehand=96, serve=132, last_at='昨天 19:15',
          last_note='底线对抗训练', online=0, batch='2024 春季班',
          location='上海 · 浦东', img='training-9815c2.jpg'),
     dict(name='陈雨菲', initial='陈', tier='Elite', device='AC-90412', watch='Watch Ultra 2',
          years='6年', hand='左手', backhand='双反', racket='Head Speed MP',
          tension='54 lbs', nt='4.5', score=91.2, sessions=260, hours=310, strokes=112000,
-         forehand=129, serve=179, sweet=82.5, last_at='今天 11:30',
+         forehand=129, serve=179, last_at='今天 11:30',
          last_note='高强度实战对抗', online=1, batch='精英巡回班',
          location='深圳 · 南山', img='personas-50f800.jpg'),
     dict(name='王浩然', initial='王', tier='Pro', device='AC-62310', watch='Series 8',
          years='5年', hand='右手', backhand='双反', racket='Yonex EZONE 98',
          tension='55 lbs', nt='3.5', score=76.8, sessions=110, hours=130, strokes=42100,
-         forehand=112, serve=158, sweet=71.0, last_at='前天 09:20',
-         last_note='发球落点加练', online=1, batch='教练认证班',
+         forehand=112, serve=158, last_at='前天 09:20',
+         last_note='发球专项加练', online=1, batch='教练认证班',
          location='北京 · 海淀', img='feedback-b6f6f8.jpg'),
     dict(name='赵明', initial='赵', tier='Standard', device='AC-51009', watch='SE 2',
          years='1.5年', hand='右手', backhand='双反', racket='Wilson Clash 100',
          tension='48 lbs', nt='2.5', score=54.0, sessions=42, hours=46, strokes=14300,
-         forehand=84, serve=115, sweet=52.4, last_at='3天前 18:00',
+         forehand=84, serve=115, last_at='3天前 18:00',
          last_note='入门多球训练', online=0, batch='新手体验班',
          location='广州 · 天河', img='users-7ee98c.jpg'),
 ]
@@ -72,10 +72,10 @@ STUDENTS = [
 # 反馈工单（内容与设计稿 _5 一致）
 # ===========================================================================
 TICKETS = [
-    dict(code='FB-20241028-09', title='建议训练报告中增加底线切削专项的球速与旋转度统计',
-         body='当前系统在反手切削（Backhand Slice）时只记录了触球与落点，'
-              '但切削产生的强烈下旋转速（RPM）和出球弧度对破网战术评估至关重要，'
-              '希望能以雷达图展示。',
+    dict(code='FB-20241028-09', title='建议训练报告中增加底线切削专项的球速统计',
+         body='当前系统在反手切削（Backhand Slice）时只记录了触球与球速，'
+              '但切削与平击的出球速度差异对破网战术评估至关重要，'
+              '希望能按击球类型分档以雷达图展示。',
          category='功能新增', status='sprint', status_label='已规划至 v2.5', priority='高',
          votes=142, reporter='张哲恒', meta='NTRP 3.5 · Yonex EZONE 98',
          device='3小时前 来自 iPhone 15 Pro', roadmap='已规划至 v2.5', source='iOS App',
@@ -101,8 +101,8 @@ TICKETS = [
          votes=88, reporter='Carlos 教练', meta='认证巡回赛教练 · Head Speed Pro',
          device='2天前 来自 Web 教练控制台', roadmap='Sprint 24B', source='Web Console',
          occurred_at='2024-10-26T06:00:00.000Z'),
-    dict(code='FB-20241025-07', title='雨后潮湿人造草地球场的反弹球速测量补偿',
-         body='湿地球弹起偏低滑行长，AI 视觉预测落点深度有约 15cm 的系统偏差，'
+    dict(code='FB-20241025-07', title='雨后潮湿人造草地球场的击球球速估计补偿',
+         body='湿地球弹起偏低滑行长，击球球速估计的系统偏差明显增大，'
               '希望加入场地湿度补偿模型。',
          category='算法优化', status='triage', status_label='算法组验证', priority='中',
          votes=61, reporter='杭州聚星俱乐部', meta='14 场关联日志',
@@ -118,9 +118,9 @@ SEGMENTS = [
     dict(code='ARCHETYPE 01', name='底线进攻型重炮手', name_en='Baseline Power Attacker',
          subtitle='正手主导型', headcount=14650, share=34.2, nt_range='NTRP 2.5 - 4.5',
          color='#c3f400', sort=1,
-         description='正手攻击占比超过 60%，以高转速上旋球压制对手底线，'
+         description='正手攻击占比超过 60%，以正手强攻压制对手底线，'
                      '平均发球时速 152 km/h，偏好硬地与红土场。',
-         metrics={'主武器': '正手 INSIDE-OUT', '发球均速': 152, '正手转速': 2850,
+         metrics={'主武器': '正手 INSIDE-OUT', '发球均速': 152, '正手均速': 122,
                   '场地偏好': '硬地 / 红土'},
          insight='正手击球占比 +20%，下压网球 38 次/100 拍，非受迫性失误率 12.4%。'),
     dict(code='ARCHETYPE 02', name='稳定防守反击型', name_en='Counter-Puncher / Grinder',
@@ -130,7 +130,7 @@ SEGMENTS = [
                      '依赖对手失误与突然变线，多拍能力突出。',
          metrics={'主武器': '双手反拍直线', '发球均速': 138, '平均回合': 9.4,
                   '场地偏好': '慢速硬地'},
-         insight='8 拍以上相持胜率 61%，反手防守切削落点深区率 71%。'),
+         insight='8 拍以上相持胜率 61%，长回合中段的击球质量保持稳定。'),
     dict(code='ARCHETYPE 03', name='全能进攻与发球上网', name_en='All-Court / Serve & Volley',
          subtitle='发球局主导型', headcount=7750, share=18.1, nt_range='NTRP 3.5 - 5.0',
          color='#ffb783', sort=3,
@@ -208,7 +208,7 @@ def build_metrics():
 
     m['live_sessions'] = [
         dict(name='林浩 (Kevin)', place='北京国家网球中心 · 场地 3', metric='148 拍 · 42min',
-             note='正手上旋 128km/h', tone='primary', avatar='dashboard-2fe75d.jpg'),
+             note='正手 128km/h', tone='primary', avatar='dashboard-2fe75d.jpg'),
         dict(name='Sarah Jenkins', place='上海仙霞网球中心 · 室内 1', metric='312 拍 · 1h 15m',
              note='发球均速 156km/h', tone='secondary', avatar='avatar-female-player.jpg'),
         dict(name='陈柏言', place='深圳湾体育中心 · 室外 4', metric='88 拍 · 18min',
@@ -216,7 +216,7 @@ def build_metrics():
         dict(name='Matteo Rossi', place='广州天河网球场 · 红土 2', metric='420 拍 · 58min',
              note='心率 168 bpm 🔥', tone='tertiary', initial='MR'),
         dict(name='周芷晴', place='杭州黄龙体育馆 · 室内 6', metric='205 拍 · 35min',
-             note='甜区命中率 81%', tone='primary', initial='周'),
+             note='最长相持 14 拍', tone='primary', initial='周'),
     ]
 
     m['ntrp_distribution'] = [
@@ -231,29 +231,29 @@ def build_metrics():
     m['ntrp_insight'] = {
         'kicker': '分群核心洞察',
         'title': 'NTRP 3.0+ 学员单周连线频次高达 4.2 次',
-        'body': '高阶球员重点沉浸在击球出球初速、落点深度及上旋 RPM 指标分析。',
+        'body': '高阶球员重点沉浸在击球出球初速、击球量与心率负荷指标分析。',
     }
 
     m['feedback_digest'] = [
         dict(category='功能新增', title='希望增加底线反手切削 (Slice) 专项训练模式',
-             body='“目前算法把强力切削误判成了平击防守球，希望能提供单独的切削下旋转速与滞空弧线分析。”',
+             body='“目前算法把强力切削误判成了平击防守球，希望能提供单独的切削球速与手腕角速度分析。”',
              status='排期评审中', status_tone='plain',
              meta='反馈人: 顾教练 (NTRP 4.5) · 32 位学员附议', time='2 小时前',
              category_tone='primary'),
-        dict(category='硬件交互', title='Apple Watch 击球甜区振动反馈可否自定义档位？',
-             body='“打多球时默认触觉振动稍弱，在手汗较多或移动急促时容易漏掉未打正甜区的提醒。”',
+        dict(category='硬件交互', title='Apple Watch 击球强度振动反馈可否自定义档位？',
+             body='“打多球时默认触觉振动稍弱，在手汗较多或移动急促时容易漏掉击球强度提醒。”',
              status='v2.5 灰度中', status_tone='accent',
              meta='反馈人: Michael L. · 89 位学员附议', time='5 小时前',
              category_tone='secondary'),
         dict(category='算法优化', title='雨后潮湿人造草地球场的反弹球速测量补偿',
-             body='“湿地球弹起偏低滑行长，AI 视觉预测落点深度有约 15cm 的系统偏差。”',
+             body='“湿地球弹起偏低滑行长，击球球速估计的系统偏差明显增大。”',
              status='算法组验证', status_tone='plain',
              meta='反馈人: 杭州聚星俱乐部 · 14 场关联日志', time='昨天 18:40',
              category_tone='tertiary'),
     ]
     m['feedback_hot_tags'] = [dict(tag='#切削识别', count=42),
                               dict(tag='#Watch振动', count=29),
-                              dict(tag='#甜区提示音', count=18)]
+                              dict(tag='#击球提示音', count=18)]
     m['feedback_positive_rate'] = '正面评价 94.2%'
 
     # ---------------- 反馈中心（_5） ----------------
@@ -293,38 +293,38 @@ def build_metrics():
              title='产品 @ Elena 评审通过 · 列入 v2.5 切削专项数据维度扩展需求',
              meta='Grooming 会'),
         dict(day='算法可行性评估', time='昨天 16:45', tone='secondary',
-             title='算法专家 @ Dr. Zhao 确认现有 Apple Watch 陀螺仪采样率已具备切削下旋角度识别精度，可直接调用 IMU Raw Data 输出。',
+             title='算法专家 @ Dr. Zhao 确认现有 Apple Watch 陀螺仪采样率已具备手腕角速度捕捉精度，可直接调用 IMU Raw Data 输出。',
              meta='算法评审'),
         dict(day='工程启动与排期意见', time='昨天 09:12', tone='tertiary',
              title='NLP 引擎已从 iOS 客户端闭环结果写入「切削数据维度扩展」需求池。',
              meta='工程评估'),
         dict(day='反馈推送 / Push 设置提醒', time='', tone='primary',
-             title='感谢你的建议！切削旋转与球速分析已列入 v2.5 排期。',
+             title='感谢你的建议！切削球速分析已列入 v2.5 排期。',
              meta='Push 通知'),
     ]
     m['feedback_nextgen'] = {
         'code': 'Session #TR-8821', 'title': '关联会话数据快照',
         'angle_note': '当前拍摄动态', 'fps': '120 FPS',
         'stroke_label': '反手一刀 (Backhand Slice)',
-        'metrics': [dict(label='球拍平均垂直', value='88', unit='km/h'),
-                    dict(label='切削球旋转', value='2,140', unit='RPM'),
-                    dict(label='旋转变化率', value='91', unit='%')],
+        'metrics': [dict(label='切削出球球速', value='88', unit='km/h'),
+                    dict(label='手腕角速度峰值', value='2,140', unit='°/s'),
+                    dict(label='击球节奏稳定度', value='91', unit='%')],
         'engine': '算法模型特征', 'engine_value': 'CoreML-Tennis-v4.2.1',
     }
 
     # ---------------- 训练对比（_2） ----------------
-    m['ntrp_benchmark'] = dict(level='3.5', sample=14890, avg_speed=148, sweet='68.2',
+    m['ntrp_benchmark'] = dict(level='3.5', sample=14890, avg_speed=148,
                                version='v4.2.8 Standard')
     m['ai_diagnosis'] = {
         'confidence': '96.4%',
         'text': ('张哲恒 具有显著更强的主动进攻终结能力（正手进攻平均球速高出李思源 10 km/h，'
                  '发球制胜分率高出同段位标杆 24%）；但在超过 8 拍以上 的多拍相持对抗中，'
                  '李思源 展现出更高的战术耐心，非受迫性失误率比张哲恒低 18%，'
-                 '反手防守切削落点深区率达到 71%。'),
+                 '多拍相持中的击球质量更稳定。'),
     }
     m['compare_speed_bars'] = [
         dict(label='一发最高速 (First Serve)', value=176, unit='km/h', pct=95, tone='primary'),
-        dict(label='正手上旋球均速 (Forehand)', value=122, unit='km/h', pct=78, tone='primary'),
+        dict(label='正手球均速 (Forehand)', value=122, unit='km/h', pct=78, tone='primary'),
         dict(label='反手平击与推挡 (Backhand Drive)', value=98, unit='km/h', pct=62,
              tone='secondary'),
         dict(label='网前截击出球速度 (Net Volley)', value=84, unit='km/h', pct=48,
@@ -335,17 +335,20 @@ def build_metrics():
     m['multi_rally'] = dict(
         hr_avg=158, hr_max=144, delta='-24 vs 第 7 拍', first='第 7 拍', second='第 13 拍',
         note='8 拍以上相持得分率显著下降，体能拐点出现在第 9 拍（历时 4 分钟以上重相持）')
-    m['compare_landing_quadrant'] = dict(deep=84.2, mid=60.1)
+    # 硬件准入：原先的 spin（球旋转）列不可测，已换成 A/B 双方「得分 / 均速」与最长相持。
     m['training_history'] = [
         dict(date='2024-10-24', time='16:30', location='北京·朝阳红土场', type='高强度实战对抗',
-             strokes='7 | 114', spin='5 | 116', avg_hr='14 拍', note='背靠背5盘2.5分钟',
-             verdict='张哲恒 以绝对上旋多拍 2 记多角 ACE 优势取胜。'),
+             a_score='7', a_speed=124, b_score='5', b_speed=114, rally='14 拍',
+             note='背靠背5盘2.5分钟',
+             verdict='张哲恒 抢七发球连续 2 记外角 ACE 终结比赛。'),
         dict(date='2024-10-18', time='19:00', location='上海·浦东', type='底线多球与切削',
-             strokes='4 | 118', spin='6 | 118', avg_hr='22 拍', note='红土场连续多拍训练, 多拍稳定性提升',
-             verdict='红土场连续多拍训练，多拍稳定性提升。'),
-        dict(date='2024-10-12', time='10:15', location='深圳·南山', type='巡练专项',
-             strokes='92 | 输入', spin='95 | 输入', avg_hr='—', note='高速力集中力强度',
-             verdict='高密地力集中力强度，力争出主要竞优势。'),
+             a_score='4', a_speed=118, b_score='6', b_speed=116, rally='22 拍',
+             note='红土场连续多拍训练, 多拍稳定性提升',
+             verdict='红土降速后多拍相持拉长，李思源反手深球致胜。'),
+        dict(date='2024-10-12', time='10:15', location='深圳·南山', type='定点标定训练',
+             a_score='92%', a_speed=126, b_score='96%', b_speed=113, rally='—',
+             note='定点喂球测试',
+             verdict='张哲恒爆发力更强，李思源多拍相持更稳。'),
     ]
     m['training_history_total'] = 88
 
@@ -370,24 +373,21 @@ def build_metrics():
     }
     m['persona_spotlight'] = dict(
         name='张哲恒 (Alex Zhang)', meta='VIP · 4 年球龄 · 球龄 3.5 年 · 项目',
-        tags=['物理量大球龄', '发力小于大上旋', '手大于发力 1.5 的', '力量偏好于上旋',
+        tags=['物理量大球龄', '力量型打法', '发球强攻偏好', '正手主导进攻',
               '当前排名与年龄'],
-        nt='4.5', serves='128', forehand='128', backhand='82', spin='2,850', court='红土硬地')
+        nt='4.5', serves='128', forehand='128', backhand='82', court='红土硬地')
     m['persona_recommendations'] = [
         dict(title='推荐专注于拓展数据 API 接及 1.0', body='帮助张哲恒进行数据 API 接及 1.0',
              tag='接口优先级', tone='primary'),
         dict(title='品牌信息与广告对齐', body='帮助更高效率与数据对齐', tag='品牌', tone='plain'),
         dict(title='关注硬地场景', body='数据可视化与反馈场景更优', tag='场景', tone='plain'),
     ]
+    # 硬件准入：球旋转（spin/spin_zone）与甜区（sweet）不可测，已移除，只留可得的速度/负荷。
     m['persona_comparison'] = [
-        dict(name='底线进攻型重炮手', nt='3.0 / 3.8', speed=152, spin=2850, spin_zone='Zone 3',
-             sweet='98 - 100', hr='94.2%', tone='primary'),
-        dict(name='稳定防守反击型', nt='4.1 / 5.2', speed=138, spin=2620, spin_zone='Zone 4',
-             sweet='100 - 50', hr='88.6%', tone='secondary'),
-        dict(name='全能进攻与跑动', nt='4.2 / 5.4', speed=168, spin=2310, spin_zone='Zone 5',
-             sweet='0 - 95', hr='87.1%', tone='tertiary'),
-        dict(name='休闲健身与进阶', nt='2.3 / 5.7', speed=118, spin=1480, spin_zone='Zone 2',
-             sweet='0 - 70', hr='68.5%', tone='error'),
+        dict(name='底线进攻型重炮手', nt='3.0 / 3.8', speed=152, hr='94.2%', tone='primary'),
+        dict(name='稳定防守反击型', nt='4.1 / 5.2', speed=138, hr='88.6%', tone='secondary'),
+        dict(name='全能进攻与跑动', nt='4.2 / 5.4', speed=168, hr='87.1%', tone='tertiary'),
+        dict(name='休闲健身与进阶', nt='2.3 / 5.7', speed=118, hr='68.5%', tone='error'),
     ]
 
     return m
@@ -428,7 +428,7 @@ def build_sessions(student_id, user_id, student_name, seed):
         strokes = rnd.randint(60, 420)
         stype = rnd.choice(['drill', 'match', 'rally', 'serve'])
         title = {'drill': '截击专项', 'match': '高强度实战对抗',
-                 'rally': '底线对抗训练', 'serve': '发球落点加练'}[stype]
+                 'rally': '底线对抗训练', 'serve': '发球专项加练'}[stype]
         court = rnd.choice(['hard', 'clay', 'indoor'])
         loc = rnd.choice(['北京国家网球中心', '上海仙霞网球中心', '深圳湾体育中心',
                           '广州天河网球场', '杭州黄龙体育馆'])
@@ -457,8 +457,9 @@ def build_sessions(student_id, user_id, student_name, seed):
             backhand_avg_kmh=round(fore * rnd.uniform(0.76, 0.9), 1),
             serve_avg_kmh=round(serve * rnd.uniform(0.85, 0.95), 1),
             serve_peak_kmh=round(serve, 1),
-            spin_rpm=rnd.randint(1200, 3100),
-            sweet_spot_rate=round(rnd.uniform(52, 84), 1),
+            # 硬件准入（2026-10-02）：spin_rpm / sweet_spot_rate 需要拍面传感器或
+            # 球的高速视觉轨迹，腕部单点 IMU 测不到 —— 不再写入（列暂留，恒为 NULL）。
+            # 详见 server/datasources.py 的 REMOVED 与 /settings#removed。
             unforced_errors=rnd.randint(4, 32), winners=rnd.randint(3, 28),
             hr_zone=json.dumps({'zone1': 12, 'zone2': 26, 'zone3': 38, 'zone4': 19,
                                 'zone5': 5}, ensure_ascii=False),
@@ -485,13 +486,10 @@ def build_strokes(sessions, user_id, seed, per_session=12):
                 id='str-%s-%03d' % (s['id'][5:20], k),
                 user_id=user_id, session_id=s['id'], seq_in_session=k + 1,
                 stroke_type=st, is_slice=1 if st == 'slice' else 0,
-                speed_kmh=round(speed, 1), spin_rpm=rnd.randint(900, 3400),
-                spin_type=rnd.choice(['top', 'back', 'flat']),
-                sweet_spot=1 if rnd.random() < (s['sweet_spot_rate'] or 70) / 100 else 0,
-                depth_m=round(rnd.uniform(2.0, 7.4), 2),
-                landing_zone=rnd.choice(['deep', 'mid', 'short']),
-                lateral_offset_m=round(rnd.uniform(-2.4, 2.4), 2),
-                net_clearance_m=round(rnd.uniform(0.2, 1.8), 2),
+                speed_kmh=round(speed, 1),
+                # 硬件准入（2026-10-02）：spin_rpm / spin_type / sweet_spot / depth_m /
+                # landing_zone / lateral_offset_m / net_clearance_m
+                # 全部需要拍面传感器或球的飞行轨迹，腕上测不到 —— 不再写入。
                 impact_ms=int(1000 * (k + 1) * rnd.uniform(8, 20)),
                 confidence=round(rnd.uniform(0.82, 0.99), 3),
                 anomaly=1 if rnd.random() < 0.004 else 0,
@@ -541,7 +539,9 @@ def run(force=False, user_id='u_demo'):
             racket_tension=s['tension'], nt_level=s['nt'], nt_score=s['score'],
             sessions_count=s['sessions'], hours_total=s['hours'],
             strokes_total=s['strokes'], forehand_avg=s['forehand'],
-            serve_peak=s['serve'], sweet_spot=s['sweet'], spin_rate=2850,
+            serve_peak=s['serve'],
+            # 硬件准入（2026-10-02）：sweet_spot / spin_rate 需要拍面传感器，
+            # 腕部单点 IMU 测不到 —— 不再写入（列暂留，恒为 NULL）。
             hit_rate=round(80 + i * 2.1, 1), training_load='Optimal', acwr=1.12,
             last_training_at=s['last_at'], last_training_note=s['last_note'],
             location=s['location'], is_online=s['online'],
@@ -575,12 +575,13 @@ def run(force=False, user_id='u_demo'):
         _insert(conn, 'persona_segments', row)
 
     # ---- NTRP 基准 ----
-    for lv, speed, sweet in (('2.5', 128, 58.4), ('3.0', 138, 63.8), ('3.5', 148, 68.2),
-                             ('4.0', 158, 72.6), ('4.5', 166, 77.1)):
+    # 硬件准入（2026-10-02）：sweet_spot_rate / spin_rpm 需拍面传感器，不再写入
+    #（列暂留、恒为 NULL），只保留球速类标杆值。
+    for lv, speed in (('2.5', 128), ('3.0', 138), ('3.5', 148), ('4.0', 158), ('4.5', 166)):
         row = _base('system', ts)
         row.update(dict(id='bm-%s' % lv, level=lv, sample_size=14890,
-                        avg_speed_kmh=speed, sweet_spot_rate=sweet,
-                        forehand_kmh=speed - 26, serve_kmh=speed + 20, spin_rpm=2620,
+                        avg_speed_kmh=speed,
+                        forehand_kmh=speed - 26, serve_kmh=speed + 20,
                         algorithm_version='v4.2.8 Standard'))
         _insert(conn, 'nt_benchmarks', row)
 

@@ -113,12 +113,31 @@ Base URL：`http://127.0.0.1:8787`
 | `sync` | `server_cursor`、`operations.{applied,duplicate,conflict_lost,rejected}`、`entities.{<type>.{live,tombstone}}` |
 | `entity_desc` | 4 个可同步实体的中文说明 |
 | `devices` / `protocols` | 硬件接入与 6 条协议说明（展示用） |
-| `ds` | Apple Watch 训练数据源目录（`pipeline` / `gates` / `groups` / `summary`），与 `GET /api/datasources` 同一份事实源 |
-| `annot` | 「数据采集与标注」区块的总览数字，与 `GET /api/annotation/overview` 同一份事实源 |
-| `annot_sessions` | 该区块的标注进度表（最近 8 场），字段同 `sessions[]` |
+| `ds` | Apple Watch 训练数据源目录（`pipeline` / `gates` / `notes` / `audit` / `groups` / `summary`），与 `GET /api/datasources` 同一份事实源 |
+| `annot_pointer` | 「数据采集与标注」**入口块**的两个计数（`sessions` / `heuristic_proposed`），与 `GET /api/annotation/overview` 同一份事实源 |
 
-`/annotation`（数据采集与标注工作台）额外注入 `ov`（总览），
+> ⚠️ **`/settings` 不再注入 `annot` / `annot_sessions`**（2026-10-01 起）。
+> 原先本页把「数据采集与标注」整块渲染了一遍（概览数字 + 四段链路 + 进度表 + 标注口径），
+> 与 `/annotation` 完全重复，且两处各自查库、口径容易慢慢漂移。
+> 现在标注相关内容**只有 `/annotation` 一个出口**，本页只留一条带待办计数的入口块
+> （`id="annotation-panel"`）。改标注文案请改 `server/annotation/stats.py`，不要在本页再加一份。
+
+`/annotation`（数据采集与标注工作台，**这件事的唯一出口**）额外注入：
+
+| 变量 | 说明 |
+|---|---|
+| `ov` | 总览数字，同 `GET /api/annotation/overview` 的 `overview` |
+| `spec` | 标注规范（唯一真源，见 `server/annotation/stats.py`）：`chains`（分析链 vs 训练链对照）/ `stages`（四段链路）/ `status_machine`（4 个状态）/ `rules`（5 条标注逻辑）/ `notes`（8 条作业须知）/ `labels`（8 类标签 + 哪 5 类进 CoreML 基线）/ `label_note` |
+| `progress` | 标注进度表，最近 12 场（`limit=12`），字段同 `sessions[]` |
+
 页面脚本 `/assets/js/annotation.js` 从同源相对路径调下面 §2.13 的接口。
+两个页面都带**页内锚点跳转带**（`#workbench` / `#chains` / `#state` / `#rules` / `#notes` / `#labels` / `#progress`；
+`/settings` 侧为 `#sync` / `#protocol` / `#audit` / `#pipeline` / `#gates` / `#catalog` / `#acq-notes` / `#annotation-panel`），
+落点用 `<div class="scroll-mt-24" id="...">` 提供。
+
+长文案里的 `**强调**` 由 Jinja 过滤器 `bold`（注册于 `server/routers/pages.py`）渲染成 `<strong>`；
+新增展示这些长文案的列时记得挂 `| bold`，否则页面上会原样露出两对星号。
+`scripts/verify_annotation_pages.py` 会断言渲染结果里没有残留的 `**`。
 
 ### `/training` 的查询参数（新增）
 
@@ -194,7 +213,7 @@ GET /api/students/{student_id}
 
 响应：`{student, stats, recent_sessions[≤20]}`
 
-- `stats`：`sessions` / `strokes` / `seconds` / `serve_peak` / `forehand_avg` / `sweet_spot`
+- `stats`：`sessions` / `strokes` / `seconds` / `serve_peak` / `forehand_avg`
 - `recent_sessions`：按 `started_at DESC`
 - 学员不存在或已软删除 → **404**
 
@@ -210,7 +229,9 @@ GET /api/training/compare?a=&b=&level=3.5
 | `level` | 对比基准 NTRP 档位 |
 
 响应：`{players[], level, benchmark, diagnosis, radar, speed_bars, multi_rally,
-landing_quadrant, history[], history_total}`
+history[], history_total}`
+
+> 硬件准入（2026-10-02）：原 `landing_quadrant`（落点象限）已移除 —— 需球的飞行轨迹。
 
 ## 2.5 训练会话列表
 
@@ -236,7 +257,7 @@ GET /api/training/sessions/{session_id}/strokes?limit=500
 {
   "session":  { "...": "会话对象（**未**过滤 deleted_at，历史数据）" },
   "count":    386,
-  "by_type":  [ {"stroke_type":"forehand","n":210,"avg_speed":112.3,"avg_spin":2850,"sweet":168} ],
+  "by_type":  [ {"stroke_type":"forehand","n":210,"avg_speed":112.3,"peak_speed":120.1} ],
   "strokes":  [ "...", "按 seq_in_session 升序" ]
 }
 ```
@@ -259,7 +280,7 @@ GET /api/training/student-analysis?student=stu-00001001&from=2026-09-15&to=2026-
 响应：`{student, range, kpi[], mix[], total_strokes, sessions[], totals,
 insights[], tags[], peer, headline, benchmark, empty, empty_hint}`
 
-- `kpi[]` 8 张卡：场次 / 时长 / 击球量 / 消耗 / 发球最高速 / 正反手均速 / 甜区率 / 心率
+- `kpi[]` 7 张卡：场次 / 时长 / 击球量 / 消耗 / 发球最高速 / 正反手均速 / 心率
 - `sessions[]` 逐场明细，每场带格式化字段与 `mix`（该场击球构成）
 - `insights[]` 规则引擎产出的技术分析条目：`{tone: good|warn|info, icon, title, body}`
 - `peer` = `{total, serve_rank}`，该学员在区间内发球最高速榜的位置
@@ -280,7 +301,7 @@ GET /api/training/leaderboards?range=30&metric=slice&full=true
 |---|---|---|
 | `range` / `from` / `to` | `30` | 同 2.7 |
 | `student` | — | 高亮该学员在榜中的位置（`it.selected`） |
-| `metric` | 有数据的第一个 | `serve`\|`overall`\|`forehand`\|`backhand`\|`slice`\|`stroke_count`\|`duration`\|`calories`\|`sweet_spot`\|`avg_hr` |
+| `metric` | 有数据的第一个 | `serve`\|`overall`\|`forehand`\|`backhand`\|`slice`\|`stroke_count`\|`duration`\|`calories`\|`avg_hr` |
 | `full` | `false` | `true` 时额外返回 `matrix_rows`（全指标矩阵，体积较大） |
 
 响应：`{range, students[], metrics[], matrix_rows[], metric_tabs[], active,
@@ -293,7 +314,7 @@ value, display, n, pct, selected}`。
 
 | 口径 | 适用指标 | 说明 |
 |---|---|---|
-| **会话汇总** | 发球 / 整体 / 正手 / 反手球速，以及击球量 / 时长 / 消耗 / 甜区 / 心率 | 取自 `training_sessions` 的会话字段，即手表对**整场**的统计。无抽样偏差，每条记录齐全 |
+| **会话汇总** | 发球 / 整体 / 正手 / 反手球速，以及击球量 / 时长 / 消耗 / 心率 | 取自 `training_sessions` 的会话字段，即手表对**整场**的统计。无抽样偏差，每条记录齐全 |
 | **逐拍抽样** | 切削球速 | `stroke_records` 在库中是**抽样存储**（实测一场十几条，并非该场全部击球）。会话表没有切削列，只能用样本 —— 因此它的峰值会系统性低于真实峰值，界面上必须标注样本量 |
 
 **最大值 / 平均值 的定义**：最大值 = 该学员在区间内最好一场的该指标；
@@ -306,20 +327,52 @@ value, display, n, pct, selected}`。
 GET /api/datasources
 ```
 
-响应：`{pipeline[], gates[], groups[], summary}`
+响应：`{pipeline[], gates[], notes[], audit, groups[], summary}`
 
 - `pipeline[]` 采集链路 5 步（Watch 采集 → iPhone 识别 → 本地门禁 → 离线同步 → 后端聚合）
 - `gates[]` 6 道质量门禁（值域 / 配平 / 置信度 / 传感器 / 突变 / 交叉）
-- `groups[]` 5 个分组共 **51 个字段**，每个字段带
-  `field / key / unit / source / acquire / judge / required / sync / sync_meta`
+- `notes[]` 8 条**接入作业须知**（字段名=列名 / 缺失≠0 / 分母别用错 / 腕别决定符号 / 时基统一 /
+  幂等键 / 跨算法版本不可比 / 敏感数据不出设备），每项 `{tone, icon, title, body}`
+- `audit` 目录**核查结论**：`{date, baseline, before_fields, after_fields, findings[]}`，
+  每条 `findings` 为 `{level, title, body}`，`level ∈ fix | add | warn`。
+  这是 2026-10-01 全量比对 `schema.sql` / `analytics.py` / 各接口 / 全部页面模板后的结论，
+  **不是文档描述，是实测**；页面上按 `fix → 已订正` / `add → 已补充` / 其它 → `需注意` 渲染
+- `groups[]` 6 个分组共 **62 个字段**，每个字段带**八个**属性：
+
+  | 属性 | 含义 |
+  |---|---|
+  | `field` / `key` / `unit` | 中文名 / 数据库列名（白名单键） / 单位 |
+  | `source` | 采集来源（哪个框架 / 手表哪一路） |
+  | `acquire` | 获取方式（怎么取到） |
+  | `compute` | **采集后怎么算**（公式 / 聚合口径 / 是否原值透传） |
+  | `artifact` | **算完变成什么**（落哪张表哪一列 / 派生量 / 不落库） |
+  | `judge` | 判定规则（有效性门槛） |
+  | `surface` | **在训练分析里的哪个位置展示**（页面 › 区块 › 元素） |
+  | `required` / `sync` / `sync_meta` | 是否必填 / 上行目标 / 标签与提示 |
+  | `shown` | `surface` 是否**实测**过（`false` = 已定义口径但当前界面看不到） |
+  | `pending` | 非空表示「口径已定、后端尚未落地」的具体缺口 |
+
+  分组：训练元数据(13) / **整场球质汇总（会话级）(8)** / 击球识别与球质（逐拍抽样）(19) /
+  生理与恢复(10) / 环境与位置(5) / 设备与数据质量(7)。
 - `summary` = `{total_groups, total_fields, required_fields, session_fields,
-  stroke_fields, derive_fields, local_fields, gates, frameworks}`
+  stroke_fields, derive_fields, local_fields, shown_fields, hidden_fields,
+  pending_fields, gates, notes, frameworks}`
 
 `sync` 取值：`session`（写 `training_sessions`）/ `stroke`（写 `stroke_records`）/
 `derive`（后端现算不落库）/ `local`（隐私或体量原因不上行）。
 
+> ⚠️ **两条链路别看混**：本目录描述的是**分析链**（`server/datasources.py` 的 `PIPELINE`）——
+> 产物是 `training_sessions` + `stroke_records`，用于训练分析与排行。
+> 还有一条**训练链**（采集原始会话 → 人工标注 → 导出 CoreML 训练集），
+> 定义在 `server/annotation/stats.py` 的 `STAGES`，两条链路共用同一批手表传感器数据。
+> `/api/annotation/overview` 的 `chains` 字段给出逐项对照。
+
 > ⚠️ 字段名必须与数据库列名一致。客户端上行字段走白名单校验，未登记字段直接
 > `rejected`，不做静默丢弃。**缺失一律留空，严禁填 0。**
+>
+> ⚠️ **分母别用错**：`stroke_count` 是手表统计的**完整击球总数**，而 `stroke_records`
+> 是**抽样存储**（一场约 10~20 条）。算构成占比必须用逐拍样本数作分母，
+> 拿样本数除总数会得出「发球占 0.8%」这种错得离谱的结果。
 
 ## 2.10 用户画像
 
@@ -426,6 +479,17 @@ GET  /api/ingest/sessions?source=netpulse_watch&limit=50
 | GET | `/api/sessions/{sid}/export/annotation.json` | 单场导出（匹配后的标签） |
 | GET | `/api/export/annotation.json` | 全库标注导出 |
 | GET | `/api/export/dataset.csv` | **训练集**：38 维特征 + `label`，共 39 列 |
+
+**原始包的三级解析（`converter.load_raw_payload`）** —— 波形接口与训练集导出**共用同一个函数**：
+
+1. L0 原始层按 `raw_id` 取（2026-09-29 起的权威来源，内容寻址、只追加、可重放）；
+2. 会话表上的 `raw_path`（迁移期旧数据没有 `raw_id`，靠它兜底）；
+3. `var/raw/files/raw_<sid>.json` 这个更早的命名约定。
+
+> ⚠️ **不要在这里另写一套解析。** 这两条路径原先各有一份实现，`get_samples` 改用 L0 之后
+> `build_dataset` 没跟上，于是出现「波形画得出来、点导出却 `404 no annotated samples`」
+> 这种自相矛盾的现象，而且两端都不报错 —— 只能靠人肉对日志才发现。
+> 收敛成 `load_raw_payload` 一处后不会再漂移。
 | GET | `/api/annotation/overview` | 管理站用的聚合：总览 + `sessions[]`（`limit` 默认 50） |
 
 ### 标签空间（**刻意与展示层不同**）

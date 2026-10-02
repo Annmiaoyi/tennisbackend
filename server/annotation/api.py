@@ -33,7 +33,8 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 
-from .converter import MATCH_TOL, build_dataset, compute_consistency, export_annotation_json
+from .converter import (MATCH_TOL, build_dataset, compute_consistency,
+                        export_annotation_json, load_raw_payload)
 from .db import DATA_DIR, VIDEO_DIR, get_conn
 from .schemas import AnnotationSave, SessionMeta
 from .. import rawstore
@@ -192,21 +193,18 @@ def get_session(sid: str):
 def get_samples(sid: str, downsample: int = Query(60, ge=10, le=400)):
     conn = get_conn()
     r = _session_row(conn, sid)
-    conn.close()
     if not r:
+        conn.close()
         raise HTTPException(404, "session not found")
 
-    # 正文一律从 L0 原始层取（`raw_id` 是权威指针，`raw_path` 只是路径缓存）。
-    # 显式指定 shape='raw_package' —— 该形态才带 samples 波形；若不指定，
-    # 同一会话若也被 App 以 match_session 形态上传过，可能取到没有波形的那一份。
-    # 旧数据没有 raw_id 时回落到 raw_path，保证迁移期不中断。
-    raw = rawstore.payload_of(sid, shape=rawstore.SHAPE_RAW_PACKAGE) if r["raw_id"] else None
+    # 原始包一律经 converter.load_raw_payload 解析（raw_id → raw_path → 历史路径）。
+    # 以前这里自己写了一套解析、与导出训练集那套是两份实现，已经漂移过一次：
+    # 波形画得出来、导出却 404。收敛成一处后不会再出现这种自相矛盾。
+    raw = load_raw_payload(conn, sid)
+    conn.close()
     if raw is None:
-        raw_path = r["raw_path"]
-        if not raw_path or not os.path.exists(raw_path):
-            raise HTTPException(404, "raw file missing")
-        with open(raw_path) as f:
-            raw = json.load(f)
+        raise HTTPException(404, "raw file missing")
+
     samples = raw.get("samples", [])
     if not samples:
         return {"count": 0, "duration": 0, "channels": []}

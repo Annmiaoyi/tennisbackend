@@ -351,7 +351,7 @@ Apple 的 `NSData.compressed(using: .zlib)` 产出的是 **RFC1951 裸 DEFLATE**
     "avgHeartRate": 139, "maxHeartRate": 173,
     "calories": 514, "distanceKm": 2.31,
     "avgSpeedKmh": 96.4, "peakSpeedKmh": 121.5, "servePeakKmh": 118.0,
-    "rallyMax": 4, "sweetSpotRate": null
+    "rallyMax": 4
   }]
 }
 ```
@@ -367,14 +367,18 @@ Apple 的 `NSData.compressed(using: .zlib)` 产出的是 **RFC1951 裸 DEFLATE**
 > 注意 `startedAt` / `endedAt` 在响应里是**带毫秒**的字符串，用
 > `startedAtDate` / `endedAtDate` 取 `Date`（`.iso8601` 解码策略不认毫秒）。
 
-### 4.2 后端**没有**数据源的维度（不要再期待）
+### 4.2 后端**没有**数据源的维度（已全部下线，不要再期待）
 
 `spin_rpm`、`spin_type`、`sweet_spot`、`depth_m`、`landing_zone`、
 `lateral_offset_m`、`net_clearance_m`、`anomaly`。
 
 原因：手腕单点 IMU 测不到。落点需要看到球的飞行轨迹，甜区需要拍面振动传感器。
-Phone UI 里对应的展示项（甜区占比、旋转、落点分布）**要么标注为暂不实现，要么删掉**，
-不要用随机数/Mock 撑场面后当成真实数据展示。
+
+**2026-10-02 已收口**：这些字段不再出现在任何上行白名单（`sync.py` 的 `SYNCABLE`）、
+接口出口（`user_api.py` / `data_api.py`）、契约类型（`TennisContract.swift`）
+以及 Phone / Watch 的任何展示项里。DB 列**暂留但恒为 NULL**。
+权威清单与逐项原因见 `server/datasources.py` 的 `REMOVED`（管理台 `/settings#removed`）。
+不要再新增对这些量的 Mock 展示 —— 用随机数撑场面会被当成真实数据。
 
 ### 4.3 ⚠️ 单场详情接口的字段风格不一致（**已知，待清理**）
 

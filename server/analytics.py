@@ -5,15 +5,22 @@
 本模块**只依赖真实训练记录**，两个数据源：
 
   · 会话级  training_sessions   —— 每次训练的时长 / 卡路里 / 心率 /
-                                   击球总数 / 甜区命中率 / 各路均速
-  · 逐拍级  stroke_records      —— 单次击球的球速 / 转速 / 甜区 /
-                                   落点 / 置信度（球速类指标的**唯一**依据）
+                                   击球总数 / 各路均速
+  · 逐拍级  stroke_records      —— 单次击球的球速 / 置信度
+                                   （球速类指标的**唯一**依据）
 
 刻意**不读** students 表里的 sessions_count / strokes_total / serve_peak /
-forehand_avg / sweet_spot 等「档案汇总字段」。原因：那些是人工维护的展示值，
+forehand_avg 等「档案汇总字段」。原因：那些是人工维护的展示值，
 与真实记录**对不上**（实测：陈雨菲 serve_peak=179，但逐拍发球样本最高仅 151.6；
 sessions_count=124 而实际只落库 8 场）。列表与排行榜一律现算，
 保证页面上任何一个数字都能用一条 SQL 复现，不会出现「两个页面同一指标不同值」。
+
+===================== 硬件准入（2026-10-02） =====================
+本模块**只产出腕部单点 IMU（加速度计 + 陀螺仪）+ HealthKit 观测得到的指标**。
+甜区（拍面撞击点）、球旋转（球的自转）、落点/弹道（球的飞行轨迹）都需要
+拍面传感器或视觉方案，腕部 IMU 物理上不可观测 —— 相关字段、聚合与结论
+已全部从本模块删除，录入档见 `server/datasources.py` 的 `REMOVED`。
+**不要再把它们加回来**：那只会让展示值退回成随机数。
 
 ===================== 排行口径 =====================
 每个指标出**两张榜**：
@@ -235,14 +242,16 @@ def benchmarks():
 # 聚合查询
 # --------------------------------------------------------------------------- #
 def stroke_aggs(rng):
-    """逐拍样本聚合：{(student_id, stroke_type): {...}}。"""
+    """逐拍样本聚合：{(student_id, stroke_type): {...}}。
+
+    ⚠️ 只聚合硬件**观测得到**的量（球速 / 置信度 / 样本数）。
+    甜区与转速曾在此聚合，已随「硬件准入」一并删除 —— 见模块头。
+    """
     clause, params = _range_clause('s', rng)
     rows = db.query(
         'SELECT s.student_id AS sid, sr.stroke_type AS st,'
         ' COUNT(sr.id) AS n,'
         ' MAX(sr.speed_kmh) AS mx, AVG(sr.speed_kmh) AS av,'
-        ' AVG(sr.spin_rpm) AS spin,'
-        ' SUM(CASE WHEN sr.sweet_spot = 1 THEN 1 ELSE 0 END) AS sweet,'
         ' AVG(sr.confidence) AS conf'
         ' FROM stroke_records sr'
         ' JOIN training_sessions s ON s.id = sr.session_id'
@@ -262,7 +271,7 @@ def session_aggs(rng):
     为什么不拿 stroke_records 算球速：那张表是**逐拍抽样**（一场只存 10~20 条），
     用样本算出的峰值会系统性低于真实峰值（实测同一场：样本峰值 165.5，
     会话汇总 166.9），而且同一学员在「明细表」与「排行榜」会出现两个数。
-    逐拍样本只用于**击球构成 / 落点 / 旋转**这类会话表没有的维度。
+    逐拍样本只用于**击球构成**这类会话表没有的维度。
     """
     clause, params = _range_clause('training_sessions', rng)
     rows = db.query(
@@ -273,7 +282,6 @@ def session_aggs(rng):
         ' AVG(duration_sec) AS avg_dur, MAX(duration_sec) AS max_dur,'
         ' COALESCE(SUM(calories_kcal),0) AS tot_cal,'
         ' AVG(calories_kcal) AS avg_cal, MAX(calories_kcal) AS max_cal,'
-        ' AVG(sweet_spot_rate) AS avg_ss, MAX(sweet_spot_rate) AS max_ss,'
         ' AVG(avg_hr) AS avg_hr, MAX(avg_hr) AS max_hr_of_avg,'
         ' MAX(max_hr) AS peak_hr, MIN(date(started_at)) AS first_day,'
         ' MAX(date(started_at)) AS last_day,'
@@ -291,7 +299,7 @@ def session_aggs(rng):
 # 排行榜
 # --------------------------------------------------------------------------- #
 # kind='session' → 会话级字段（training_sessions），**没有抽样偏差**，每条记录齐全
-# kind='stroke'  → 逐拍样本（stroke_records），仅用于会话表没有的维度（切削/转速/落点）
+# kind='stroke'  → 逐拍样本（stroke_records），仅用于会话表没有的维度（切削）
 #
 # 为什么球速优先走 session：
 #   ① 会话表每场都有 serve_peak / serve_avg / forehand_avg / backhand_avg，
@@ -332,10 +340,6 @@ LEADERBOARD_METRICS = [
      'unit': 'kcal', 'icon': 'local_fire_department', 'better': 'high', 'decimals': 0,
      'kind': 'session', 'max_col': 'max_cal', 'avg_col': 'avg_cal',
      'note': '最大值 = 单场最高消耗；平均值 = 场均消耗'},
-    {'key': 'sweet_spot', 'label': '甜区命中率', 'label_en': 'Sweet Spot',
-     'unit': '%', 'icon': 'adjust', 'better': 'high', 'decimals': 1,
-     'kind': 'session', 'max_col': 'max_ss', 'avg_col': 'avg_ss',
-     'note': '最大值 = 单场最佳命中率；平均值 = 场均命中率'},
     {'key': 'avg_hr', 'label': '平均心率', 'label_en': 'Avg Heart Rate',
      'unit': 'BPM', 'icon': 'favorite', 'better': None, 'decimals': 0,
      'kind': 'session', 'max_col': 'max_hr_of_avg', 'avg_col': 'avg_hr',
@@ -357,7 +361,6 @@ def _metric_pairs(metric, session_map, stroke_map):
                 'max': None if mx is None else float(mx) * scale,
                 'avg': None if av is None else float(av) * scale,
                 'n': agg.get('n') or 0,
-                'spin': agg.get('spin'),
             }
     else:
         for sid, agg in session_map.items():
@@ -496,14 +499,16 @@ def _kpi(label, value, unit, icon, tone='primary', sub=''):
 
 
 def stroke_mix_for(session_ids_or_student, rng, student_id=None):
-    """击球构成（按类型计数 + 均速 + 极速）。被个人分析与会话明细共用。"""
+    """击球构成（按类型计数 + 均速 + 极速）。被个人分析与会话明细共用。
+
+    ⚠️ `spin` / `sweet_pct` 两个输出字段已于 2026-10-02 删除 ——
+    甜区与转速腕部 IMU 观测不到，留着只会诱使模板再展示一次。
+    """
     if student_id:
         clause, params = _range_clause('s', rng)
         rows = db.query(
             'SELECT sr.stroke_type AS st, COUNT(*) AS n,'
-            ' AVG(sr.speed_kmh) AS av, MAX(sr.speed_kmh) AS mx,'
-            ' AVG(sr.spin_rpm) AS spin,'
-            ' SUM(CASE WHEN sr.sweet_spot = 1 THEN 1 ELSE 0 END) AS sweet'
+            ' AVG(sr.speed_kmh) AS av, MAX(sr.speed_kmh) AS mx'
             ' FROM stroke_records sr'
             ' JOIN training_sessions s ON s.id = sr.session_id'
             ' WHERE sr.deleted_at IS NULL AND s.deleted_at IS NULL'
@@ -512,9 +517,7 @@ def stroke_mix_for(session_ids_or_student, rng, student_id=None):
     else:
         rows = db.query(
             'SELECT sr.stroke_type AS st, COUNT(*) AS n,'
-            ' AVG(sr.speed_kmh) AS av, MAX(sr.speed_kmh) AS mx,'
-            ' AVG(sr.spin_rpm) AS spin,'
-            ' SUM(CASE WHEN sr.sweet_spot = 1 THEN 1 ELSE 0 END) AS sweet'
+            ' AVG(sr.speed_kmh) AS av, MAX(sr.speed_kmh) AS mx'
             ' FROM stroke_records sr WHERE sr.deleted_at IS NULL'
             ' AND sr.session_id = ? GROUP BY sr.stroke_type', (session_ids_or_student,))
     total = sum((r['n'] or 0) for r in rows)
@@ -537,8 +540,6 @@ def stroke_mix_for(session_ids_or_student, rng, student_id=None):
             # 直接下发会让接口调用方（含小程序）拿到无法直接展示的数字
             'avg_speed': _round(rv.get('av'), 1),
             'max_speed': _round(rv.get('mx'), 1),
-            'spin': _round(rv.get('spin'), 0),
-            'sweet_pct': _pct(rv.get('sweet'), rv.get('n')) if rv.get('n') else None,
             'display': fmt(n, 0, ' 次') if n else '—',
             'total': total,
         })
@@ -606,7 +607,6 @@ def _build_insights(stu, totals, mix, bm, peer, rng, mix_total):
 
     bm_serve = (bm or {}).get('serve_kmh')
     bm_fh = (bm or {}).get('forehand_kmh')
-    bm_sweet = (bm or {}).get('sweet_spot_rate')
 
     # ---- 1. 发球 ----
     if sv_max:
@@ -668,25 +668,7 @@ def _build_insights(stu, totals, mix, bm, peer, rng, mix_total):
                         '但要留意它是否替代了本该进攻的正手机会球。'
                         % (share, sl['count'], fmt(sl.get('avg_speed'), 1))})
 
-    # ---- 4. 甜区命中率 ----
-    ss = totals.get('avg_sweet')
-    if ss is not None:
-        if bm_sweet and ss >= bm_sweet:
-            out.append({
-                'tone': 'good', 'icon': 'adjust', 'title': '击球点控制优于段位常模',
-                'body': '场均甜区命中率 %.1f%%，高于 NTRP %s 段位标杆 %.1f%%，'
-                        '说明击球点稳定、容错率高。'
-                        % (ss, stu.get('nt_level') or '—', bm_sweet)})
-        else:
-            ref = bm_sweet or 68.2
-            out.append({
-                'tone': 'warn', 'icon': 'adjust', 'title': '甜区命中率有提升空间',
-                'body': '场均甜区命中率 %.1f%%，低于段位标杆 %.1f%%。'
-                        '从逐拍数据看，偏差多集中在拍面上沿 —— 通常是准备时间不足、'
-                        '抢点击球导致，建议配合小场快节奏多球练习。'
-                        % (ss, ref)})
-
-    # ---- 5. 体能与心率 ----
+    # ---- 4. 体能与心率 ----
     ahr, phr = totals.get('avg_hr'), totals.get('peak_hr')
     if ahr:
         if ahr >= 150:
@@ -703,7 +685,7 @@ def _build_insights(stu, totals, mix, bm, peer, rng, mix_total):
                         '若是技术打磨期属正常；若目标是比赛，需要加入对抗强度更高的内容。'
                         % fmt(ahr, 0)})
 
-    # ---- 6. 训练频率 ----
+    # ---- 5. 训练频率 ----
     n = totals.get('sessions') or 0
     span = totals.get('span_days')
     if n and span:
@@ -720,7 +702,7 @@ def _build_insights(stu, totals, mix, bm, peer, rng, mix_total):
                 'body': '区间内 %d 场训练、跨度 %d 天，平均 %.1f 天一场，'
                         '频率处于技术巩固的理想区间。' % (n, span, gap)})
 
-    # ---- 7. 单场稳定性 ----
+    # ---- 6. 单场稳定性 ----
     fh_series = [s.get('forehand_avg_kmh') for s in totals.get('session_rows') or []]
     sd = _std(fh_series)
     mean_fh = (sum(v for v in fh_series if v) / len([v for v in fh_series if v])
@@ -733,7 +715,7 @@ def _build_insights(stu, totals, mix, bm, peer, rng, mix_total):
                     '建议固定赛前热身的时长与强度。'
                     % (sd, fmt(mean_fh, 1), sd / mean_fh * 100)})
 
-    # ---- 8. 同侪位置 ----
+    # ---- 7. 同侪位置 ----
     if peer and peer.get('total'):
         rk = peer.get('serve_rank')
         if rk:
@@ -768,7 +750,6 @@ def student_analysis(student_id, rng):
     cals = sum((r.get('calories_kcal') or 0) for r in rows)
     hrs = [r.get('avg_hr') for r in rows if r.get('avg_hr')]
     peaks = [r.get('max_hr') for r in rows if r.get('max_hr')]
-    sss = [r.get('sweet_spot_rate') for r in rows if r.get('sweet_spot_rate') is not None]
 
     span_days = None
     if rows:
@@ -798,7 +779,6 @@ def student_analysis(student_id, rng):
         'calories': cals,
         'avg_hr': round(sum(hrs) / len(hrs)) if hrs else None,
         'peak_hr': max(peaks) if peaks else None,
-        'avg_sweet': round(sum(sss) / len(sss), 1) if sss else None,
         'span_days': span_days,
         'match_count': sum(1 for r in rows if r.get('session_type') == 'match'),
         'session_rows': rows,
@@ -839,7 +819,6 @@ def student_analysis(student_id, rng):
             'serve_peak_label': fmt(r.get('serve_peak_kmh'), 1, ' km/h'),
             'forehand_label': fmt(r.get('forehand_avg_kmh'), 1, ' km/h'),
             'backhand_label': fmt(r.get('backhand_avg_kmh'), 1, ' km/h'),
-            'sweet_label': fmt(r.get('sweet_spot_rate'), 1, ' %'),
             'rally_label': fmt(r.get('rally_max'), 0, ' 拍'),
             'mix': parts,
         })
@@ -862,8 +841,6 @@ def student_analysis(student_id, rng):
              '反手为正手的 %s' % (
                  '%.0f%%' % (totals['bh_avg'] * 100.0 / totals['fh_avg'])
                  if totals['fh_avg'] else '—')),
-        _kpi('场均甜区命中率', fmt(totals['avg_sweet'], 1), '%', 'adjust', 'primary',
-             '标杆 %s%%' % fmt((benchmarks().get(stu.get('nt_level')) or {}).get('sweet_spot_rate'), 1)),
         _kpi('平均 / 峰值心率',
              '%s / %s' % (fmt(totals['avg_hr'], 0), fmt(totals['peak_hr'], 0)),
              'BPM', 'favorite', 'error', '峰值取自各场最高心率'),
@@ -893,10 +870,6 @@ def student_analysis(student_id, rng):
         ratio = totals['bh_avg'] / totals['fh_avg']
         tags.append({'label': '正反手均衡' if ratio > 0.92 else '反手短板',
                      'tone': 'good' if ratio > 0.92 else 'warn'})
-    if totals['avg_sweet'] is not None:
-        ref = bm.get('sweet_spot_rate') or 68.2
-        tags.append({'label': '击球点稳定' if totals['avg_sweet'] >= ref else '击球点待稳定',
-                     'tone': 'good' if totals['avg_sweet'] >= ref else 'warn'})
     if totals['avg_hr']:
         tags.append({'label': '负荷偏高' if totals['avg_hr'] >= 150 else '负荷适中',
                      'tone': 'warn' if totals['avg_hr'] >= 150 else 'good'})
@@ -929,7 +902,6 @@ def student_analysis(student_id, rng):
             'level': stu.get('nt_level'),
             'serve': fmt(bm.get('serve_kmh'), 0),
             'forehand': fmt(bm.get('forehand_kmh'), 0),
-            'sweet': fmt(bm.get('sweet_spot_rate'), 1),
             'sample': fmt(bm.get('sample_size'), 0),
             'version': bm.get('algorithm_version') or '—',
         },

@@ -501,9 +501,8 @@ nonisolated public struct SessionListItem: Codable, Sendable {
     public var peakSpeedKmh: Double?
     public var servePeakKmh: Double?
     public var rallyMax: Int?
-    /// 后端**没有数据源**（手腕单点 IMU 测不到甜区），恒为 null。
-    /// UI 不要把这个字段当真实数据展示。
-    public var sweetSpotRate: Double?
+    // 硬件准入（2026-10-02）：sweetSpotRate（甜区命中率）已整体移除 ——
+    // 甜区是球在**拍面**上的撞击点，腕部单点 IMU + HealthKit 物理上测不到。
 
     public var startedAtDate: Date? { startedAt.flatMap(WireDate.date(from:)) }
     public var endedAtDate: Date? { endedAt.flatMap(WireDate.date(from:)) }

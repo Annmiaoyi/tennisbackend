@@ -18,6 +18,55 @@ from .db import RAW_DIR
 MATCH_TOL = 0.3
 
 
+def load_raw_payload(conn, session_id):
+    """取一场会话的原始包（含 samples 波形）。**这是本模块唯一的原始数据入口。**
+
+    三级回落，顺序不能换：
+      1. L0 原始层按 raw_id 取 —— 2026-09-29 起这是权威来源，内容寻址、只追加，
+         识别算法换版也能拿它重算；
+      2. 会话表上的 raw_path —— 迁移期旧数据没有 raw_id，靠它兜底；
+      3. `var/raw/files/raw_<sid>.json` 这个历史命名约定 —— 只为兼容更早的散落文件。
+
+    ⚠️ 为什么必须收敛成一处：`api.get_samples`（画波形）与 `build_dataset`
+    （导出训练集）原先各写了一套解析。前者改用 L0 之后，后者没跟上，
+    仍然只找第 3 级路径 —— 于是出现「波形画得出来、点导出却 404 说没有样本」
+    这种自相矛盾的现象，而且两端都不报错，只能靠人肉对日志才发现。
+    """
+    from .. import rawstore
+
+    row = conn.execute(
+        'SELECT raw_id, raw_path FROM sessions WHERE id=?', (session_id,)
+    ).fetchone()
+    if row is None:
+        return None
+
+    # 1) L0 权威源。显式指定 shape='raw_package' —— 只有该形态带 samples；
+    #    若同一会话也被 App 以 match_session 形态上传过，不指定会取到没有波形的那份。
+    if row['raw_id']:
+        raw = rawstore.payload_of(session_id, shape=rawstore.SHAPE_RAW_PACKAGE)
+        if raw is not None:
+            return raw
+
+    # 2) 会话表里的路径缓存
+    raw_path = row['raw_path']
+    if raw_path and os.path.exists(raw_path):
+        try:
+            with open(raw_path, encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+
+    # 3) 历史命名约定（var/raw/files/raw_<sid>.json）
+    legacy = os.path.join(RAW_DIR, 'raw_%s.json' % session_id)
+    if os.path.exists(legacy):
+        try:
+            with open(legacy, encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return None
+
+
 def feat_stats(x):
     n = len(x)
     m = sum(x) / n
@@ -135,12 +184,10 @@ def build_dataset(conn, out_path):
             resolved = resolve_session_annotations(conn, sid)
             if not resolved:
                 continue
-            raw_path = os.path.join(RAW_DIR, f"raw_{sid}.json")
-            if not os.path.exists(raw_path):
+            raw = load_raw_payload(conn, sid)
+            if raw is None:
                 continue
-            with open(raw_path) as rf:
-                raw = json.load(rf)
-            samples = raw.get("samples", [])
+            samples = raw.get('samples', [])
             for r in resolved:
                 it = r["impact_time"]
                 win = [s for s in samples if (it - 0.05) <= s["t"] <= (it + 0.10)]

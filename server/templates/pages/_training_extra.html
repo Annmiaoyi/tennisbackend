@@ -148,9 +148,9 @@
           </span>
 </div>
 <div class="px-space-md py-2 rounded-xl bg-surface-container-low flex flex-col">
-<span class="font-label-sm text-label-sm text-outline">段位常模 · 发球 / 正手 / 甜区</span>
+<span class="font-label-sm text-label-sm text-outline">段位常模 · 发球 / 正手</span>
 <span class="font-label-md text-label-md text-on-surface font-bold whitespace-nowrap">
-            {% if analysis.bm_disp.has %}{{ analysis.bm_disp.serve }} / {{ analysis.bm_disp.forehand }} / {{ analysis.bm_disp.sweet }}%
+            {% if analysis.bm_disp.has %}{{ analysis.bm_disp.serve }} / {{ analysis.bm_disp.forehand }} km/h
             {%- else %}无该段位基准{% endif %}
           </span>
 </div>
@@ -284,7 +284,7 @@
 <th class="py-space-sm px-space-md">消耗 / 平均心率</th>
 <th class="py-space-sm px-space-md text-primary-fixed">发球极速</th>
 <th class="py-space-sm px-space-md text-secondary">正手 / 反手均速</th>
-<th class="py-space-sm px-space-md">甜区 / 最长相持</th>
+<th class="py-space-sm px-space-md">最长相持 / 击球量</th>
 <th class="py-space-sm px-space-md rounded-r-lg">击球构成（逐拍样本）</th>
 </tr>
 </thead>
@@ -310,8 +310,8 @@
 <div class="font-label-sm text-label-sm text-outline">{{ s.backhand_label }}</div>
 </td>
 <td class="py-space-md px-space-md">
-<div class="font-semibold text-on-surface">{{ s.sweet_label }}</div>
-<div class="font-label-sm text-label-sm text-outline">最长 {{ s.rally_label }}</div>
+<div class="font-semibold text-on-surface">最长 {{ s.rally_label }}</div>
+<div class="font-label-sm text-label-sm text-outline">{{ s.stroke_label }}</div>
 </td>
 <td class="py-space-md px-space-md">
 {% if s.mix %}
@@ -547,11 +547,11 @@
 <span class="material-symbols-outlined text-[18px] text-outline">info</span>
 <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">统计口径（可复核）</span>
 </div>
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-sm">
+<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-space-sm">
 <div class="p-space-md rounded-lg bg-surface-container flex flex-col gap-1">
 <span class="font-label-sm text-label-sm text-primary-fixed font-bold">① 会话汇总（主口径）</span>
 <span class="font-label-sm text-label-sm text-on-surface-variant">
-            球速类（发球 / 整体 / 正手 / 反手）与负荷类（时长 / 卡路里 / 心率 / 击球总数 / 甜区率）
+            球速类（发球 / 整体 / 正手 / 反手）与负荷类（时长 / 卡路里 / 心率 / 击球总数 / 最长相持）
             全部取自 training_sessions 的会话字段，即手表对<span class="text-on-surface font-semibold">整场</span>的统计结果 ——
             没有抽样偏差，且每条训练记录都齐全。个人明细表、技术分析、排行榜三处<span class="text-on-surface font-semibold">同源</span>，
             同一学员同一指标不会出现两个数。
@@ -561,8 +561,8 @@
 <span class="font-label-sm text-label-sm text-secondary font-bold">② 逐拍抽样（仅补齐会话表没有的维度）</span>
 <span class="font-label-sm text-label-sm text-on-surface-variant">
             stroke_records 在库中是<span class="text-on-surface font-semibold">抽样存储</span>（实测一场十几条，
-            而非该场全部击球）。因此它只用于会话表没有对应列的维度：<span class="text-on-surface font-semibold">击球构成占比</span>、
-            切削球速、转速、落点。这些位置都标注了「逐拍抽样」并给出样本量。
+            而非该场全部击球）。因此它只用于会话表没有对应列的维度：<span class="text-on-surface font-semibold">击球构成占比</span>与
+            单拍球速样本。这些位置都标注了「逐拍抽样」并给出样本量。
             <span class="text-on-surface font-semibold">不要</span>拿样本峰值当整场峰值 —— 样本抽样会让峰值系统性偏低。
           </span>
 </div>
@@ -572,6 +572,15 @@
             students 表的 sessions_count / strokes_total / serve_peak / forehand_avg 等为<span class="text-on-surface font-semibold">人工维护的展示值</span>，
             与真实记录不一致（实测：某学员 serve_peak=179，但记录中该学员发球峰值仅 166.9；
             sessions_count=124 而实际只有 8 场）。本页一律现算，保证任何数字都能用一条 SQL 复现。
+          </span>
+</div>
+<div class="p-space-md rounded-lg bg-surface-container flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-error font-bold">④ 硬件准入：测不到的就不展示</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">
+            本页所有指标都必须由<span class="text-on-surface font-semibold">腕部单点 IMU（加速度计 + 陀螺仪）+ HealthKit</span>观测得到。
+            甜区命中、球旋转（RPM）、落点深度/区域、过网高度需要<span class="text-on-surface font-semibold">拍面传感器或球的飞行轨迹</span>，
+            腕上测不到 —— 因此这些指标已从字段目录、分析与本页全部下线，不再以任何形式展示。
+            字段留档见 <a class="text-primary-fixed font-semibold hover:underline" href="/settings#removed">已移除字段</a>。
           </span>
 </div>
 </div>

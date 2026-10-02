@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS students (
   strokes_total     INTEGER DEFAULT 0,        -- 累计击球
   forehand_avg      INTEGER,                  -- 正手均速 km/h
   serve_peak        INTEGER,                  -- 发球峰值 km/h
-  sweet_spot        REAL,                     -- 甜区命中率 %
+  sweet_spot        REAL,                     -- [不可得] 甜区命中率 %（列暂留恒 NULL）
   spin_rate         INTEGER,                  -- 平均转速 RPM
   hit_rate          REAL,                     -- 有效击球占比 %
   training_load     TEXT,                     -- 训练负荷：Optimal | High ...
@@ -119,8 +119,8 @@ CREATE TABLE IF NOT EXISTS training_sessions (
   backhand_avg_kmh  REAL,
   serve_avg_kmh     REAL,
   serve_peak_kmh    REAL,
-  spin_rpm          INTEGER,
-  sweet_spot_rate   REAL,
+  spin_rpm          INTEGER,                  -- [不可得] 列暂留恒 NULL
+  sweet_spot_rate   REAL,                     -- [不可得] 列暂留恒 NULL
   unforced_errors   INTEGER,
   winners           INTEGER,
   hr_zone           TEXT,                     -- 心率区间分布 JSON
@@ -154,13 +154,16 @@ CREATE TABLE IF NOT EXISTS stroke_records (
   stroke_type       TEXT,                     -- forehand | backhand | serve | slice | volley | smash
   is_slice          INTEGER DEFAULT 0,
   speed_kmh         REAL,
-  spin_rpm          INTEGER,
-  spin_type         TEXT,                     -- top | back | flat
-  sweet_spot        INTEGER DEFAULT 0,        -- 是否命中甜区
-  depth_m           REAL,                     -- 落点深度
-  landing_zone      TEXT,                     -- deep | mid | short
-  lateral_offset_m  REAL,                     -- 左右偏差
-  net_clearance_m   REAL,                     -- 过网高度
+  -- 硬件准入（2026-10-02）：以下 6 列需拍面传感器或球的飞行轨迹，腕部单点 IMU
+  -- 测不到 —— 列**暂留但恒为 NULL**，停止写入、不再出现在任何接口/页面。
+  -- 详见 server/datasources.py 的 REMOVED 与 /settings#removed。
+  spin_rpm          INTEGER,                  -- [不可得] 球旋转
+  spin_type         TEXT,                     -- [不可得] top | back | flat
+  sweet_spot        INTEGER,                  -- [不可得] 是否命中甜区（原 DEFAULT 0 已去掉）
+  depth_m           REAL,                     -- [不可得] 落点深度
+  landing_zone      TEXT,                     -- [不可得] deep | mid | short
+  lateral_offset_m  REAL,                     -- [不可得] 左右偏差
+  net_clearance_m   REAL,                     -- [不可得] 过网高度
   impact_ms         INTEGER,                  -- 击球瞬间距会话开始的毫秒偏移
   confidence        REAL,                     -- 算法置信度
   anomaly           INTEGER DEFAULT 0,        -- 异常抖动标记
@@ -251,10 +254,10 @@ CREATE TABLE IF NOT EXISTS nt_benchmarks (
   level             TEXT NOT NULL,            -- 3.5
   sample_size       INTEGER,
   avg_speed_kmh     REAL,
-  sweet_spot_rate   REAL,
+  sweet_spot_rate   REAL,                     -- [不可得] 列暂留恒 NULL
   forehand_kmh      REAL,
   serve_kmh         REAL,
-  spin_rpm          INTEGER,
+  spin_rpm          INTEGER,                  -- [不可得] 列暂留恒 NULL
   algorithm_version TEXT,
   created_at        TEXT NOT NULL,
   updated_at        TEXT NOT NULL,

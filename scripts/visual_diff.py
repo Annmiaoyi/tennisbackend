@@ -42,6 +42,16 @@ PAGES = [
 ]
 
 CHROME_CANDIDATES = [
+    # macOS（本仓库主要开发机）
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+    '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
+    # 常见 Linux 路径
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    # Windows
     r'C:\Program Files\Google\Chrome\Application\chrome.exe',
     r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe',
     r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe',
@@ -55,7 +65,12 @@ def find_chrome():
     for c in CHROME_CANDIDATES:
         if os.path.exists(c):
             return c
-    raise SystemExit('未找到 Chrome/Edge')
+    raise SystemExit(
+        '未找到 Chrome / Chromium / Edge —— 本脚本需要本机装一个基于 Chromium 的浏览器。\n'
+        'macOS:  brew install --cask google-chrome   （或 chromium / microsoft-edge）\n'
+        'Linux:  apt install chromium-browser\n'
+        'Windows: 装 Chrome 或 Edge 即可（默认路径已在候选里）。\n'
+        '只跑功能回归、不需要像素比对的话，用 scripts/smoke_pages.py 即可。')
 
 
 def free_port():

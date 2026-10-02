@@ -30,6 +30,19 @@
 </button>
 </div>
 </div>
+<!-- 页内锚点：本页含 60+ 字段的长表格，给一条跳转带 -->
+<nav class="flex flex-wrap items-center gap-space-xs p-space-sm rounded-xl bg-surface-container-low border border-outline/15">
+<span class="material-symbols-outlined text-outline text-[18px] ml-1">toc</span>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#sync">同步水位与硬件</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#protocol">协议约定</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#audit">目录核查结论</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#pipeline">采集链路</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#gates">质量门禁</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#catalog">训练元数据总表</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-error/80 hover:text-error hover:bg-surface-container-high transition-colors" href="#removed">已移除字段</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#acq-notes">采集作业须知</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-primary-fixed hover:bg-surface-container-high transition-colors font-bold" href="#annotation-panel">数据采集与标注</a>
+</nav>
 <!-- 同步协议水位 -->
 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md">
 <div class="p-space-lg rounded-xl bg-surface-container flex flex-col justify-between shadow-md">
@@ -76,6 +89,7 @@
 <p class="font-label-sm text-label-sm text-on-surface-variant mt-1">字段校验失败或跨租户写入</p>
 </div>
 </div>
+<div class="scroll-mt-24" id="sync"></div>
 <!-- 同步实体水位 + 硬件 -->
 <div class="grid grid-cols-1 xl:grid-cols-12 gap-space-md items-stretch">
 <div class="xl:col-span-7 p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
@@ -132,6 +146,7 @@
 </div>
 </div>
 </div>
+<div class="scroll-mt-24" id="protocol"></div>
 <!-- 同步协议说明 -->
 <div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
 <div class="flex items-center gap-space-sm">
@@ -144,7 +159,7 @@
 <div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
 <span class="font-label-sm text-label-sm uppercase tracking-wider text-primary-fixed font-bold">{{ p.name }}</span>
 <span class="font-body-md text-body-md text-on-surface font-semibold">{{ p.title }}</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">{{ p.body }}</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">{{ p.body | bold }}</span>
 </div>
 {% endfor %}
 </div>
@@ -154,6 +169,7 @@
 </div>
 </div>
 </div>
+<div class="scroll-mt-24" id="datasources"></div>
 <!-- ================= 数据源与采集口径（Apple Watch → 后端） =================
      目录本体在 server/datasources.py：页面与 GET /api/datasources 共用同一份，
      避免「文档写一套、接口返另一套」的字段漂移。 -->
@@ -185,34 +201,94 @@
 </div>
 </div>
 
-<!-- 概览数字 -->
-<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-space-sm">
+<!-- 概览数字（口径见 server/datasources.py 的 summary()） -->
+<div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-space-sm">
 <div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
 <span class="font-label-sm text-label-sm text-outline">采集分组</span>
 <span class="font-metric-digit text-headline-md text-primary font-bold">{{ ds.summary.total_groups }}</span>
 </div>
 <div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
-<span class="font-label-sm text-label-sm text-outline">会话级上行</span>
-<span class="font-metric-digit text-headline-md text-primary-fixed font-bold">{{ ds.summary.session_fields }}</span>
+<span class="font-label-sm text-label-sm text-outline">字段总数</span>
+<span class="font-metric-digit text-headline-md text-primary font-bold">{{ ds.summary.total_fields }}</span>
 </div>
 <div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
-<span class="font-label-sm text-label-sm text-outline">逐拍上行</span>
-<span class="font-metric-digit text-headline-md text-secondary font-bold">{{ ds.summary.stroke_fields }}</span>
+<span class="font-label-sm text-label-sm text-outline">元数据分类</span>
+<span class="font-metric-digit text-headline-md text-primary font-bold">{{ ds.summary.total_categories }}</span>
 </div>
 <div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
-<span class="font-label-sm text-label-sm text-outline">后端派生</span>
-<span class="font-metric-digit text-headline-md text-tertiary-fixed-dim font-bold">{{ ds.summary.derive_fields }}</span>
+<span class="font-label-sm text-label-sm text-outline">有实际展示</span>
+<span class="font-metric-digit text-headline-md text-primary-fixed font-bold">{{ ds.summary.shown_fields }}</span>
 </div>
 <div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
-<span class="font-label-sm text-label-sm text-outline">仅本地留存</span>
-<span class="font-metric-digit text-headline-md text-on-surface-variant font-bold">{{ ds.summary.local_fields }}</span>
+<span class="font-label-sm text-label-sm text-outline">仅落库不展示</span>
+<span class="font-metric-digit text-headline-md text-on-surface-variant font-bold">{{ ds.summary.hidden_fields }}</span>
 </div>
 <div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
-<span class="font-label-sm text-label-sm text-outline">必填字段</span>
-<span class="font-metric-digit text-headline-md text-error font-bold">{{ ds.summary.required_fields }}</span>
+<span class="font-label-sm text-label-sm text-outline">待后端落地</span>
+<span class="font-metric-digit text-headline-md text-tertiary-fixed-dim font-bold">{{ ds.summary.pending_fields }}</span>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
+<span class="font-label-sm text-label-sm text-outline">已移除（不可得）</span>
+<span class="font-metric-digit text-headline-md text-error font-bold">{{ ds.summary.removed_fields }}</span>
 </div>
 </div>
 
+<!-- 上行口径图例：四个 sync 值各有多少字段 -->
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-wrap items-center gap-space-md">
+<span class="flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-bold text-primary-fixed">会话级上行</span>
+{{ ds.summary.session_fields }} 个 · 一场一行
+</span>
+<span class="flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-bold text-secondary">逐拍上行</span>
+{{ ds.summary.stroke_fields }} 个 · 单次击球一行
+</span>
+<span class="flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-bold text-tertiary-fixed-dim">后端派生</span>
+{{ ds.summary.derive_fields }} 个 · 不单独存储
+</span>
+<span class="flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
+<span class="px-1.5 py-0.5 rounded bg-surface-container font-bold text-outline">仅本地</span>
+{{ ds.summary.local_fields }} 个 · 不上行
+</span>
+</div>
+
+<div class="scroll-mt-24" id="audit"></div>
+<!-- 核查结论：本次全量比对 schema.sql / analytics.py / 各接口后发现的错漏 -->
+<div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[22px]">fact_check</span>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">目录核查结论</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">
+{{ ds.audit.date }} 全量复核：字段数 {{ ds.audit.before_fields }} → {{ ds.audit.after_fields }}，
+发现 {{ ds.audit.findings | length }} 处需要订正或补充的口径问题
+</span>
+</div>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm max-w-md">
+对照基线：{{ ds.audit.baseline }}
+</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-space-sm">
+{% for f in ds.audit.findings %}
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="px-1.5 py-0.5 rounded font-label-sm text-label-sm font-bold
+  {{ 'bg-primary-fixed/15 text-primary-fixed' if f.level == 'fix' else
+     ('bg-secondary/15 text-secondary' if f.level == 'add' else 'bg-tertiary-fixed-dim/15 text-tertiary-fixed-dim') }}">
+  {{ {'fix': '已订正', 'add': '已补充'}.get(f.level, '需注意') }}
+</span>
+<span class="font-body-md text-body-md text-on-surface font-semibold">{{ f.title }}</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ f.body | bold }}</span>
+</div>
+{% endfor %}
+</div>
+</div>
+
+<div class="scroll-mt-24" id="pipeline"></div>
 <!-- 采集链路 -->
 <div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
 <div class="flex items-center justify-between">
@@ -236,6 +312,7 @@
 </div>
 </div>
 
+<div class="scroll-mt-24" id="gates"></div>
 <!-- 质量门禁 -->
 <div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
 <div class="flex items-center gap-space-sm">
@@ -251,290 +328,254 @@
 <span class="font-body-md text-body-md text-on-surface font-semibold">{{ g.name }}</span>
 <span class="material-symbols-outlined text-outline text-[16px] ml-auto">{{ g.icon }}</span>
 </div>
-<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ g.body }}</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ g.body | bold }}</span>
 </div>
 {% endfor %}
 </div>
 </div>
 
-<!-- 字段目录 -->
-{% for g in ds.groups %}
+<div class="scroll-mt-24" id="catalog"></div>
+<!-- ===================== 训练元数据总表（统一表 · 一张） =====================
+     2026-10-02：原先按 6 个采集分组渲染成 6 张表，读者要横向比对就得来回滚。
+     现在合并为**一张统一表**，并加两个正交维度：
+       · 编号   MD-001…（全局唯一，跨端引用某条字段时用它）
+       · 分类   见 server/datasources.py 的 CATEGORIES —— 表的「备注」列，
+                也是下面筛选栏的取值域。分类横切采集分组：
+                分组答「从哪个采集口来」，分类答「是什么性质的量」。
+     数据源：server/datasources.py 的 ds.rows（= flat_rows()），页面与
+     GET /api/datasources 共用同一份，字段增删只需改那一个文件。 -->
 <div class="rounded-xl bg-surface-container shadow-md overflow-hidden">
-<div class="p-space-lg pb-space-sm flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div class="p-space-lg pb-space-sm flex flex-col gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-space-sm">
 <div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-primary-fixed text-[22px]">{{ g.icon }}</span>
+<span class="material-symbols-outlined text-primary-fixed text-[22px]">table_view</span>
 <div class="flex flex-col">
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">训练元数据总表</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high text-primary-fixed font-label-sm text-label-sm font-bold">{{ ds.rows | length }} 个字段 · {{ ds.categories | length }} 个分类</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">
+          全站唯一的字段事实源。准入硬门槛：只有「腕部单点 IMU + HealthKit」<span class="text-on-surface font-semibold">观测得到</span>的量才允许进表 ——
+          采不到的字段不登记、不采集、不展示。
+        </span>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm shrink-0">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">有展示 {{ ds.summary.shown_fields }}</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">仅落库 {{ ds.summary.hidden_fields }}</span>
+{% if ds.summary.pending_fields %}<span class="px-space-xs py-0.5 rounded bg-tertiary-fixed-dim/15 text-tertiary-fixed-dim font-label-sm text-label-sm font-bold">待落地 {{ ds.summary.pending_fields }}</span>{% endif %}
+<span class="px-space-xs py-0.5 rounded bg-error-container/20 text-error font-label-sm text-label-sm font-bold">已移除 {{ ds.summary.removed_fields }}</span>
+</div>
+</div>
+
+<!-- 筛选栏：按分类筛 + 关键词搜（纯前端，不影响无 JS 时的完整展示） -->
+<div class="flex flex-col gap-space-sm p-space-md rounded-xl bg-surface-container-low border border-outline/15">
+<div class="flex flex-wrap items-center gap-space-sm">
 <div class="flex items-center gap-space-xs">
-<span class="font-headline-sm text-headline-sm text-primary font-bold">{{ g.name }}</span>
-<span class="px-space-xs py-0.5 rounded bg-surface-container-high text-primary-fixed font-label-sm text-label-sm font-bold">{{ g.framework }}</span>
+<span class="material-symbols-outlined text-[18px] text-primary-fixed">filter_alt</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">筛选</span>
 </div>
-<span class="font-label-sm text-label-sm text-on-surface-variant">{{ g.desc }}</span>
+<span class="font-label-md text-label-md text-on-surface font-bold" id="catCount">显示 {{ ds.rows | length }} / {{ ds.rows | length }}</span>
+<span class="flex-1"></span>
+<label class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container border border-outline/25 min-w-[240px]">
+<span class="material-symbols-outlined text-[16px] text-outline">search</span>
+<input class="flex-1 bg-transparent text-body-md text-on-surface placeholder:text-outline focus:outline-none"
+       id="catSearch" placeholder="搜字段名 / 列名 / 单位 / 分组…" type="search"/>
+</label>
+</div>
+<div class="flex flex-wrap items-center gap-space-xs" id="catBar">
+{#- ⚠️ ON / OFF 两个类串在下方脚本里也是字面量，Tailwind 才能扫到并生成对应规则。 -#}
+<button class="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg font-label-md text-label-md transition-colors bg-primary-container text-on-primary-fixed font-bold shadow-[0_0_20px_rgba(195,244,0,0.18)]"
+        data-cat="all" type="button">
+<span class="material-symbols-outlined text-[16px]">select_all</span>
+<span>全部</span>
+<span class="font-label-sm text-label-sm opacity-70">{{ ds.rows | length }}</span>
+</button>
+{% for c in ds.categories %}
+<button class="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg font-label-md text-label-md transition-colors bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+        data-cat="{{ c.key }}" title="{{ c.desc }}" type="button">
+<span class="material-symbols-outlined text-[16px] {{ c.tone }}">{{ c.icon }}</span>
+<span>{{ c.label }}</span>
+<span class="font-label-sm text-label-sm opacity-70">{{ c.count }}</span>
+</button>
+{% endfor %}
 </div>
 </div>
-<div class="flex items-center gap-space-sm shrink-0">
-<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">{{ g.count }} 个字段</span>
-<span class="px-space-xs py-0.5 rounded bg-error-container/20 text-error font-label-sm text-label-sm font-bold">必填 {{ g.required_count }}</span>
 </div>
-</div>
+
+{#- 九列：编号 → 字段 → 单位 → 备注(分类) → 采集 → 计算 → 产物 → 判定 → 在哪看得见。
+    列宽刻意给足（min-w-[1760px]）+ 外层 overflow-x-auto，
+    宁可在宽屏上横向滚动，也不把中文压成一条竖线。 -#}
 <div class="overflow-x-auto">
-<table class="w-full text-left text-body-md">
+<table class="w-full min-w-[1760px] text-left text-body-md">
 <thead>
 <tr class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider bg-surface-container-low/70">
-<th class="py-space-sm px-space-md w-10">#</th>
-<th class="py-space-sm px-space-md whitespace-nowrap">字段 / 列名</th>
-<th class="py-space-sm px-space-md whitespace-nowrap">单位</th>
-<th class="py-space-sm px-space-md">数据来源 / 获取方式</th>
-<th class="py-space-sm px-space-md">判定规则</th>
+<th class="py-space-sm px-space-md whitespace-nowrap w-[78px]">编号</th>
+<th class="py-space-sm px-space-md whitespace-nowrap w-[150px]">字段 / 列名</th>
+<th class="py-space-sm px-space-md whitespace-nowrap w-[80px]">单位</th>
+<th class="py-space-sm px-space-md whitespace-nowrap w-[170px]">备注 · 分类</th>
+<th class="py-space-sm px-space-md w-[250px]">① 采集来源 · 获取方式</th>
+<th class="py-space-sm px-space-md w-[240px]">② 采集后如何计算</th>
+<th class="py-space-sm px-space-md w-[200px]">③ 产物 / 落库</th>
+<th class="py-space-sm px-space-md w-[240px]">④ 判定规则</th>
+<th class="py-space-sm px-space-md w-[260px]">⑤ 在训练分析中的展示位置</th>
 </tr>
 </thead>
-<tbody class="divide-y divide-surface-container-high/40">
-{% for r in g.rows %}
-<tr class="hover:bg-surface-container-high/50 transition-colors align-top">
-<td class="py-space-md px-space-md font-label-sm text-label-sm text-outline">{{ r.idx }}</td>
+<tbody class="divide-y divide-surface-container-high/40" id="catBody">
+{% for r in ds.rows %}
+<tr class="cat-row hover:bg-surface-container-high/50 transition-colors align-top"
+    data-cat="{{ r.cat_key }}"
+    data-text="{{ (r.no ~ ' ' ~ r.field ~ ' ' ~ r.key ~ ' ' ~ r.unit ~ ' ' ~ r.cat_label ~ ' ' ~ r.group_name) | lower | e }}">
+<td class="py-space-md px-space-md whitespace-nowrap">
+<span class="font-mono font-label-md text-label-md text-primary-fixed font-bold">{{ r.no }}</span>
+</td>
 <td class="py-space-md px-space-md">
-<div class="flex items-center gap-space-xs">
-<span class="font-semibold text-on-surface whitespace-nowrap">{{ r.field }}</span>
+<div class="flex flex-wrap items-center gap-1">
+<span class="font-semibold text-on-surface">{{ r.field }}</span>
 {% if r.required %}<span class="px-1 rounded bg-error-container/20 text-error font-label-sm text-label-sm font-bold">必填</span>{% endif %}
 </div>
-<div class="font-label-sm text-label-sm text-outline">{{ r.key }}</div>
-<span class="inline-block mt-1 px-1.5 py-0.5 rounded bg-surface-container-low font-label-sm text-label-sm font-bold whitespace-nowrap {{ r.sync_meta.tone }}"
+<div class="font-mono text-label-sm text-outline break-all">{{ r.key }}</div>
+<div class="flex flex-wrap gap-1 mt-1">
+<span class="inline-block px-1.5 py-0.5 rounded bg-surface-container-low font-label-sm text-label-sm font-bold whitespace-nowrap {{ r.sync_meta.tone }}"
       title="{{ r.sync_meta.hint }}">{{ r.sync_meta.label }}</span>
+{% if not r.shown %}<span class="inline-block px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm font-bold whitespace-nowrap">无展示</span>{% endif %}
+</div>
 </td>
-<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">{{ r.unit }}</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface-variant">{{ r.unit }}</td>
 <td class="py-space-md px-space-md">
-<div class="font-label-sm text-label-sm text-secondary leading-relaxed">{{ r.source }}</div>
-<div class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ r.acquire }}</div>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-container-high font-label-sm text-label-sm font-bold whitespace-nowrap {{ r.cat_tone }}">
+<span class="material-symbols-outlined text-[14px]">{{ r.cat_icon }}</span>
+<span>{{ r.cat_label }}</span>
+</span>
+<div class="font-label-sm text-label-sm text-outline mt-1">分组：{{ r.group_name }}</div>
+{% if r.cat_warn %}<div class="font-label-sm text-label-sm text-error mt-0.5">{{ r.cat_warn }}</div>{% endif %}
 </td>
-<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ r.judge }}</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
-</div>
-</div>
-{% endfor %}
-
-<div class="p-space-lg rounded-xl bg-surface-container-low flex flex-col gap-space-sm">
-<div class="flex items-center gap-space-xs">
-<span class="material-symbols-outlined text-[18px] text-outline">integration_instructions</span>
-<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">接入约定</span>
-</div>
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-sm">
-<div class="p-space-md rounded-lg bg-surface-container flex flex-col gap-1">
-<span class="font-label-sm text-label-sm text-primary-fixed font-bold">① 先对齐字段名</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">
-            客户端上行字段必须与上表 <span class="text-on-surface font-semibold">列名</span> 完全一致（如 speed_kmh 而非 speed）。
-            服务端按列名白名单校验，未登记字段直接 rejected，不做静默丢弃。
-          </span>
-</div>
-<div class="p-space-md rounded-lg bg-surface-container flex flex-col gap-1">
-<span class="font-label-sm text-label-sm text-secondary font-bold">② 缺失 ≠ 0</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">
-            采集不到的字段一律留空并置 <span class="text-on-surface font-semibold">missing</span>，
-            严禁填 0。写 0 会把平均值拉低，且事后无法区分「真的没有」与「没采到」。
-          </span>
-</div>
-<div class="p-space-md rounded-lg bg-surface-container flex flex-col gap-1">
-<span class="font-label-sm text-label-sm text-tertiary-fixed-dim font-bold">③ 敏感数据不外传</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">
-            标「仅本地」的字段（HRV / 静息心率 / 体重 / GPS 精确轨迹）只在设备内用于恢复建议，
-            不进同步队列，服务端也不落库。
-          </span>
-</div>
-</div>
-</div>
-</div>
-
-<!-- ===================== 数据采集与标注 =====================
-     采集回来的原始会话在这里完成「视频 ↔ 波形」同步标注，产出 CoreML 训练集。
-     原先跑在独立进程（miniprogram-3 的 :8000），现已并入本站：
-       · 数据接口 server/annotation/api.py，工作台页面 /annotation
-       · 库落在 var/annotation/annotations.db，与分析库 var/acemate.db 分库并存 -->
-<div class="flex flex-col gap-space-md" id="annotation-panel">
-<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
-<div class="flex flex-col gap-space-2xs">
-<div class="flex items-center gap-space-sm">
-<span class="px-space-xs py-0.5 rounded bg-surface-container-high text-primary-fixed font-label-sm text-label-sm uppercase tracking-wider font-bold">Annotation Pipeline</span>
-<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
-<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Raw Session → Labeled Dataset</span>
-</div>
-<h2 class="font-headline-sm text-headline-sm text-primary font-bold">数据采集与标注</h2>
-<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">
-        每场训练从 Apple Watch 采集到的原始传感器会话，在这里做「视频 ↔ 波形」同步标注，
-        产出 CoreML 训练管线可直接消费的 annotation.json 与 38 维 dataset.csv。
-        该能力原先跑在独立进程，现已并入本站 —— 工作台见
-        <a class="text-primary-fixed font-semibold hover:underline" href="/annotation">/annotation</a>，
-        接口见 <span class="text-primary-fixed font-semibold">/api/annotation/overview</span>。
-      </p>
-</div>
-<div class="flex flex-wrap items-center gap-space-sm">
-<div class="px-space-md py-2 rounded-xl bg-surface-container flex flex-col">
-<span class="font-label-sm text-label-sm text-outline">原始会话</span>
-<span class="font-label-md text-label-md text-on-surface font-bold">{{ annot.sessions }}</span>
-</div>
-<div class="px-space-md py-2 rounded-xl bg-surface-container flex flex-col">
-<span class="font-label-sm text-label-sm text-outline">待纠错预标注</span>
-<span class="font-label-md text-label-md text-primary-fixed font-bold">{{ annot.heuristic_proposed }}</span>
-</div>
-<a class="flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all shadow-[0_0_24px_rgba(195,244,0,0.18)]" href="/annotation">
-<span class="material-symbols-outlined text-[18px]">graphic_eq</span>
-<span>打开标注工作台</span>
-</a>
-</div>
-</div>
-
-<!-- 概览数字 -->
-<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-space-sm">
-<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
-<span class="font-label-sm text-label-sm text-outline">原始会话</span>
-<span class="font-metric-digit text-headline-md text-primary font-bold">{{ annot.sessions }}</span>
-</div>
-<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
-<span class="font-label-sm text-label-sm text-outline">含视频对照</span>
-<span class="font-metric-digit text-headline-md text-secondary font-bold">{{ annot.with_video }}</span>
-</div>
-<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
-<span class="font-label-sm text-label-sm text-outline">人工确认标注</span>
-<span class="font-metric-digit text-headline-md text-primary-fixed font-bold">{{ annot.human_confirmed }}</span>
-</div>
-<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
-<span class="font-label-sm text-label-sm text-outline">待纠错预标注</span>
-<span class="font-metric-digit text-headline-md text-tertiary-fixed-dim font-bold">{{ annot.heuristic_proposed }}</span>
-</div>
-<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
-<span class="font-label-sm text-label-sm text-outline">误检已剔除</span>
-<span class="font-metric-digit text-headline-md text-error font-bold">{{ annot.heuristic_rejected }}</span>
-</div>
-<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
-<span class="font-label-sm text-label-sm text-outline">标注者</span>
-<span class="font-metric-digit text-headline-md text-on-surface-variant font-bold">{{ annot.annotators }}</span>
-</div>
-</div>
-
-<!-- 四段链路 -->
-<div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-primary-fixed text-[22px]">account_tree</span>
-<span class="font-headline-sm text-headline-sm text-primary font-bold">采集到训练的四段链路</span>
-</div>
-<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">capture → upload → annotate → train</span>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-sm">
-{% for st in annot.stages %}
-<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
-<div class="flex items-center justify-between">
-<span class="material-symbols-outlined {{ 'text-primary-fixed' if loop.first else 'text-outline' }} text-[20px]">{{ st.icon }}</span>
-<span class="font-label-sm text-label-sm text-outline font-bold">{{ st.step }}</span>
-</div>
-<span class="font-body-md text-body-md text-on-surface font-semibold">{{ st.title }}</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ st.body }}</span>
-</div>
-{% endfor %}
-</div>
-</div>
-
-<!-- 标注进度（会话清单） -->
-<div class="rounded-xl bg-surface-container shadow-md overflow-hidden">
-<div class="p-space-lg pb-space-sm flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-primary-fixed text-[22px]">playlist_play</span>
-<div class="flex flex-col">
-<span class="font-headline-sm text-headline-sm text-primary font-bold">标注进度</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">最近 8 场会话的人工介入情况（预标注需逐条纠错或确认）</span>
-</div>
-</div>
-<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">{{ annot.sessions_touched }} / {{ annot.sessions }} 场已介入</span>
-</div>
-{% if annot_sessions %}
-<div class="overflow-x-auto">
-<table class="w-full text-left text-body-md">
-<thead>
-<tr class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider bg-surface-container-low/70">
-<th class="py-space-sm px-space-md whitespace-nowrap">会话</th>
-<th class="py-space-sm px-space-md whitespace-nowrap">持拍</th>
-<th class="py-space-sm px-space-md whitespace-nowrap">开始时间</th>
-<th class="py-space-sm px-space-md whitespace-nowrap">时长</th>
-<th class="py-space-sm px-space-md whitespace-nowrap">标注总数</th>
-<th class="py-space-sm px-space-md whitespace-nowrap">待纠错</th>
-<th class="py-space-sm px-space-md whitespace-nowrap">人工标注数</th>
-<th class="py-space-sm px-space-md">进度</th>
-</tr>
-</thead>
-<tbody class="divide-y divide-surface-container-high/40">
-{% for s in annot_sessions %}
-<tr class="hover:bg-surface-container-high/50 transition-colors">
 <td class="py-space-md px-space-md">
-<span class="font-semibold text-on-surface whitespace-nowrap">{{ s.id }}</span>
-{% if s.has_video %}<span class="ml-1 px-1 rounded bg-secondary/15 text-secondary font-label-sm text-label-sm">有视频</span>{% endif %}
+<div class="font-label-sm text-label-sm text-secondary leading-relaxed">{{ r.source | bold }}</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed mt-1">{{ r.acquire | bold }}</div>
 </td>
-<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">{{ s.wrist }}</td>
-<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">{{ (s.started_at or '—')[:16] }}</td>
-<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">{{ s.duration_label }}</td>
-<td class="py-space-md px-space-md font-label-md text-label-md text-on-surface whitespace-nowrap">{{ s.n_total }}</td>
-<td class="py-space-md px-space-md font-label-md text-label-md whitespace-nowrap {{ 'text-tertiary-fixed-dim font-bold' if s.n_proposed else 'text-outline' }}">{{ s.n_proposed }}</td>
-<td class="py-space-md px-space-md font-label-md text-label-md whitespace-nowrap {{ 'text-primary-fixed font-bold' if s.n_human else 'text-outline' }}">{{ s.n_human }}</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ r.compute | bold }}</td>
 <td class="py-space-md px-space-md">
-<div class="flex items-center gap-space-xs">
-<div class="w-24 h-1.5 rounded-full bg-surface-container-high overflow-hidden">
-<div class="h-full rounded-full bg-primary-container" style="width: {{ s.progress }}%"></div>
-</div>
-<span class="font-label-sm text-label-sm text-on-surface-variant">{{ s.progress | int }}%</span>
-</div>
-</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
-</div>
-{% else %}
-<div class="px-space-lg pb-space-lg">
-<div class="py-space-xl rounded-xl border border-dashed border-outline/30 flex flex-col items-center gap-space-xs">
-<span class="material-symbols-outlined text-[32px] text-outline">inbox</span>
-<span class="font-body-md text-body-md text-on-surface-variant">还没有采集到会话</span>
-<span class="font-label-sm text-label-sm text-outline">把手表导出的 raw_*.json 上传到标注工作台即可开始</span>
-<a class="mt-space-xs flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all" href="/annotation">
-<span class="material-symbols-outlined text-[18px]">upload</span>
-<span>去上传</span>
-</a>
-</div>
+<div class="font-mono text-label-sm text-on-surface-variant leading-relaxed break-all">{{ r.artifact | bold }}</div>
+{% if r.pending %}
+<div class="mt-1 p-1.5 rounded bg-tertiary-fixed-dim/10 border border-tertiary-fixed-dim/30 font-label-sm text-label-sm text-tertiary-fixed-dim leading-relaxed">
+待落地：{{ r.pending | bold }}
 </div>
 {% endif %}
+</td>
+<td class="py-space-md px-space-md font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ r.judge | bold }}</td>
+<td class="py-space-md px-space-md">
+<span class="font-label-sm text-label-sm leading-relaxed {{ 'text-primary-fixed' if r.shown else 'text-outline' }}">{{ r.surface | bold }}</span>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+<div class="hidden py-space-xl flex-col items-center gap-space-xs text-center" id="catEmpty">
+<span class="material-symbols-outlined text-[32px] text-outline">search_off</span>
+<span class="font-body-md text-body-md text-on-surface-variant">没有匹配的字段</span>
+<span class="font-label-sm text-label-sm text-outline">换个分类或清空关键词试试</span>
+</div>
+<p class="px-space-lg pb-space-lg pt-space-sm font-label-sm text-label-sm text-outline leading-relaxed">
+「备注 · 分类」列是这张表的筛选维度；「分组」是采集口来源。
+编号 <span class="font-mono text-on-surface-variant">MD-xxx</span> 只在同一契约版本内稳定 ——
+字段增删会让其后编号顺延，跨版本引用请以「字段 / 列名」为准。
+</p>
 </div>
 
-<!-- 标注口径 -->
+<div class="scroll-mt-24" id="removed"></div>
+<!-- ===================== 已移除字段（留档，不采集不展示） =====================
+     判据：腕部单点 IMU + HealthKit 观测不到。留着这一节是为了让「为什么页面上
+     没有甜区/转速/落点」有据可查，而不是让人以为漏做了。 -->
+<div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-error text-[22px]">block</span>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">已移除字段（硬件不可得）</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">
+          这些量腕部单点 IMU 物理上观测不到，因此<span class="text-on-surface font-semibold">不进源数据表、不采集、不展示</span>。
+        </span>
+</div>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-error-container/20 text-error font-label-sm text-label-sm font-bold">{{ ds.removed | length }} 项</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-space-sm">
+{% for r in ds.removed %}
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="font-body-md text-body-md text-on-surface font-semibold">{{ r.field }}</span>
+<span class="font-mono text-label-sm text-outline">{{ r.key }}</span>
+</div>
+<span class="font-mono text-label-sm text-outline break-all">{{ r.art }}（列暂留 · 恒为 NULL · 已无消费方）</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ r.reason | bold }}</span>
+</div>
+{% endfor %}
+</div>
+</div>
+
+<div class="scroll-mt-24" id="acq-notes"></div>
 <div class="p-space-lg rounded-xl bg-surface-container-low flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
 <div class="flex items-center gap-space-xs">
-<span class="material-symbols-outlined text-[18px] text-outline">rule_settings</span>
-<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">标注与训练口径</span>
+<span class="material-symbols-outlined text-[18px] text-outline">integration_instructions</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">接入作业须知</span>
 </div>
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-sm">
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">{{ ds.notes | length }} 条 · 逐条来自真实踩坑</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-space-sm">
+{% for n in ds.notes %}
 <div class="p-space-md rounded-lg bg-surface-container flex flex-col gap-1">
-<span class="font-label-sm text-label-sm text-primary-fixed font-bold">① 「你只纠错」模式</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">
-            Watch 的启发式结果在上传时自动写成预标注（<span class="text-on-surface font-semibold">source=auto / status=proposed</span>）。
-            标注者只处理错的：手动确认的记为 <span class="text-on-surface font-semibold">confirmed</span>，
-            改标签或删误检的记为 <span class="text-on-surface font-semibold">rejected</span>（即硬例）。
-            未被更正的预标注会直接成为训练标签，不必逐条点过。
-          </span>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] {{ n.tone }}">{{ n.icon }}</span>
+<span class="font-label-sm text-label-sm {{ n.tone }} font-bold">{{ n.title }}</span>
 </div>
-<div class="p-space-md rounded-lg bg-surface-container flex flex-col gap-1">
-<span class="font-label-sm text-label-sm text-secondary font-bold">② 标签空间 8 类 ≠ 展示 6 类</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">
-            标注保留 8 类（多出<span class="text-on-surface font-semibold">高压 / 挑高 / 放小球</span>），
-            而小程序与 Swift 端只用 6 类 —— 这是<span class="text-on-surface font-semibold">刻意为之</span>：
-            标注阶段留富标签便于难例分析，训练时再按需归并；两端都用 8 类反而会让分类器去猜它区分不了的类别。
-          </span>
+<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ n.body | bold }}</span>
 </div>
-<div class="p-space-md rounded-lg bg-surface-container flex flex-col gap-1">
-<span class="font-label-sm text-label-sm text-tertiary-fixed-dim font-bold">③ 训练集从解析后的标签生成</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">
-            导出时按<span class="text-on-surface font-semibold">冲击时刻 0.3s 容差</span>聚类成簇，
-            簇内有人工标注则取多数投票，否则采用未审阅的预标注；再切 ±窗口算 38 维特征。
-            因此「标注了多少条」与「导出多少样本」不是同一个数。
-          </span>
+{% endfor %}
 </div>
 </div>
+</div>
+
+<!-- ================= 数据采集与标注（入口） =================
+     2026-10-01：这一块原先在本页完整渲染了一遍（概览数字 + 四段链路 + 进度表 + 标注口径），
+     而 /annotation 是同一件事的完整工作台 —— 同一件事两个页面各说一套，
+     两处还各自查库，口径容易慢慢漂移。
+     现在收敛为单一出口：全部内容搬到 /annotation，本页只留一条带待办计数的入口。
+     ⚠️ 改标注相关内容请只改 /annotation 与 server/annotation/stats.py，不要在本页再加一份。 -->
+<div class="p-space-lg rounded-xl bg-surface-container flex flex-col lg:flex-row lg:items-center justify-between gap-space-md shadow-md" id="annotation-panel">
+<div class="flex items-start gap-space-md">
+<div class="p-space-md rounded-xl bg-surface-container-low flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary-fixed text-[26px]">graphic_eq</span>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<div class="flex flex-wrap items-center gap-space-sm">
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high text-primary-fixed font-label-sm text-label-sm uppercase tracking-wider font-bold">Annotation Pipeline</span>
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Raw Session &rarr; Labeled Dataset</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-primary font-bold">数据采集与标注</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
+        采集回来的原始传感器会话，在标注工作台完成「视频 &harr; 波形」同步标注，
+        产出 CoreML 训练管线可直接消费的 annotation.json 与 38 维 dataset.csv。
+        采集链路对照、标注逻辑与状态机、作业须知、标注进度都在该页，本页不再重复渲染。
+      </p>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm shrink-0">
+<div class="px-space-md py-2 rounded-xl bg-surface-container-low flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">原始会话</span>
+<span class="font-label-md text-label-md text-on-surface font-bold">{{ annot_pointer.sessions }}</span>
+</div>
+<div class="px-space-md py-2 rounded-xl bg-surface-container-low flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">待纠错预标注</span>
+<span class="font-label-md text-label-md font-bold {{ 'text-tertiary-fixed-dim' if annot_pointer.heuristic_proposed else 'text-outline' }}">{{ annot_pointer.heuristic_proposed }}</span>
+</div>
+<a class="flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all shadow-[0_0_24px_rgba(195,244,0,0.18)]" href="/annotation">
+<span class="material-symbols-outlined text-[18px]">open_in_new</span>
+<span>打开数据采集与标注</span>
+</a>
 </div>
 </div>
 
@@ -548,6 +589,62 @@
         setTimeout(() => { icon.classList.remove('animate-spin'); location.reload(); }, 600);
       });
     }
+  })();
+
+  /* ===================== 训练元数据总表：分类筛选 + 关键词搜索 =====================
+     纯前端过滤，不刷新页面。
+     · 无 JS 时：所有行照常显示（按钮是 <button>，不会跳走），功能降级但内容完整。
+     · 类名分离成 ON / OFF 两个**字面量**常量：Tailwind 只生成被扫描文件里
+       出现过的字面量类名，字符串拼接出来的类名不会被生成（会静默丢样式）。 */
+  (function() {
+    const body   = document.getElementById('catBody');
+    const bar    = document.getElementById('catBar');
+    const count  = document.getElementById('catCount');
+    const search = document.getElementById('catSearch');
+    const empty  = document.getElementById('catEmpty');
+    if (!body || !bar) return;
+
+    const rows  = Array.from(body.querySelectorAll('tr.cat-row'));
+    const total = rows.length;
+    const ON    = 'flex items-center gap-space-xs px-space-md py-1.5 rounded-lg font-label-md text-label-md transition-colors bg-primary-container text-on-primary-fixed font-bold shadow-[0_0_20px_rgba(195,244,0,0.18)]';
+    const OFF   = 'flex items-center gap-space-xs px-space-md py-1.5 rounded-lg font-label-md text-label-md transition-colors bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface';
+
+    let activeCat = 'all';
+    let keyword   = '';
+
+    function apply() {
+      let shown = 0;
+      for (const tr of rows) {
+        const okCat = (activeCat === 'all') || (tr.dataset.cat === activeCat);
+        const okKw  = !keyword || (tr.dataset.text || '').indexOf(keyword) !== -1;
+        const ok    = okCat && okKw;
+        tr.classList.toggle('hidden', !ok);
+        if (ok) shown++;
+      }
+      if (count) count.textContent = '显示 ' + shown + ' / ' + total;
+      if (empty) {
+        empty.classList.toggle('hidden', shown !== 0);
+        empty.classList.toggle('flex',    shown === 0);
+      }
+    }
+
+    bar.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-cat]');
+      if (!b) return;
+      activeCat = b.dataset.cat;
+      for (const other of bar.querySelectorAll('button[data-cat]')) {
+        other.className = (other === b) ? ON : OFF;
+      }
+      apply();
+    });
+
+    if (search) {
+      search.addEventListener('input', () => {
+        keyword = search.value.trim().toLowerCase();
+        apply();
+      });
+    }
+    apply();
   })();
 </script>
 {% endblock %}
