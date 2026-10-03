@@ -195,7 +195,7 @@ CATEGORY_OF = {
     'temperature_c': 'context', 'humidity_pct': 'context', 'wind_speed_ms': 'context',
     # 采集质量
     'confidence': 'quality', 'anomaly': 'quality', 'wrist_on': 'quality',
-    'sample_rate_hz': 'quality', 'drop_rate': 'quality',
+    'sample_rate_hz': 'quality', 'drop_rate': 'quality', 'hit_rate': 'quality',
     # 设备信息
     'watch_model': 'device', 'os_version': 'device', 'battery_pct': 'device',
     # 采集标识
@@ -234,6 +234,15 @@ REMOVED = [
      'reason': '同落点深度 —— 横向落点同样需要球的飞行轨迹。'},
     {'key': 'net_clearance_m', 'field': '过网高度', 'art': 'stroke_records.net_clearance_m',
      'reason': '同落点深度 —— 弹道推断的前提是先能观测到弹道。'},
+    # 2026-10-03 复查补录：上一轮审计关键词只有「甜区/旋转/落点/过网/弹道」，
+    # 漏掉了「结果类」（进球 / 得分 / 失误 / 制胜分）。这几个字段此前**从未进过本登记表**，
+    # 所以「登记表驱动」的复核结构上看不见它们 —— 教训：登记表 ≠ DB 全集，
+    # 必须另做一次 schema 列 vs 本表 key 的对账。
+    {'key': 'unforced_errors', 'field': '非受迫性失误', 'art': 'training_sessions.unforced_errors',
+     'reason': '判定「失误」要先知道球有没有落在界内、以及这一分是否因此丢掉 —— '
+               '两者都需要视觉或人工计分。腕部 IMU 只知道你挥了几拍。'},
+    {'key': 'winners', 'field': '制胜分', 'art': 'training_sessions.winners',
+     'reason': '同上。制胜分是「这一分的对抗结果」，属计分数据，不是腕部可观的运动学量。'},
 ]
 
 # --------------------------------------------------------------------------- #
@@ -620,6 +629,19 @@ GROUPS = [
              'artifact': 'stroke_records.anomaly',
              'judge': '为 1 的样本不参与球速统计；单场占比 > 10% 时整场标 suspect',
              'surface': '未在任何页面展示；仅 App 单场详情按逐拍返回',
+             'shown': False, 'required': False},
+            {'field': '达标击球占比', 'key': 'hit_rate', 'unit': '%', 'sync': 'derive',
+             'source': '派生 · 逐拍算法置信度聚合',
+             'acquire': '统计 confidence ≥ 0.60 的击球数，占全部已识别击球的比例',
+             'compute': 'Σ(confidence ≥ 0.60) ÷ 识别击球总数 × 100，写入学员档案随 '
+                        'student_profile 上行。'
+                        '⚠️ 2026-10-03 **改口径**：原注释写「有效击球占比」，字面会被读成'
+                        '「球是否落在界内」—— 那是落点，需视觉，腕表测不到；'
+                        '现口径只依赖**分类器置信度**，是腕部侧完全可得的量',
+             'artifact': 'students.hit_rate',
+             'judge': '0 ≤ 值 ≤ 100。与 G3 门禁共用 0.60 阈值：'
+                      '< 60 说明该学员整体识别质量偏低，其球速结论需标注不可信',
+             'surface': '未在任何页面展示（仅落库）',
              'shown': False, 'required': False},
         ],
     },

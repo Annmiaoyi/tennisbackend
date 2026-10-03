@@ -370,13 +370,16 @@ Apple 的 `NSData.compressed(using: .zlib)` 产出的是 **RFC1951 裸 DEFLATE**
 ### 4.2 后端**没有**数据源的维度（已全部下线，不要再期待）
 
 `spin_rpm`、`spin_type`、`sweet_spot`、`depth_m`、`landing_zone`、
-`lateral_offset_m`、`net_clearance_m`、`anomaly`。
+`lateral_offset_m`、`net_clearance_m`、`anomaly`，
+以及会话级的 `unforced_errors`（非受迫性失误）、`winners`（制胜分）。
 
-原因：手腕单点 IMU 测不到。落点需要看到球的飞行轨迹，甜区需要拍面振动传感器。
+原因：手腕单点 IMU 测不到。落点需要看到球的飞行轨迹，甜区需要拍面振动传感器；
+`unforced_errors` / `winners` 是**对抗结果**，需要知道球有没有落在界内、这一分谁赢。
 
-**2026-10-02 已收口**：这些字段不再出现在任何上行白名单（`sync.py` 的 `SYNCABLE`）、
-接口出口（`user_api.py` / `data_api.py`）、契约类型（`TennisContract.swift`）
-以及 Phone / Watch 的任何展示项里。DB 列**暂留但恒为 NULL**。
+**2026-10-02 首轮收口，2026-10-03 补漏**：这些字段不再出现在任何上行白名单
+（`sync.py` 的 `SYNCABLE`）、接口出口（`user_api.py` / `data_api.py`）、
+契约类型（`TennisContract.swift`）以及 Phone / Watch 的任何展示项里。
+DB 列**暂留但恒为 NULL**。
 权威清单与逐项原因见 `server/datasources.py` 的 `REMOVED`（管理台 `/settings#removed`）。
 不要再新增对这些量的 Mock 展示 —— 用随机数撑场面会被当成真实数据。
 

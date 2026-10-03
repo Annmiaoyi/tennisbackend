@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS students (
   forehand_avg      INTEGER,                  -- 正手均速 km/h
   serve_peak        INTEGER,                  -- 发球峰值 km/h
   sweet_spot        REAL,                     -- [不可得] 甜区命中率 %（列暂留恒 NULL）
-  spin_rate         INTEGER,                  -- 平均转速 RPM
-  hit_rate          REAL,                     -- 有效击球占比 %
+  spin_rate         INTEGER,                  -- [不可得] 球自转，腕部 IMU 测不到（列暂留恒 NULL）
+  hit_rate          REAL,                     -- 识别置信度达标（confidence ≥ 0.60）的击球占比 %
   training_load     TEXT,                     -- 训练负荷：Optimal | High ...
   acwr              REAL,                     -- 急慢性负荷比
 
@@ -121,8 +121,8 @@ CREATE TABLE IF NOT EXISTS training_sessions (
   serve_peak_kmh    REAL,
   spin_rpm          INTEGER,                  -- [不可得] 列暂留恒 NULL
   sweet_spot_rate   REAL,                     -- [不可得] 列暂留恒 NULL
-  unforced_errors   INTEGER,
-  winners           INTEGER,
+  unforced_errors   INTEGER,                  -- [不可得] 非受迫性失误（列暂留恒 NULL）
+  winners           INTEGER,                  -- [不可得] 制胜分（列暂留恒 NULL）
   hr_zone           TEXT,                     -- 心率区间分布 JSON
   notes             TEXT,
 

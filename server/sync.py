@@ -53,8 +53,7 @@ SYNCABLE = {
             'started_at', 'ended_at', 'duration_sec', 'stroke_count', 'rally_max',
             'distance_km', 'calories_kcal', 'avg_hr', 'max_hr', 'avg_speed_kmh',
             'peak_speed_kmh', 'forehand_avg_kmh', 'backhand_avg_kmh', 'serve_avg_kmh',
-            'serve_peak_kmh', 'unforced_errors',
-            'winners', 'hr_zone', 'notes',
+            'serve_peak_kmh', 'hr_zone', 'notes',
             # 采集侧元数据与击球分项计数（Apple Watch 接入新增）
             'worn_wrist', 'source', 'external_id',
             'forehand_count', 'backhand_count', 'serve_count',

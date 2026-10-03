@@ -202,8 +202,13 @@ def metric(key, default=None):
 累计统计：`sessions_count` `hours_total` `strokes_total` `forehand_avg` `serve_peak`
 `hit_rate`
 
-> 硬件准入（2026-10-02）：`sweet_spot` / `spin_rate` 列**暂留但恒为 NULL**
-> （腕部单点 IMU 测不到），已停止写入、不再出现在任何接口与页面。
+> `hit_rate` 口径（**2026-10-03 修订**）：**识别置信度达标（`confidence` ≥ 0.60）的击球占比**。
+> 原注释写「有效击球占比」，字面会被读成「球是否落在界内」—— 那是落点，腕表测不到。
+> 新口径只依赖分类器置信度，是腕部侧完全可得的量，因此**保留**（登记编号 MD-032）。
+
+> 硬件准入（2026-10-02 / 2026-10-03）：`sweet_spot` `spin_rate` `unforced_errors`
+> `winners` 列**暂留但恒为 NULL**（腕部单点 IMU 测不到），已停止写入、
+> 不再出现在任何接口与页面。权威清单见 `server/datasources.py` 的 `REMOVED`。
 
 负荷：`training_load`(Optimal/High) `acwr`
 
@@ -221,8 +226,9 @@ def metric(key, default=None):
 心率：`avg_hr` `max_hr` `hr_zone`（区间分布 JSON）
 球速：`avg_speed_kmh` `peak_speed_kmh` `forehand_avg_kmh` `backhand_avg_kmh`
 　　　`serve_avg_kmh` `serve_peak_kmh`
-技术：`unforced_errors` `winners` `notes`
-（`spin_rpm` / `sweet_spot_rate` 列暂留恒 NULL，见 `server/datasources.py` 的 `REMOVED`）
+备注：`notes`
+（`unforced_errors` / `winners` / `spin_rpm` / `sweet_spot_rate` 列暂留恒 NULL，
+见 `server/datasources.py` 的 `REMOVED`）
 
 ### `stroke_records`（击球样本）
 

@@ -122,23 +122,24 @@ SEGMENTS = [
                      '平均发球时速 152 km/h，偏好硬地与红土场。',
          metrics={'主武器': '正手 INSIDE-OUT', '发球均速': 152, '正手均速': 122,
                   '场地偏好': '硬地 / 红土'},
-         insight='正手击球占比 +20%，下压网球 38 次/100 拍，非受迫性失误率 12.4%。'),
+         insight='正手击球占比 +20%，下压球（高压 / 截击）38 次/100 拍，'
+                 '平均击球间隔比同段位短 15%。'),
     dict(code='ARCHETYPE 02', name='稳定防守反击型', name_en='Counter-Puncher / Grinder',
          subtitle='相持忍耐型', headcount=12210, share=28.5, nt_range='NTRP 2.0 - 3.5',
          color='#7bd0ff', sort=2,
-         description='平均回合拍数最长，非受迫性失误率最低（＜10%）。'
-                     '依赖对手失误与突然变线，多拍能力突出。',
+         description='平均回合拍数最长，8 拍以上长回合占比最高。'
+                     '以稳定多拍拉锯消耗对手，相持续航能力突出。',
          metrics={'主武器': '双手反拍直线', '发球均速': 138, '平均回合': 9.4,
                   '场地偏好': '慢速硬地'},
-         insight='8 拍以上相持胜率 61%，长回合中段的击球质量保持稳定。'),
+         insight='8 拍以上长回合占比 61%，长回合中段的平均球速衰减不足 5%。'),
     dict(code='ARCHETYPE 03', name='全能进攻与发球上网', name_en='All-Court / Serve & Volley',
          subtitle='发球局主导型', headcount=7750, share=18.1, nt_range='NTRP 3.5 - 5.0',
          color='#ffb783', sort=3,
-         description='发球局得分率显著高于同段位，网前截击使用率 25%，'
-                     '一发进球后主动上网比例最高。',
+         description='发球均速显著高于同段位，网前截击与高压球使用率 25%，'
+                     '是四类画像中上网最积极的一类。',
          metrics={'主武器': '发球 + 上网', '发球均速': 168, '网前占比': '25%',
                   '场地偏好': '草地 / 快速硬地'},
-         insight='一发得分率 74%，网前截击成功率 68.5%。'),
+         insight='发球均速 168 km/h 为四类最高，一发与二发速差控制在 18 km/h 以内。'),
     dict(code='ARCHETYPE 04', name='休闲健身与进阶新手', name_en='Beginner & Casual Fitness',
          subtitle='健康与技能并重', headcount=8240, share=19.2, nt_range='NTRP 1.0 - 2.5',
          color='#ffb4ab', sort=4,
@@ -317,10 +318,10 @@ def build_metrics():
                                version='v4.2.8 Standard')
     m['ai_diagnosis'] = {
         'confidence': '96.4%',
-        'text': ('张哲恒 具有显著更强的主动进攻终结能力（正手进攻平均球速高出李思源 10 km/h，'
-                 '发球制胜分率高出同段位标杆 24%）；但在超过 8 拍以上 的多拍相持对抗中，'
-                 '李思源 展现出更高的战术耐心，非受迫性失误率比张哲恒低 18%，'
-                 '多拍相持中的击球质量更稳定。'),
+        'text': ('张哲恒 具有显著更强的主动进攻能力（正手进攻平均球速高出李思源 10 km/h，'
+                 '发球均速高出同段位标杆 6 km/h）；但在超过 8 拍以上的多拍相持中，'
+                 '李思源 的击球节奏更稳，长回合平均球速衰减比张哲恒少 8%，'
+                 '多拍相持中的球速保持能力更好。'),
     }
     m['compare_speed_bars'] = [
         dict(label='一发最高速 (First Serve)', value=176, unit='km/h', pct=95, tone='primary'),
@@ -334,21 +335,23 @@ def build_metrics():
     ]
     m['multi_rally'] = dict(
         hr_avg=158, hr_max=144, delta='-24 vs 第 7 拍', first='第 7 拍', second='第 13 拍',
-        note='8 拍以上相持得分率显著下降，体能拐点出现在第 9 拍（历时 4 分钟以上重相持）')
+        note='8 拍以上长回合占比显著下降，体能拐点出现在第 9 拍（历时 4 分钟以上重相持）')
     # 硬件准入：原先的 spin（球旋转）列不可测，已换成 A/B 双方「得分 / 均速」与最长相持。
+    # 硬件准入（2026-10-03）：原先的 a_score / b_score 是**比分**，属对抗结果，
+    # 腕部 IMU 无法观测，已整列去掉；verdict 里「ACE / 致胜 / 终结比赛」同样去掉。
     m['training_history'] = [
         dict(date='2024-10-24', time='16:30', location='北京·朝阳红土场', type='高强度实战对抗',
-             a_score='7', a_speed=124, b_score='5', b_speed=114, rally='14 拍',
+             a_speed=124, b_speed=114, rally='14 拍',
              note='背靠背5盘2.5分钟',
-             verdict='张哲恒 抢七发球连续 2 记外角 ACE 终结比赛。'),
+             verdict='张哲恒 发球均速与峰值均为上风，发球局节奏更主动。'),
         dict(date='2024-10-18', time='19:00', location='上海·浦东', type='底线多球与切削',
-             a_score='4', a_speed=118, b_score='6', b_speed=116, rally='22 拍',
+             a_speed=118, b_speed=116, rally='22 拍',
              note='红土场连续多拍训练, 多拍稳定性提升',
-             verdict='红土降速后多拍相持拉长，李思源反手深球致胜。'),
+             verdict='红土降速后多拍相持明显拉长，李思源的最长相持拍数更高。'),
         dict(date='2024-10-12', time='10:15', location='深圳·南山', type='定点标定训练',
-             a_score='92%', a_speed=126, b_score='96%', b_speed=113, rally='—',
+             a_speed=126, b_speed=113, rally='—',
              note='定点喂球测试',
-             verdict='张哲恒爆发力更强，李思源多拍相持更稳。'),
+             verdict='张哲恒 击球均速更高，李思源 最长相持更长。'),
     ]
     m['training_history_total'] = 88
 
@@ -459,8 +462,9 @@ def build_sessions(student_id, user_id, student_name, seed):
             serve_peak_kmh=round(serve, 1),
             # 硬件准入（2026-10-02）：spin_rpm / sweet_spot_rate 需要拍面传感器或
             # 球的高速视觉轨迹，腕部单点 IMU 测不到 —— 不再写入（列暂留，恒为 NULL）。
+            # 硬件准入（2026-10-03）补：unforced_errors / winners 是**对抗结果**，
+            # 需要知道球有没有落在界内、这一分谁赢 —— 同样测不到，不再写入。
             # 详见 server/datasources.py 的 REMOVED 与 /settings#removed。
-            unforced_errors=rnd.randint(4, 32), winners=rnd.randint(3, 28),
             hr_zone=json.dumps({'zone1': 12, 'zone2': 26, 'zone3': 38, 'zone4': 19,
                                 'zone5': 5}, ensure_ascii=False),
             notes='%s · %s' % (student_name, title),
@@ -542,7 +546,10 @@ def run(force=False, user_id='u_demo'):
             serve_peak=s['serve'],
             # 硬件准入（2026-10-02）：sweet_spot / spin_rate 需要拍面传感器，
             # 腕部单点 IMU 测不到 —— 不再写入（列暂留，恒为 NULL）。
-            hit_rate=round(80 + i * 2.1, 1), training_load='Optimal', acwr=1.12,
+            # hit_rate（2026-10-03 改口径）：识别置信度达标（confidence ≥ 0.60）的
+            # 击球占比。原口径「有效击球占比」会被读成「球是否落在界内」——那是落点，
+            # 测不到；新口径只依赖分类器置信度，腕部侧可得，故保留。
+            hit_rate=round(88 + i * 1.6, 1), training_load='Optimal', acwr=1.12,
             last_training_at=s['last_at'], last_training_note=s['last_note'],
             location=s['location'], is_online=s['online'],
         ))
