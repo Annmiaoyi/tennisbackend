@@ -352,8 +352,13 @@ for label, got, want in [
          'id="histScroll" role="region"' in html_a and 'tabindex="0"' in html_a, True),
         ('横滚: 横扫到头不触发浏览器前进/后退',
          'overscroll-behavior-x: contain' in html_a, True),
-        ('横滚: CSS 例外里 scrollbar-width 覆盖了全局的 none',
-         'scrollbar-width: thin' in _css_exc, True),
+        # 例外块里必须是 auto，不能是 thin、也不能配 scrollbar-color：
+        # 只要 scrollbar-width/scrollbar-color 非 auto，浏览器就改用标准滚动条
+        # 渲染并**忽略 ::-webkit-scrollbar**（标准滚动条在 macOS「自动隐藏滚动条」
+        # 下会自动隐去 → 等于白恢复）。
+        ('横滚: CSS 例外把 scrollbar-width 从 none 改回 auto',
+         'scrollbar-width: auto' in _css_exc
+         and 'scrollbar-width: none' not in _css_exc, True),
         ('横滚: CSS 例外里给了旧 Safari 兜底（::-webkit-scrollbar）',
          '.hist-scroll::-webkit-scrollbar {' in _CSS_SRC, True),
         ('横滚: 全局隐藏滚动条的设计要求仍在（例外才有存在意义）',

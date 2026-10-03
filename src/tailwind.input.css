@@ -72,16 +72,19 @@
  * **看不见的**路径：鼠标没有横滚轮的人根本不知道这里能滚，右侧列等于不存在
  * （2026-10-03 用户实际反馈）。
  *
- * ⚠️ 两条都必须覆盖，少一条都不生效：
- *   · `scrollbar-width` —— 按规范，只要元素上设了非 auto 的 scrollbar-width，
- *     浏览器就**改用标准滚动条渲染并忽略 `::-webkit-scrollbar`**，
- *     所以光写 `::-webkit-scrollbar` 会被全局的 `scrollbar-width: none` 压住。
- *   · `::-webkit-scrollbar` —— 给不支持 scrollbar-width 的旧 Safari 兜底。
+ * ⚠️ 两条必须**同时**覆盖，少一条都不生效：
+ *   · `scrollbar-width: auto` —— 覆盖全局那条 `none`（否则滚动条仍然不显示）。
+ *     刻意写 `auto` 而**不是** `thin`，也**不写** `scrollbar-color`：按规范，
+ *     元素上一旦设了非 auto 的 scrollbar-width / scrollbar-color，浏览器就
+ *     **改用标准滚动条渲染并忽略 `::-webkit-scrollbar`**；而自定义滚动条是
+ *     **非 overlay、常驻可见**的，标准滚动条在 macOS「自动隐藏滚动条」下会自动
+ *     隐去 —— 那等于白恢复。auto = 「渲染方式交回 UA」，下面那段才作数。
+ *   · `::-webkit-scrollbar` —— 实际把滚动条画出来（并给不支持 scrollbar-width
+ *     的旧 Safari 兜底）。
  * 选择器优先级：`.hist-scroll`（0,1,0）> `*`（0,0,0），所以无需 !important。
  */
 .hist-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(142, 147, 121, 0.5) rgba(142, 147, 121, 0.1);
+  scrollbar-width: auto;
 }
 .hist-scroll::-webkit-scrollbar {
   display: block;
@@ -89,17 +92,17 @@
   height: 10px;
 }
 .hist-scroll::-webkit-scrollbar-track {
-  background: rgba(142, 147, 121, 0.08);
+  background: #181d1a; /* surface-container-low */
 }
 .hist-scroll::-webkit-scrollbar-thumb {
-  background: rgba(142, 147, 121, 0.42);
+  background: #444933; /* outline-variant */
   border-radius: 9999px;
 }
 .hist-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(195, 244, 0, 0.6); /* primary-container */
+  background: #c3f400; /* primary-container */
 }
 .hist-scroll::-webkit-scrollbar-corner {
-  background: transparent;
+  background: #181d1a;
 }
 
 /* ============ 2. 外壳（设计稿未含，按截图还原） ============ */
