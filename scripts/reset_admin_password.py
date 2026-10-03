@@ -13,17 +13,19 @@
 
 用法
 ----
+（下面用 macOS/Linux 的 `.venv/bin/python`；Windows 换成 `.venv/Scripts/python`）
+
     # 生成一个随机口令（推荐）
-    .venv/Scripts/python scripts/reset_admin_password.py
+    .venv/bin/python scripts/reset_admin_password.py
 
     # 指定口令
-    .venv/Scripts/python scripts/reset_admin_password.py --password 'MyPassw0rd'
+    .venv/bin/python scripts/reset_admin_password.py --password 'MyPassw0rd'
 
     # 直接在终端显示新口令（便于复制；注意终端历史会留痕）
-    .venv/Scripts/python scripts/reset_admin_password.py --print
+    .venv/bin/python scripts/reset_admin_password.py --print
 
     # 看一下有哪些账号
-    .venv/Scripts/python scripts/reset_admin_password.py --list
+    .venv/bin/python scripts/reset_admin_password.py --list
 
 做的事
 ------
