@@ -212,7 +212,7 @@
     ('登记表字段', hist.totals.fields, 'text-on-surface-variant'),
     ('必采字段', hist.totals.required, 'text-tertiary-fixed-dim'),
     ('必采已填满', hist.totals.required_filled, 'text-primary-fixed'),
-    ('逐拍样本', hist.totals.stroke_samples, 'text-on-surface')] %}
+    ('逐拍抽样', hist.totals.stroke_samples, 'text-on-surface')] %}
 <span class="px-space-sm py-1 rounded-lg bg-surface-container-low flex items-center gap-space-xs font-label-sm text-label-sm">
 <span class="text-outline">{{ lab }}</span>
 <span class="font-mono font-label-md text-label-md {{ tone }} font-bold">{{ val }}</span>
@@ -220,7 +220,9 @@
 {% endfor %}
 <span class="flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-surface-container-low font-label-sm text-label-sm text-outline">
 <span class="material-symbols-outlined text-[16px]">swipe</span>
-<span>表头与左侧会话列已固定；悬停任意格或列头看原始值</span>
+{#- 「点会话号或逐拍字段看原始全量」这句必须写出来：把逐拍格从「12 条」
+    改成入口之后，不说明的话读者只会看到一个数字加一个箭头，不知道点进去是什么。 -#}
+<span>表头与左侧会话列已固定；悬停任意格看原始值；点<span class="text-primary-fixed">会话号</span>或<span class="text-primary-fixed">逐拍字段</span>看原始全量</span>
 </span>
 
 {#- 横向翻页入口。
@@ -316,7 +318,12 @@
     跟着变色（sticky 单元格自己的背景会盖住 tr 的背景）。 -#}
 <td class="bg-surface-container group-hover:bg-surface-container-high transition-colors" style="position: sticky; left: 0; z-index: 2; padding: 6px 8px; border-right: 1px solid {{ C_LINE }}; border-bottom: {{ ROW }}; vertical-align: middle;" title="{{ s.id }}">
 <div class="flex flex-col">
-<span class="font-mono font-label-md text-label-md text-on-surface font-bold">{{ s.short }}</span>
+{#- 会话号本身就是「看这一场明细」的入口。放在这里而不是只放在逐拍列上：
+    读者想下钻时，第一反应是点**这一行的名字**，而不是某一列的格子。 -#}
+<a class="flex items-center gap-0.5 font-mono font-label-md text-label-md text-on-surface font-bold hover:text-primary-fixed hover:underline" href="/strokes?session={{ s.id }}" title="查看本场逐拍原始全量">
+<span>{{ s.short }}</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</a>
 <span class="font-label-sm text-label-sm text-outline truncate">{{ s.type_label }}</span>
 </div>
 </td>
@@ -337,10 +344,14 @@
 </div>
 </td>
 {#- 数据格：cells 与 fields 同序，用 loop.index0 取本列定义（为了拿
-    group_first 与 level 决定分隔线粗细和配色）。 -#}
+    group_first 与 level 决定分隔线粗细和配色）。
+    逐拍字段（level='stroke'）的格子带 href —— 那些字段一场有几十上百个值，
+    一格放不下，所以给的是「本场击球总数 + 进入逐拍原始全量页」。
+    ⚠️ 链接必须走 <a> 而不是 JS 跳转：禁 JS、中键新标签、右键复制链接
+    这三件事都要照常能用。 -#}
 {% for c in s.cells %}
 {% set f = hist.fields[loop.index0] %}
-<td class="font-label-sm text-label-sm {{ 'text-secondary' if f.level == 'stroke' else ('text-outline' if c.v == '—' else 'text-on-surface') }}" style="padding: 6px 6px; text-align: center; border-left: 1px solid {{ C_GROUP if f.group_first else C_LINE }}; border-bottom: {{ ROW }}; font-variant-numeric: tabular-nums; white-space: nowrap;"{% if c.t %} title="{{ c.t | plain }}"{% endif %}>{{ c.v }}</td>
+<td class="font-label-sm text-label-sm {{ 'text-secondary' if f.level == 'stroke' else ('text-outline' if c.v == '—' else 'text-on-surface') }}" style="padding: 6px 6px; text-align: center; border-left: 1px solid {{ C_GROUP if f.group_first else C_LINE }}; border-bottom: {{ ROW }}; font-variant-numeric: tabular-nums; white-space: nowrap;"{% if c.t %} title="{{ c.t | plain }}"{% endif %}>{% if c.href %}<a class="inline-flex items-center gap-0.5 text-primary-fixed hover:underline" href="{{ c.href }}"><span>{{ c.v }}</span><span class="material-symbols-outlined text-[13px]">chevron_right</span></a>{% else %}{{ c.v }}{% endif %}</td>
 {% endfor %}
 </tr>
 {% endfor %}

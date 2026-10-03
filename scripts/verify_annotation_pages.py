@@ -28,7 +28,7 @@ env.filters['bold'] = _bold_filter
 env.filters['plain'] = _plain_filter
 
 # ---- 1. 语法检查 ---------------------------------------------------------
-tpls = ['pages/settings.html', 'pages/annotation.html']
+tpls = ['pages/settings.html', 'pages/annotation.html', 'pages/strokes.html']
 bad = 0
 for t in tpls:
     try:
@@ -386,6 +386,74 @@ for label, got, want in [
 
 print()
 
+# ---- 5. 逐拍原始全量页（/strokes） -----------------------------------------
+# 这一页存在的理由就是回答「台账写着 106 拍、逐拍字段却写着 12 条」那个疑问，
+# 所以断言的重点**不是**「表能渲染出来」，而是**两个口径是否真的对得上**：
+# 逐拍行数必须等于 L0 原始包里的全量条数，且与会话汇总的 stroke_count 一致。
+# 只断言「页面上有 id="strokes"」的话，把数据源换回抽稀的 stroke_records
+# 也照样能过 —— 那正是要防的回归。
+print('逐拍原始全量页（/strokes）')
+
+
+def render_strokes(session_id):
+    detail = ann_stats.stroke_detail(session_id)
+    ctx = dict(common, nav_active='data-annotation', detail=detail)
+    return env.get_template('pages/strokes.html').render(
+        request=_FakeReq(), **ctx), detail
+
+
+html_sd, det_sd = render_strokes('hist-S01-02')      # 有人工介入的一场
+html_sd1, det_sd1 = render_strokes('hist-S01-01')    # 该学员最早的一场
+html_sd0, _ = render_strokes('')                     # 无参数
+html_sdn, _ = render_strokes('hist-NOPE')            # 不存在的会话
+
+# 注：不能用 tbody_of —— 它是台账专用的（会先切到 #history 区块再取 tbody）。
+# /strokes 只有一张表，直接取第一个 <tbody> 即可。
+_sd_rows = slice_between(html_sd, '<tbody>', '</tbody>').count('<tr class="group ')
+for label, got, want in [
+        ('逐拍页: 表体渲染出来', 'id="strokes"' in html_sd, True),
+        # 这三条是同一件事的三个说法，缺一条就说明口径又被改回去了：
+        # 行数 = L0 全量 = 会话汇总。
+        ('逐拍页: 逐拍行数 = L0 原始包全量条数',
+         _sd_rows, det_sd['stats']['n_swings_raw']),
+        ('逐拍页: 逐拍行数 = 会话汇总 stroke_count',
+         _sd_rows, det_sd['session']['stroke_count']),
+        ('逐拍页: 两端计数比对为「一致」', det_sd['stats']['count_match'], True),
+        ('逐拍页: 页面显示「一致」徽章',
+         'verified' in html_sd and '<span>一致</span>' in html_sd, True),
+        ('逐拍页: 标出原始包条数是 L0 全量口径',
+         'L0 session.swings 全量' in html_sd, True),
+        ('逐拍页: 写明与台账是两个粒度', '两个粒度' in html_sd, True),
+        ('逐拍页: 点明 stroke_records 是抽稀副本', 'stroke_records' in html_sd, True),
+        # 人工介入必须可视，否则这一页退化成一张纯序号表
+        ('逐拍页: 有「已纠错」标记', '已纠错' in html_sd, True),
+        ('逐拍页: 有「已确认」标记', '已确认' in html_sd, True),
+        ('逐拍页: 有「未审阅」标记', '未审阅' in html_sd, True),
+        ('逐拍页: 纠错行写明改判前后', '人工改判：' in html_sd, True),
+        ('逐拍页: 会话元信息（学员名）在页头', det_sd['session']['student_name'] in html_sd, True),
+        # 7 列 ≈ 900px，小屏必须能横滚 —— 全站隐藏了滚动条，不挂类就「能滚但看不出来」
+        ('逐拍页: 表格容器挂了 .hist-scroll', 'class="hist-scroll ' in html_sd, True),
+        ('逐拍页: 空参数走「没指定会话」空态', '没有指定会话' in html_sd0, True),
+        ('逐拍页: 不存在的会话走「找不到」空态', '找不到会话' in html_sdn, True),
+        ('逐拍页: 空态给出回台账的出口',
+         'href="/annotation#history"' in html_sd0, True),
+        ('逐拍页: 首场只有「下一场」没有「上一场」',
+         ('下一场' in html_sd1) and ('上一场' not in html_sd1), True),
+        # 台账 → 逐拍页的入口：每行 1 个会话号 + 5 个逐拍字段格。
+        ('台账: 每行 1 个会话号入口 + 5 个逐拍格',
+         tbody_of(html_a).count('/strokes?session=') // n_rows, 6),
+        # 本次修复的核心：格子里必须是**本场击球总数**，不能再是抽稀的样本条数。
+        ('台账: 逐拍格 title 给出本场击球总数',
+         ('本场击球 %d 次' % det_sd1['session']['stroke_count'])
+         in tbody_of(html_a), True),
+]:
+    ok = got == want
+    print('%s %-52s got=%s want=%s' % ('✅' if ok else '❌', label, got, want))
+    if not ok:
+        fail += 1
+
+print()
+
 
 def body_text(html):
     """只剩「读者能看到的正文」—— 注释里写 **强调** 是给人读源码的，不算残留。
@@ -403,9 +471,11 @@ def body_text(html):
 
 s_left = body_text(html_s).count('**')
 a_left = body_text(html_a).count('**')
+sd_left = body_text(html_sd).count('**')
 print('裸 ** 残留（settings 正文）：', s_left)
 print('裸 ** 残留（annotation 正文）：', a_left)
-if s_left or a_left:
+print('裸 ** 残留（strokes 正文）：', sd_left)
+if s_left or a_left or sd_left:
     fail += 1
     print('❌ 有未渲染的 ** 标记（注释里的不计）')
 print('结论：', '全部通过' if not fail else '%d 项失败' % fail)

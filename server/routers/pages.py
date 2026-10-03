@@ -435,3 +435,23 @@ def annotation_workspace(request: Request):
 @router.get('/dashboard')
 def dashboard_alias():
     return RedirectResponse('/')
+
+
+@router.get('/strokes', response_class=HTMLResponse)
+def strokes(request: Request):
+    """单场「逐拍原始全量」——从台账下钻进来的只读明细页。
+
+    为什么是独立页面而不是 /annotation 里的又一个锚点区块：
+    逐拍表是「一次击球 = 一行」，一场 75~269 行；塞进那个已经十屏的长文档
+    会把后面的区块全挤走，而且会让人误以为这里也能像工作台那样改标注。
+
+    参数只有一个 `session`（会话 id）。不做「无参数时列全部会话」——
+    台账才是选场次的地方，在这里再列一遍等于两处各有一套入口，
+    所以无参数直接给空态、附带回台账的链接。
+    """
+    from server.annotation import stats
+
+    sid = (request.query_params.get('session') or '').strip()
+    ctx = _context(request, 'pages/strokes.html', 'data-annotation')
+    ctx['detail'] = stats.stroke_detail(sid)
+    return templates.TemplateResponse(request, 'pages/strokes.html', ctx)

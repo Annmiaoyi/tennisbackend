@@ -18,6 +18,12 @@ from .db import RAW_DIR, VIDEO_DIR, get_conn  # noqa: F401  (RAW_DIR/VIDEO_DIR �
 import json
 import re
 import unicodedata
+from collections import Counter
+
+# 标注聚类的容差**必须与导出训练集那一侧同源**：逐拍页显示「这一拍已纠错」，
+# 而导出时用的是另一套容差，两边就会各说各话（页面说改过了、训练集里还是旧标签）。
+# 所以这里主动复用 converter 的常量，而不是在本文件再写一个 0.3。
+from .converter import MATCH_TOL  # noqa: E402
 
 # 训练形式 / 场地类型的中文名。与 server/analytics.py 里的那份保持一致 ——
 # 同一个枚举在两个页面必须显示同一个中文名，否则「专项练习」和「截击专项」
@@ -693,7 +699,10 @@ def history_metadata(student=None, rng=None, q=None):
                 sam = stroke_by_sess.get(r['id'], [])
                 if any(s.get(f['col']) is not None for s in sam):
                     coverage += 1
-                by_id[r['id']]['cells'].append(_stroke_cell(f['col'], sam))
+                # 传 r['id'] 与 stroke_count：逐拍格要显示本场**击球总数**
+                # （而不是抽稀样本条数），并挂上进入 /strokes 的链接。
+                by_id[r['id']]['cells'].append(
+                    _stroke_cell(f['col'], sam, r['id'], r.get('stroke_count')))
         item['coverage'] = coverage
         item['total'] = len(sessions)
         item['filled'] = coverage == len(sessions)
@@ -800,29 +809,73 @@ def _hist_filter_info(student, rng, n_shown, n_all, students):
     }
 
 
-def _stroke_cell(col, samples):
-    """逐拍字段的单元格：值恒为「本场样本条数」，title 补列本身的分布。
+# 逐拍字段的单位（只给需要单位的列）。原来这个映射写在 _stroke_cell 内部，
+# 改成模块级是因为下面的取值概况与它是一回事，两处各写一份迟早不一致。
+_STROKE_UNITS = {'speed_kmh': ' km/h', 'impact_ms': ' ms'}
 
-    stroke_records 是**抽样**表（本批每场 12 条），所以这一格不是「全量计数」。
-    不写成具体数值是为了不让读者拿它跟会话汇总列做除法（分母不同）。
+
+def _stroke_val_fmt(col, ref):
+    """逐拍数值的格式化。
+
+    ⚠️ 置信度**必须给 3 位小数**：门限是 0.60，用 1 位小数会把 0.62 和 0.58
+    都写成 `0.6`，等于把这一列的有效信息全丢了（2026-10-03 实测发现的真 bug）。
+    """
+    if col == 'confidence':
+        return lambda x: '%.3f' % x
+    if isinstance(ref, float):
+        return lambda x: '%.1f' % x
+    return lambda x: '%d' % x
+
+
+def _stroke_range_tip(col, vals):
+    """抽稀样本里这一列的取值概况（给 title 用）。
+
+    ⚠️ 布尔列（anomaly）给「min ~ max」读不出任何信息 —— 永远只会得到
+    `0 ~ 0` 或 `0 ~ 1`。这类列要的是**计数**，所以单独走一条分支。
+    """
+    if col == 'anomaly':
+        n_true = sum(1 for v in vals if v)
+        return '抽稀样本里 %d 条标为异常抖动' % n_true
+    lo, hi = min(vals), max(vals)
+    fmt = _stroke_val_fmt(col, lo)
+    return '抽稀样本里 %s ~ %s%s' % (fmt(lo), fmt(hi), _STROKE_UNITS.get(col, ''))
+
+
+def _stroke_cell(col, samples, session_id=None, total=None):
+    """逐拍字段的单元格：**本场击球总数 + 进入逐拍全量页的入口**。
+
+    ⚠️ 这里曾经显示的是「样本条数」——`stroke_records` 的抽稀条数，本批每场固定 12。
+    后果是同一行的会话汇总写着 106 拍、逐拍字段却写着 12 条，两个数对不上，
+    读者只会得出「数据丢了」的结论；而真实原因不过是「分析层只存了 12 条抽稀样本」,
+    这个事实不该由读者去猜。
+
+    现在的取舍：
+      · 值 = 本场**击球总数**（会话汇总口径），与同一行的 `stroke_count` 一致；
+      · 点击进入 /strokes，那里才是这些字段的**全量原始**落点；
+      · 抽稀样本的条数与数值范围降级到 title 里，作为补充而不是主体。
     """
     n = len(samples)
-    if not n:
-        return {'v': '—', 't': '该场没有逐拍样本'}
-    tips = ['该场逐拍样本 %d 条（stroke_records 是抽样表，不是全量）' % n]
-    vals = [s.get(col) for s in samples if s.get(col) is not None]
-    if vals:
-        try:
-            lo, hi = min(vals), max(vals)
-            unit = {'speed_kmh': ' km/h', 'impact_ms': ' ms',
-                    'confidence': '', 'seq_in_session': ''}.get(col, '')
-            fmt = (lambda x: '%.1f' % x) if isinstance(lo, float) else (lambda x: '%d' % x)
-            tips.append('本列 %d 个非空样本，%s ~ %s%s' % (len(vals), fmt(lo), fmt(hi), unit))
-        except TypeError:
-            pass
+    tips = []
+    if isinstance(total, int):
+        tips.append('本场击球 %d 次' % total)
+    if n:
+        tips.append('分析库 stroke_records 另存 %d 条抽稀样本（不是全量）' % n)
+        vals = [s.get(col) for s in samples if s.get(col) is not None]
+        if vals:
+            try:
+                tips.append(_stroke_range_tip(col, vals))
+            except TypeError:
+                pass
+        else:
+            tips.append('抽稀样本里这一列全为空')
     else:
-        tips.append('本列在样本里全为空')
-    return {'v': '%d 条' % n, 't': ' · '.join(tips)}
+        tips.append('分析库 stroke_records 没有本场样本')
+    return {
+        'v': ('%d 条' % total) if isinstance(total, int) else ('%d 条' % n),
+        't': ' · '.join(tips) + ' · 点击查看 L0 原始全量',
+        'href': ('/strokes?session=%s' % session_id) if session_id else '',
+        'href_title': '查看本场逐拍原始全量',
+    }
 
 
 
@@ -832,3 +885,327 @@ def _zone_list(raw):
         return [json.loads(raw)['zone%d' % i] for i in range(1, 6)]
     except Exception:
         return []
+
+
+# --------------------------------------------------------------------------- #
+# 逐拍原始全量（L0 下钻视图）
+# --------------------------------------------------------------------------- #
+# 台账（history_metadata）是「一场训练 = 一行」，逐拍字段在一格里放不下，
+# 只能给个计数；本区块回答的是另一半问题：**这一场每一次击球到底是什么样**。
+#
+# 数据源刻意选 L0 原始包，而不是分析库的 `stroke_records`：
+#   · L0 是内容寻址的原始字节，是「原始」二字的唯一落点；
+#   · `stroke_records` 是**抽稀**出来的分析层副本（每场固定 12 条），
+#     它既不等于 L0 的全量条数、也不等于同场的会话汇总 `stroke_count`。
+#     拿它当「全量」展示会自相矛盾 —— 详见 _stroke_cell 的说明。
+# 标注状态取自标注库 `annotations`，按 MATCH_TOL 与击球时刻对齐。
+# 球种中文名的**唯一真源**是 schemas.LABEL_CN，这里只换个本地别名。
+#
+# ⚠️ 刻意**不**复用 analytics.STROKE_TYPES（那边只有 6 类）—— schemas 的
+# 文档字符串写明了两套标签空间是**故意分开**的：标注阶段保留 8 类富标签
+# （多出 smash/lob/drop）便于难例分析，训练/展示时再归并。
+# 逐拍页看的是标注结果，所以必须用 8 类那一套，否则 lob / drop 会显示成英文。
+from .schemas import LABEL_CN as STROKE_TYPE_LABEL  # noqa: E402
+
+# 标注状态 → (中文标签, 说明, 色调类)。
+# ⚠️ 色调类必须写**完整字面量**：tailwind 扫的是源码文本，
+# `'text-' + tone` 这种运行时拼接扫不到，会被 purge（本仓库踩过）。
+STROKE_STATUS_META = {
+    'confirmed': ('已确认', '人工认可了这次预标注', 'text-primary-fixed'),
+    'corrected': ('已纠错', '人工改了球种标签', 'text-tertiary-fixed-dim'),
+    'proposed':  ('未审阅', '启发式预标注，尚无人工介入', 'text-on-surface-variant'),
+    'rejected':  ('已判误检', '人工判定这一拍是误检，预标注已删', 'text-error'),
+    'unmatched': ('无对应标注', '有这次击球，但没有任何标注行与它对齐', 'text-outline'),
+}
+
+# 标注状态的展示顺序：先人工介入过的，再机器预标注，最后两边都没有的。
+_STATUS_ORDER = ['corrected', 'confirmed', 'rejected', 'proposed', 'unmatched']
+
+
+def _row_get(row, key, default=None):
+    """sqlite3.Row 与 dict 都能取。取不到给默认值。
+
+    本函数要同时吃两个库的行：标注库走 `sqlite3.Row`、分析库走 dict，
+    而 `Row['不存在的列']` 抛 IndexError、`dict[...]` 抛 KeyError —— 不兜住的话
+    「某个库少了一列」会变成整页 500，而不是一行「—」。
+    """
+    if row is None:
+        return default
+    try:
+        v = row[key]
+    except (KeyError, IndexError, TypeError):
+        return default
+    return default if v is None else v
+
+
+def _fmt_t(sec):
+    """距本次训练开始的秒数 → `mm:ss.s`。
+
+    逐拍表里 106 行全是相对时刻，写绝对时间戳既长又没法直接比；而只给秒数
+    则超过 60s 以后要靠读者自己换算。`mm:ss.s` 两头都顾上。
+    """
+    try:
+        s = float(sec)
+    except (TypeError, ValueError):
+        return '—'
+    m, r = divmod(s, 60)
+    return '%02d:%04.1f' % (int(m), r)
+
+
+def _cluster_annotations(rows):
+    """把标注行按 MATCH_TOL 聚成簇（与 converter.resolve_session_annotations 同规则）。"""
+    clusters = []
+    for r in rows:
+        t = r.get('impact_time')
+        if t is None:
+            continue
+        for c in clusters:
+            if abs(c['center'] - t) <= MATCH_TOL:
+                c['items'].append(r)
+                break
+        else:
+            clusters.append({'center': t, 'items': [r]})
+    return clusters
+
+
+def _judge_cluster(items):
+    """一个标注簇 → 这一拍的最终结论。
+
+    优先级与 converter.resolve_session_annotations 一致：
+    **人工确认优先，否则未审阅的启发式直接继承**。
+    唯一的差别是这里不「跳过只有 rejected 的簇」—— 被删掉的那条预标注同样
+    要看得见，否则逐拍表会凭空少一行，读者会以为丢数据了。
+    """
+    humans = [a for a in items
+              if (a.get('annotator') or '') != 'heuristic'
+              and a.get('status') == 'confirmed']
+    heur = [a for a in items if (a.get('annotator') or '') == 'heuristic']
+    if humans:
+        label = Counter(a['label'] for a in humans).most_common(1)[0][0]
+        # 人工标签与启发式标签不同 = 人工改过标；相同 = 只是认可了预标注。
+        status = 'corrected' if (heur and heur[0]['label'] != label) else 'confirmed'
+        source = 'human'
+    elif heur:
+        label, source = heur[0]['label'], 'auto'
+        status = heur[0].get('status') or 'proposed'
+    else:
+        return None
+    return {
+        'label': label,
+        'source': source,
+        'status': status,
+        'annotators': sorted({a.get('annotator') for a in humans if a.get('annotator')}),
+        'n_items': len(items),
+    }
+
+
+def _stroke_status_counts(strokes):
+    """按固定顺序输出状态分布（计数为 0 的也留着 —— 有 0 才说明「确实没发生」）。"""
+    c = Counter(s['status'] for s in strokes)
+    return [{'key': k, 'label': STROKE_STATUS_META[k][0], 'tone': STROKE_STATUS_META[k][2],
+             'n': c.get(k, 0)} for k in _STATUS_ORDER]
+
+
+def stroke_detail(session_id):
+    """某一场会话的**逐拍原始全量**明细。取不到数据时 exists=False，不抛错。
+
+    返回的 `strokes` 顺序即 L0 原始包里 `session.swings` 的原始顺序
+    （不是按标注重新排的）；`orphans` 是**没有对应击球**的标注簇 ——
+    正常情况为空，一旦非空就说明两端数据已经对不上，页面必须显式提示，
+    而不是悄悄少几行。
+
+    ⚠️ 只用**一条**标注库连接：`load_raw_payload` 需要同一连接来查 raw_id，
+    顺手在同一个 `try` 里把它取完，避免开两次库。
+    """
+    sid = (session_id or '').strip()
+    out = {
+        'exists': False, 'missing': None, 'session_id': sid,
+        'session': {}, 'raw': {}, 'strokes': [], 'orphans': [],
+        'stats': {}, 'nav': {'prev': None, 'next': None},
+    }
+    if not sid:
+        out['missing'] = 'no_session'
+        return out
+
+    # ---- 标注库侧：会话行 + 标注行 + L0 原始包 --------------------------
+    srow, ann_rows, raw = None, [], None
+    conn = get_conn()
+    try:
+        srow = conn.execute(
+            'SELECT id, wrist, started_at, ended_at, duration, player_id, raw_id,'
+            '       video_path FROM sessions WHERE id=?', (sid,)).fetchone()
+        ann_rows = [dict(a) for a in conn.execute(
+            'SELECT impact_time, label, confidence, annotator, source, status'
+            '  FROM annotations WHERE session_id=? ORDER BY impact_time', (sid,))]
+        if srow is not None:
+            from .converter import load_raw_payload
+            raw = load_raw_payload(conn, sid)
+    except Exception:
+        srow, ann_rows, raw = None, [], None
+    finally:
+        conn.close()
+
+    raw_session = (raw or {}).get('session') or {}
+    swings = raw_session.get('swings') or []
+    samples = (raw or {}).get('samples') or []
+
+    # ---- 分析库侧：学员姓名 + 会话汇总（与台账同源，两边的数必须对得上）----
+    arow = None
+    try:
+        from .. import db as analysis_db
+        rows = analysis_db.query(
+            'SELECT s.*, st.name AS student_name, st.avatar_url AS student_avatar'
+            '  FROM training_sessions s LEFT JOIN students st ON st.id = s.student_id'
+            ' WHERE s.id = ?', (sid,))
+        arow = rows[0] if rows else None
+    except Exception:
+        arow = None
+
+    out['exists'] = bool(srow) or bool(arow)
+    if not out['exists']:
+        out['missing'] = 'not_found'
+        return out
+
+    # ---- 逐拍：L0 swings 与标注簇按时刻对齐 -----------------------------
+    clusters = _cluster_annotations(ann_rows)
+    taken = [False] * len(clusters)
+    strokes = []
+    for i, sw in enumerate(swings):
+        t = sw.get('impactTime')
+        # 取**最近**的簇，而不是第一个命中的：两个簇都落在容差内时，
+        # 「第一个」取决于 SQL 排序，会让归属看起来随机。
+        best, best_d = None, None
+        for j, c in enumerate(clusters):
+            if taken[j] or t is None:
+                continue
+            d = abs(c['center'] - t)
+            if d <= MATCH_TOL and (best is None or d < best_d):
+                best, best_d = j, d
+        judged = None
+        if best is not None:
+            taken[best] = True
+            judged = _judge_cluster(clusters[best]['items'])
+
+        conf = sw.get('confidence')
+        status = (judged or {}).get('status') or 'unmatched'
+        meta = STROKE_STATUS_META.get(status, STROKE_STATUS_META['unmatched'])
+        label = (judged or {}).get('label')
+        strokes.append({
+            'seq': i + 1,
+            't': t,
+            't_label': _fmt_t(t),
+            'type': sw.get('type'),
+            'type_label': STROKE_TYPE_LABEL.get(sw.get('type')) or (sw.get('type') or '—'),
+            'confidence': conf,
+            'conf_label': ('%.3f' % conf) if isinstance(conf, (int, float)) else '—',
+            'label': label,
+            'label_type_label': (STROKE_TYPE_LABEL.get(label) or label) if label else '—',
+            'status': status,
+            'status_label': meta[0],
+            'status_hint': meta[1],
+            'status_tone': meta[2],
+            'annotators': '、'.join(judged['annotators']) if judged else '',
+            'n_items': (judged or {}).get('n_items', 0),
+            # 最终标签与启发式标签是否一致。None = 没有结论可比。
+            'agrees': (label == sw.get('type')) if label else None,
+        })
+
+    orphans = []
+    for j, c in enumerate(clusters):
+        if taken[j]:
+            continue
+        jd = _judge_cluster(c['items']) or {}
+        orphans.append({
+            't': c['center'], 't_label': _fmt_t(c['center']),
+            'label': jd.get('label'),
+            'label_type_label': STROKE_TYPE_LABEL.get(jd.get('label')) or jd.get('label') or '—',
+            'status': jd.get('status') or 'unmatched',
+            'annotators': '、'.join(jd.get('annotators') or []),
+            'n_items': len(c['items']),
+        })
+    out['orphans'] = orphans
+
+    # ---- 汇总 ----------------------------------------------------------
+    n_sw = len(strokes)
+    n_l0 = len(swings)
+    confs = [s['confidence'] for s in strokes
+             if isinstance(s.get('confidence'), (int, float))]
+    type_counts = Counter(s['type'] for s in strokes)
+    reported = _row_get(arow, 'stroke_count')
+    dur = _row_get(srow, 'duration') or raw_session.get('duration')
+
+    out['strokes'] = strokes
+    out['session'] = {
+        'id': sid,
+        'student_id': _row_get(arow, 'student_id') or _row_get(srow, 'player_id') or '',
+        'student_name': _row_get(arow, 'student_name') or '',
+        'student_avatar': _row_get(arow, 'student_avatar') or '',
+        'started_at': _row_get(arow, 'started_at') or _row_get(srow, 'started_at') or '',
+        'duration': dur,
+        'duration_label': _fmt_dur(dur),
+        'wrist': _row_get(srow, 'wrist') or _row_get(arow, 'worn_wrist') or '',
+        'session_type': _row_get(arow, 'session_type') or '',
+        'stroke_count': reported,
+        'has_video': bool(_row_get(arow, 'video_path') or _row_get(srow, 'video_path')),
+        'raw_id': _row_get(srow, 'raw_id') or '',
+    }
+    out['session']['wrist_label'] = {
+        'left': '左手', 'right': '右手'}.get(out['session']['wrist'],
+                                             out['session']['wrist'] or '—')
+    out['session']['session_type_label'] = SESSION_TYPE_LABEL.get(
+        out['session']['session_type'], out['session']['session_type'] or '—')
+
+    out['raw'] = {
+        'raw_id': out['session']['raw_id'],
+        'n_swings': n_l0,
+        'n_samples': len(samples),
+        'has_package': bool(raw),
+        'sample_hz': (round(len(samples) / float(dur), 1)
+                      if samples and dur else None),
+    }
+
+    out['stats'] = {
+        'n_strokes': n_sw,
+        'n_swings_raw': n_l0,
+        # ⚠️ 这一条是整个页面的重点：会话汇总（分析库）与原始包条数
+        # 应当**恒等**。不等就说明两端已经漂移，必须让人看见。
+        'count_match': (reported == n_l0) if isinstance(reported, int) else None,
+        'n_annotations': len(ann_rows),
+        'n_clusters': len(clusters),
+        'n_orphan': len(orphans),
+        'status_counts': _stroke_status_counts(strokes),
+        'n_human_touched': sum(1 for s in strokes if s['status'] in
+                               ('confirmed', 'corrected', 'rejected')),
+        'n_corrected': sum(1 for s in strokes if s['status'] == 'corrected'),
+        'n_rejected': sum(1 for s in strokes if s['status'] == 'rejected'),
+        'n_unmatched': sum(1 for s in strokes if s['status'] == 'unmatched'),
+        'type_counts': [
+            {'key': k, 'label': STROKE_TYPE_LABEL.get(k) or k, 'n': n,
+             'pct': round(n * 100.0 / n_sw, 1) if n_sw else 0}
+            for k, n in type_counts.most_common()],
+        'conf_min': min(confs) if confs else None,
+        'conf_max': max(confs) if confs else None,
+        'conf_avg': (sum(confs) / len(confs)) if confs else None,
+        'conf_min_label': ('%.3f' % min(confs)) if confs else '—',
+        'conf_max_label': ('%.3f' % max(confs)) if confs else '—',
+        'conf_avg_label': ('%.3f' % (sum(confs) / len(confs))) if confs else '—',
+        't_first': strokes[0]['t_label'] if strokes else '—',
+        't_last': strokes[-1]['t_label'] if strokes else '—',
+    }
+
+    # ---- 上一场 / 下一场（与台账同一批、同一排序）-------------------------
+    ids = []
+    try:
+        from .. import db as analysis_db
+        ids = [r['id'] for r in analysis_db.query(
+            'SELECT id FROM training_sessions WHERE id LIKE ? AND deleted_at IS NULL'
+            ' ORDER BY id', (HIST_PREFIX + '%',))]
+    except Exception:
+        ids = []
+    if sid in ids:
+        i = ids.index(sid)
+        out['nav'] = {
+            'prev': ids[i - 1] if i > 0 else None,
+            'next': ids[i + 1] if i + 1 < len(ids) else None,
+        }
+    return out

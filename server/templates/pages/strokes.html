@@ -1,0 +1,332 @@
+{#- 逐拍原始全量 —— 从台账下钻进来的单场明细页。
+
+    为什么单独一页，而不是塞进 /annotation：
+      1) 逐拍表是「一次击球 = 一行」，一场 75~269 行，放进那个已经十屏的长文档
+         会把后面的区块全挤到看不见；
+      2) 它是**只读查阅**，与工作台（视频↔波形对齐、纠错、保存）职责不同 ——
+         混在一起会让人以为这里也能改。
+    数据全部来自 stats.stroke_detail()（唯一入口），本模板不做任何取数。
+
+    ⚠️ 与台账（/annotation#history）的关系，页面上必须写清楚：
+      台账是「一场训练 = 一行」，逐拍字段在一格里放不下，只给一个**样本条数**；
+      而那个条数取自分析库的 `stroke_records` —— 一张**抽稀**出来的副本。
+      本页给的是 L0 原始包里的**全量**击球。两者不是一个东西，
+      这正是「106 拍却写着 12 条」这个疑问的来源。 -#}
+{% extends "base.html" %}
+{% set nav_active = "data-annotation" %}
+{% block title %}逐拍原始数据 · {{ detail.session_id }}{% endblock %}
+{% block main %}
+<div class="p-space-lg md:p-space-xl lg:p-margin-desktop flex flex-col gap-space-xl">
+
+<!-- ===================== 页头 ===================== -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div class="flex flex-col gap-space-2xs">
+<div class="flex items-center gap-space-sm">
+<a class="flex items-center gap-space-2xs text-on-surface-variant hover:text-on-surface transition-colors font-label-sm text-label-sm" href="/annotation#history">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+<span>历史采集元数据</span>
+</a>
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">L0 Raw Package</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight font-bold">
+{% if detail.exists %}{{ detail.session_id }} 逐拍原始数据{% else %}逐拍原始数据{% endif %}
+</h1>
+{% if detail.exists %}
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">
+{{ detail.session.student_name or '—' }} ·
+{{ detail.session.started_at[:16].replace('T', ' ') if detail.session.started_at else '—' }} ·
+{{ detail.session.duration_label }} · {{ detail.session.wrist_label }} · {{ detail.session.session_type_label }}
+</p>
+{% endif %}
+</div>
+
+{% if detail.exists %}
+<div class="flex flex-wrap items-center gap-space-sm">
+{% if detail.nav.prev %}
+<a class="flex items-center gap-space-2xs px-space-md py-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" href="/strokes?session={{ detail.nav.prev }}">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+<span class="font-label-sm text-label-sm">上一场 {{ detail.nav.prev }}</span>
+</a>
+{% endif %}
+{% if detail.nav.next %}
+<a class="flex items-center gap-space-2xs px-space-md py-2 rounded-xl bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" href="/strokes?session={{ detail.nav.next }}">
+<span class="font-label-sm text-label-sm">下一场 {{ detail.nav.next }}</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</a>
+{% endif %}
+{% if detail.session.has_video %}
+<a class="flex items-center gap-space-2xs px-space-md py-2 rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high transition-all" href="/annotation#workbench">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">videocam</span>
+<span class="font-label-sm text-label-sm">工作台看波形</span>
+</a>
+{% endif %}
+</div>
+{% endif %}
+</div>
+
+{% if not detail.exists %}
+{#- 空态分成两种：没带参数（正常误入）与会话不存在（链接失效）。
+    分开措辞是因为处理动作不同 —— 前者点一下回去，后者要查链接。 -#}
+<div class="p-space-xl rounded-xl bg-surface-container flex flex-col items-center gap-space-md text-center">
+<span class="material-symbols-outlined text-outline text-[40px]">help</span>
+<p class="font-body-md text-body-md text-on-surface-variant">
+{% if detail.missing == 'no_session' %}
+没有指定会话。请从台账里点某一场的「逐拍」入口进来。
+{% else %}
+找不到会话 <span class="font-mono text-on-surface">{{ detail.session_id }}</span> ——
+它可能不在库里，或者不是本批历史采集数据。
+{% endif %}
+</p>
+<a class="flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-primary-container text-on-primary-fixed font-label-md text-label-md font-bold hover:brightness-105 transition-all" href="/annotation#history">
+<span class="material-symbols-outlined text-[18px]">history</span>
+<span>回到历史采集元数据</span>
+</a>
+</div>
+{% else %}
+
+<!-- ===================== 一致性 + 计数 ===================== -->
+{#- 这一组数字是本页的重点：会话汇总（分析库）与原始包条数**应当恒等**。
+    不等就说明两端已经漂移，必须显眼，而不是让它悄悄过去。 -#}
+<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-space-sm">
+<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
+<span class="font-label-sm text-label-sm text-outline">会话汇总击球数</span>
+<span class="font-metric-digit text-headline-md text-primary font-bold">{{ detail.session.stroke_count if detail.session.stroke_count is not none else '—' }}</span>
+<span class="font-label-sm text-label-sm text-outline">分析库 training_sessions</span>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
+<span class="font-label-sm text-label-sm text-outline">原始包击球数</span>
+<span class="font-metric-digit text-headline-md text-primary-fixed font-bold">{{ detail.stats.n_swings_raw }}</span>
+<span class="font-label-sm text-label-sm text-outline">L0 session.swings 全量</span>
+</div>
+<div class="p-space-md rounded-xl flex flex-col gap-0.5 shadow-md
+            {{ 'bg-surface-container' if detail.stats.count_match is not false else 'bg-error-container' }}">
+<span class="font-label-sm text-label-sm {{ 'text-outline' if detail.stats.count_match is not false else 'text-on-error-container' }}">两端是否一致</span>
+{% if detail.stats.count_match is sameas true %}
+<span class="flex items-center gap-space-2xs font-label-md text-label-md text-primary-fixed font-bold">
+<span class="material-symbols-outlined text-[18px]">verified</span><span>一致</span>
+</span>
+{% elif detail.stats.count_match is sameas false %}
+<span class="flex items-center gap-space-2xs font-label-md text-label-md text-error font-bold">
+<span class="material-symbols-outlined text-[18px]">priority_high</span><span>已漂移</span>
+</span>
+{% else %}
+<span class="font-label-md text-label-md text-outline font-bold">无法比对</span>
+{% endif %}
+</div>
+<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
+<span class="font-label-sm text-label-sm text-outline">标注行 / 聚类</span>
+<span class="font-metric-digit text-headline-md text-secondary font-bold">{{ detail.stats.n_annotations }} / {{ detail.stats.n_clusters }}</span>
+<span class="font-label-sm text-label-sm text-outline">同一拍可有多条标注</span>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-0.5 shadow-md">
+<span class="font-label-sm text-label-sm text-outline">人工介入</span>
+<span class="font-metric-digit text-headline-md {{ 'text-tertiary-fixed-dim' if detail.stats.n_human_touched else 'text-outline' }} font-bold">{{ detail.stats.n_human_touched }}</span>
+<span class="font-label-sm text-label-sm text-outline">已确认 + 已纠错 + 判误检</span>
+</div>
+</div>
+
+<!-- ===================== 与台账的关系（必须写清楚，否则又会产生 12 vs 106 的疑问） ===================== -->
+<div class="p-space-md rounded-xl bg-surface-container-low border border-outline/15 flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[20px] mt-0.5">rule</span>
+<div class="flex flex-col gap-space-2xs">
+<p class="font-body-md text-body-md text-on-surface">{{ '本页与台账是**两个粒度**，不是同一张表的两个视图。' | bold }}</p>
+<p class="font-label-md text-label-md text-on-surface-variant">
+台账（<a class="text-primary-fixed hover:underline" href="/annotation#history">历史采集元数据</a>）是「一场训练 = 一行」，
+逐拍字段在一格里放不下，只能给一个样本条数；而那个条数取自分析库的
+<span class="font-mono text-on-surface">stroke_records</span> —— 一张按固定条数抽稀出来的副本。
+</p>
+<p class="font-label-md text-label-md text-on-surface-variant">
+{{ '本页给的是 L0 原始包 session.swings 里的**全量**击球，所以上面的「原始包击球数」才是这一场真正的击球次数。' | bold }}
+</p>
+</div>
+</div>
+
+<!-- ===================== 分布摘要 ===================== -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-space-md">
+
+<!-- 标注状态 -->
+<div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[20px]">fact_check</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">标注状态</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+{% for s in detail.stats.status_counts %}
+<div class="flex items-center gap-space-sm">
+<span class="font-label-sm text-label-sm {{ s.tone }}" style="width: 76px;">{{ s.label }}</span>
+<div class="flex-1 h-2 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full rounded-full bg-current {{ s.tone }}" style="width: {{ (s.n * 100 // detail.stats.n_strokes) if detail.stats.n_strokes else 0 }}%;"></div>
+</div>
+<span class="font-mono font-label-sm text-label-sm text-on-surface text-right" style="width: 44px;">{{ s.n }}</span>
+</div>
+{% endfor %}
+</div>
+<p class="font-label-sm text-label-sm text-outline">
+{{ '「未审阅」= 启发式预标注尚未有人工介入，按当前规则会**直接成为训练标签**。' | bold }}
+</p>
+</div>
+
+<!-- 球种分布 -->
+<div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[20px]">bar_chart</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">球种分布</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">启发式判定</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+{% for t in detail.stats.type_counts %}
+<div class="flex items-center gap-space-sm">
+<span class="font-label-sm text-label-sm text-on-surface-variant" style="width: 76px;">{{ t.label }}</span>
+<div class="flex-1 h-2 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full rounded-full bg-primary-fixed" style="width: {{ t.pct }}%;"></div>
+</div>
+<span class="font-mono font-label-sm text-label-sm text-on-surface text-right" style="width: 44px;">{{ t.n }}</span>
+<span class="font-mono font-label-sm text-label-sm text-outline text-right" style="width: 40px;">{{ t.pct }}%</span>
+</div>
+{% endfor %}
+</div>
+</div>
+
+<!-- 采集与原始包 -->
+<div class="p-space-lg rounded-xl bg-surface-container flex flex-col gap-space-md shadow-md">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[20px]">description</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">原始包</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between gap-space-sm">
+<span class="font-label-sm text-label-sm text-outline">raw_id（内容寻址）</span>
+<span class="font-mono font-label-sm text-label-sm text-on-surface">{{ detail.raw.raw_id or '—' }}</span>
+</div>
+<div class="flex items-center justify-between gap-space-sm">
+<span class="font-label-sm text-label-sm text-outline">波形采样点</span>
+<span class="font-mono font-label-sm text-label-sm text-on-surface">{{ detail.raw.n_samples }}</span>
+</div>
+<div class="flex items-center justify-between gap-space-sm">
+<span class="font-label-sm text-label-sm text-outline">采样率</span>
+<span class="font-mono font-label-sm text-label-sm text-on-surface">{{ (detail.raw.sample_hz ~ ' Hz') if detail.raw.sample_hz else '—' }}</span>
+</div>
+<div class="flex items-center justify-between gap-space-sm">
+<span class="font-label-sm text-label-sm text-outline">置信度 min / 均 / max</span>
+<span class="font-mono font-label-sm text-label-sm text-on-surface">{{ detail.stats.conf_min_label }} / {{ detail.stats.conf_avg_label }} / {{ detail.stats.conf_max_label }}</span>
+</div>
+<div class="flex items-center justify-between gap-space-sm">
+<span class="font-label-sm text-label-sm text-outline">击球时刻范围</span>
+<span class="font-mono font-label-sm text-label-sm text-on-surface">{{ detail.stats.t_first }} ~ {{ detail.stats.t_last }}</span>
+</div>
+</div>
+<p class="font-label-sm text-label-sm text-outline">
+{{ '波形是**整个会话**一条，不是每拍一段（%d 个采样点，%s Hz）。' | format(detail.raw.n_samples, detail.raw.sample_hz or '—') | bold }}
+在 <a class="text-primary-fixed hover:underline" href="/annotation#workbench">标注工作台</a> 里与视频同步查看。
+</p>
+</div>
+
+</div>
+
+{% if detail.orphans %}
+{#- 正常应为空。非空 = 有标注行对不上任何一次击球，两端数据已经错位，
+    必须显式提示 —— 否则读者只会在心里数出「少了几行」。 -#}
+<div class="p-space-md rounded-xl bg-error-container/40 border border-error/30 flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-error text-[20px] mt-0.5">priority_high</span>
+<div class="flex flex-col gap-space-2xs">
+<p class="font-body-md text-body-md text-on-error-container font-semibold">
+有 {{ detail.orphans|length }} 条标注对不上任何一次击球
+</p>
+<p class="font-label-md text-label-md text-on-surface-variant">
+这些标注的时刻与原始包里的击球时刻相差超过容差，说明标注层与 L0 已经错位。
+</p>
+</div>
+</div>
+{% endif %}
+
+<!-- ===================== 逐拍全量表 ===================== -->
+<div class="scroll-mt-24" id="strokes"></div>
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[22px]">table_view</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">逐拍全量</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">
+{{ detail.stats.n_strokes }} 行 · L0 原始顺序
+</span>
+</div>
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="flex items-center gap-space-2xs px-space-sm py-1 rounded-lg bg-surface-container-low font-label-sm text-label-sm text-outline">
+<span class="material-symbols-outlined text-[16px]">swipe</span>
+<span>悬停任意格看原始值</span>
+</span>
+</div>
+</div>
+
+{#- 表宽 7 列 ≈ 900px，小屏必须能横滚 ⇒ 挂 .hist-scroll。
+    ⚠️ 全站 CSS 把所有滚动条 display:none 了（设计稿决定），
+    不加这个类的话「能滚」但**看不出来能滚**（2026-10-03 踩过）。 -#}
+<div class="hist-scroll border border-outline/15 rounded-xl" style="max-height: 72vh; overflow: auto;" tabindex="0">
+<table class="w-full text-left text-body-md" style="min-width: 900px; border-collapse: separate; border-spacing: 0;">
+<colgroup>
+<col style="width: 64px;">
+<col style="width: 92px;">
+<col style="width: 104px;">
+<col style="width: 88px;">
+<col style="width: 116px;">
+<col style="width: 112px;">
+<col style="width: 104px;">
+<col>
+</colgroup>
+<thead style="position: sticky; top: 0; z-index: 20;">
+<tr class="bg-surface-container-high">
+<th class="px-space-sm py-2 font-label-sm text-label-sm text-outline uppercase tracking-wider border-b border-outline/25" style="position: sticky; top: 0;">#</th>
+<th class="px-space-sm py-2 font-label-sm text-label-sm text-outline uppercase tracking-wider border-b border-outline/25" style="position: sticky; top: 0;">距离开始</th>
+<th class="px-space-sm py-2 font-label-sm text-label-sm text-outline uppercase tracking-wider border-b border-outline/25" style="position: sticky; top: 0;">启发式球种</th>
+<th class="px-space-sm py-2 font-label-sm text-label-sm text-outline uppercase tracking-wider border-b border-outline/25" style="position: sticky; top: 0;">置信度</th>
+<th class="px-space-sm py-2 font-label-sm text-label-sm text-outline uppercase tracking-wider border-b border-outline/25" style="position: sticky; top: 0;">最终标签</th>
+<th class="px-space-sm py-2 font-label-sm text-label-sm text-outline uppercase tracking-wider border-b border-outline/25" style="position: sticky; top: 0;">标注状态</th>
+<th class="px-space-sm py-2 font-label-sm text-label-sm text-outline uppercase tracking-wider border-b border-outline/25" style="position: sticky; top: 0;">标注者</th>
+<th class="px-space-sm py-2 font-label-sm text-label-sm text-outline uppercase tracking-wider border-b border-outline/25" style="position: sticky; top: 0;">备注</th>
+</tr>
+</thead>
+<tbody>
+{% for x in detail.strokes %}
+<tr class="group border-b border-outline/10 hover:bg-surface-container-low transition-colors
+           {{ 'bg-surface-container-low/40' if x.status in ('confirmed', 'corrected', 'rejected') }}">
+<td class="px-space-sm py-1.5 font-mono font-label-sm text-label-sm text-outline">{{ x.seq }}</td>
+<td class="px-space-sm py-1.5 font-mono font-label-sm text-label-sm text-on-surface-variant">{{ x.t_label }}</td>
+<td class="px-space-sm py-1.5 font-label-sm text-label-sm text-on-surface" title="{{ x.type or '' }}">{{ x.type_label }}</td>
+<td class="px-space-sm py-1.5 font-mono font-label-sm text-label-sm
+           {{ 'text-error' if (x.confidence is not none and x.confidence < 0.6) else 'text-on-surface-variant' }}"
+    title="{{ x.conf_label }}">{{ x.conf_label }}</td>
+<td class="px-space-sm py-1.5 font-label-sm text-label-sm {{ x.status_tone if x.status != 'unmatched' else 'text-outline' }}"
+    title="{{ x.status_hint }}">{{ x.label_type_label }}</td>
+<td class="px-space-sm py-1.5">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded font-label-sm text-label-sm {{ x.status_tone }}">
+{% if x.status == 'confirmed' %}
+<span class="material-symbols-outlined text-[14px]">done_all</span>
+{% elif x.status == 'corrected' %}
+<span class="material-symbols-outlined text-[14px]">auto_fix_high</span>
+{% elif x.status == 'rejected' %}
+<span class="material-symbols-outlined text-[14px]">block</span>
+{% elif x.status == 'proposed' %}
+<span class="material-symbols-outlined text-[14px]">help</span>
+{% else %}
+<span class="material-symbols-outlined text-[14px]">info</span>
+{% endif %}
+<span>{{ x.status_label }}</span>
+</span>
+</td>
+<td class="px-space-sm py-1.5 font-label-sm text-label-sm text-on-surface-variant">{{ x.annotators or '—' }}</td>
+<td class="px-space-sm py-1.5 font-label-sm text-label-sm text-outline truncate">
+{% if x.agrees is sameas false %}人工改判：{{ x.type_label }} → {{ x.label_type_label }}
+{% elif x.status == 'rejected' %}判为误检，已从训练标签中剔除
+{% elif x.status == 'confirmed' %}人工认可预标注
+{% elif x.status == 'unmatched' %}无对应标注行
+{% else %}—{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+{% endif %}
+</div>
+{% endblock %}

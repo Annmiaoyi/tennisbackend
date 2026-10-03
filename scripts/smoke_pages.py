@@ -45,6 +45,8 @@ PAGES = [
     ('/annotation',   ['id="workbench"', '两条链路', '标注状态机', '标注逻辑',
                        '作业须知', '标签空间', '标注进度', 'id="state"',
                        'id="rules"', 'id="notes"', 'id="labels"', 'id="progress"']),
+    # 空态（没带 session）：必须给出回台账的出口，而不是一片空白。
+    ('/strokes',      ['回到历史采集元数据']),
     ('/docs',         []),
     ('/assets/css/app.css', []),
 ]
@@ -133,6 +135,25 @@ def main():
             if n not in body:
                 FAIL.append('%s 缺少「%s」' % (path, n))
                 print('   ❌ 缺少 %s' % n)
+
+    # ---- 逐拍下钻：从台账里抓一条真实入口，点进去 -----------------------
+    # 刻意**不硬编码** session id：入口链接是台账渲染出来的，从那里抓才能
+    # 同时验证「链接格式对」和「落点真的在」这两件事。硬编码的话，
+    # 哪天 seed 换了 id 就成了「测试自己造的数据」，页面坏了它照样绿。
+    links = sorted(set(re.findall(r'href="(/strokes\?session=[^"&]+)"',
+                                  bodies.get('/annotation', ''))))
+    if not links:
+        FAIL.append('/annotation 里没有指向 /strokes 的逐拍入口链接')
+        print('❌ /annotation 里没有指向 /strokes 的逐拍入口链接')
+    else:
+        print('✅ /annotation 里有 %d 个逐拍入口，例：%s' % (len(links), links[0]))
+        st, body = c.get(links[0])
+        rows = len(re.findall(r'<tr class="group ', body))
+        ok = st == 200 and 'id="strokes"' in body and rows > 0
+        print('%s GET %-34s → %-3d %7d B（逐拍表 %d 行）'
+              % ('✅' if ok else '❌', links[0], st, len(body), rows))
+        if not ok:
+            FAIL.append('逐拍页 %s 异常（状态 %d，逐拍行 %d）' % (links[0], st, rows))
 
     # ---- 静态资源死链 ---------------------------------------------------
     refs = set()
