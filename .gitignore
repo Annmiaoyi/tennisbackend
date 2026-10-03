@@ -46,5 +46,12 @@ _*.log
 Thumbs.db
 desktop.ini
 
+# ---- 部署：环境文件（含采集口令 / 微信密钥），绝不能入库 ----
+# 模板是 deploy/acemate.env.example，服务器上从它复制出 acemate.env
+deploy/acemate.env
+
+# ---- PM2 运行日志 ----
+var/log/
+
 # ---- 智能体工作区（本地记忆，不入库）----
 .workbuddy/

@@ -116,6 +116,35 @@ curl http://127.0.0.1:8787/api/sync/status   # 同步水位
 
 ---
 
+## 部署到服务器（PM2）
+
+仓库里已备好整套文件，不需要手写 PM2 配置：
+
+```bash
+# 本机 Mac
+ssh <user>@172.20.49.43 "sudo mkdir -p /srv/acemate/backend && sudo chown \$(id -u):\$(id -g) /srv/acemate/backend"
+bash deploy/push-from-mac.sh <user>@172.20.49.43 --data     # 推代码 + 搬 var/
+# 服务器
+ssh <user>@172.20.49.43
+cd /srv/acemate/backend && sudo bash deploy/bootstrap-server.sh && pm2 startup
+```
+
+| 文件 | 作用 |
+|---|---|
+| `deploy/push-from-mac.sh` | 本机执行：rsync 推代码（`--data` 连数据一起搬） |
+| `deploy/bootstrap-server.sh` | 服务器执行：装依赖 + venv + 编译 CSS + `pm2 start` + `pm2 save` |
+| `ecosystem.config.js` | PM2 配置，环境变量从 `deploy/acemate.env` 读 |
+| `deploy/acemate.env.example` | 环境变量模板（复制成 `acemate.env` 再填，该文件不入库） |
+| `deploy/nginx-acemate.conf` | 可选：需要 HTTPS / 反代时才用 |
+
+日常更新：`push-from-mac.sh` → 服务器上 `npm run build:css && pm2 reload acemate-backend`。
+
+> ⚠️ 三个**错了都不报错**的点，务必别改：PM2 必须 `instances: 1` / `fork`（SQLite 单写者）、
+> `watch: false`（否则写库触发无限重启）、`deploy/acemate.env` 里的 `TZ=Asia/Shanghai`
+> （服务器默认 UTC 会让"近 7 天"整体偏一天）。详见 [docs/DEPLOY.md](docs/DEPLOY.md)。
+
+---
+
 ## 数据分层
 
 ```
@@ -141,6 +170,7 @@ L3 终端展示层   /api/prod/*        只读 L2，给 Phone / 小程序看
 .venv/bin/python scripts/verify_contract.py  # 契约 ↔ 后端一致性（38 项对账）
 .venv/bin/python scripts/test_sync.py        # 同步协议端到端（54 项断言）
 .venv/bin/python scripts/verify_layers.py    # L0–L3 + 鉴权端到端（73 项断言）
+.venv/bin/python scripts/verify_deploy_config.py  # 部署配置对账（32 项，不需起服务）
 ```
 
 > ⚠️ 若你的环境设了 `HTTP_PROXY`，本机回环请求会被代理拦掉（表现为满屏 502）。
@@ -158,6 +188,14 @@ npm run build:css                              # 编译 Tailwind（改样式后�
 .venv/bin/python scripts/visual_diff.py        # 5 页与设计稿逐像素比对
 .venv/bin/python scripts/check_css_coverage.py # 确认 app.css 覆盖所有用到的 class
 .venv/bin/python scripts/reset_admin_password.py
+```
+
+服务器上（PM2）：
+
+```bash
+pm2 logs acemate-backend        # 看日志
+pm2 reload acemate-backend      # 改完 Python 代码后重载
+pm2 status && pm2 monit         # 状态 / 资源面板
 ```
 
 ---

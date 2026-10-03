@@ -37,12 +37,94 @@ python run.py --port 8787
 
 ### 生产建议
 
-```bash
-# 多 worker（SQLite 是文件锁，worker 数不宜多，2~4 足够）
-uvicorn server.app:app --host 0.0.0.0 --port 8787 --workers 4
+> ⚠️ **`--workers N` 不要照抄。** 全部数据在 SQLite 单文件里，多 worker = 多个进程
+> 同时写同一批文件。配了 `busy_timeout=30000` 之后不会立刻报错，而是把
+> `database is locked` 从"必现"变成**偶发** —— 最难查的那一类故障。
+> 本服务的并发量（内部管理页 + 采集端上传）单 worker 完全够；
+> 真要提并发只能换库，不是加 worker。
+> 若确需多 worker，请用 Nginx 反代，让静态资源由 Nginx 直接返回，别让 worker 干这事。
 
-# 或交给进程管理器（systemd / NSSM / supervisor），示例 unit：
+```bash
+# 单 worker（推荐）
+uvicorn server.app:app --host 0.0.0.0 --port 8787
 ```
+
+### PM2 部署（Ubuntu 服务器）
+
+仓库里已备好一整套，**不需要手写 PM2 配置**：
+
+| 文件 | 在哪执行 | 作用 |
+|---|---|---|
+| `deploy/push-from-mac.sh` | 本机 Mac | rsync 推代码；带 `--data` 时连 `var/` 一起搬 |
+| `deploy/bootstrap-server.sh` | 服务器 | 装依赖 + venv + 编译 CSS + `pm2 start` + `pm2 save` |
+| `ecosystem.config.js` | 服务器 | PM2 进程配置，环境变量从 `deploy/acemate.env` 读 |
+| `deploy/acemate.env.example` | 服务器 | 环境变量模板，复制成 `.env` 再填 |
+| `deploy/nginx-acemate.conf` | 服务器 | 可选：需要 HTTPS / 对公网开放时用 |
+
+#### 完整流程
+
+```bash
+# ---- 1) 本机 Mac：停掉本地服务（避免两边同时写同一个库）----
+#      确认端口已释放： lsof -nP -iTCP:8787 -sTCP:LISTEN
+#      并把 WAL 折回主库，保证搬的是单文件干净快照：
+#        .venv/bin/python -c "import sqlite3;c=sqlite3.connect('var/acemate.db');\
+#          print(c.execute('PRAGMA wal_checkpoint(TRUNCATE)').fetchone())"
+#      （三个库都要做：var/acemate.db、var/annotation/annotations.db、var/raw/acemate_raw.db）
+
+# ---- 2) 本机 Mac：建目录 + 推代码 + 搬数据 ----
+ssh <user>@172.20.49.43 "sudo mkdir -p /srv/acemate/backend && sudo chown \$(id -u):\$(id -g) /srv/acemate/backend"
+bash deploy/push-from-mac.sh <user>@172.20.49.43 --data
+
+# ---- 3) 服务器：一次性初始化 ----
+ssh <user>@172.20.49.43
+cd /srv/acemate/backend
+sudo bash deploy/bootstrap-server.sh
+
+# ---- 4) 服务器：开机自启（只做一次，照抄它打印的 sudo 命令）----
+pm2 startup && pm2 save
+```
+
+#### 日常更新
+
+```bash
+# Mac 上
+bash deploy/push-from-mac.sh <user>@172.20.49.43
+# 服务器上
+cd /srv/acemate/backend
+npm run build:css && pm2 reload acemate-backend     # 改了模板就必须重编 CSS
+# 只改了 Python 的话： pm2 reload acemate-backend
+# 改了 requirements.txt： .venv/bin/python3 -m pip install -r requirements.txt && pm2 reload acemate-backend
+```
+
+#### 几条必须知道的原因
+
+- **`instances: 1` / `exec_mode: 'fork'` 不能改成 cluster** —— 同上面 `--workers` 的理由。
+- **`watch: false` 不能开** —— 应用自己的 SQLite 就写在 `var/` 下，
+  开了会变成「写库 → 触发重启 → 写库」的死循环。
+- **`kill_timeout: 8000`** —— uvicorn 是优雅关闭，PM2 默认只等 1600ms 就 SIGKILL，
+  正在处理的 push（一次最多 500 条）会被硬砍。
+- **环境变量放 `deploy/acemate.env`，不写进 `ecosystem.config.js`** ——
+  后者进 git，而 `NETPULSE_INGEST_KEY` / `WECHAT_SECRET` 是口令。
+  该文件已在 `.gitignore` 里。
+- **`NETPULSE_INGEST_KEY` 为空 + 绑定非 `127.0.0.1` 时，`pm2 start` 会直接失败**（刻意）：
+  那种状态下 `/api/ingest`、`/api/raw` 的写口完全敞开，而应用只打一行告警。
+  宁可起不来，也不要"悄悄开着"。
+- **`TZ` 必须在环境文件里设成 `Asia/Shanghai`**：`analytics.resolve_range()` 用
+  `date.today()`（朴素本地时间）算"近 7 天"，服务器默认 UTC 会让区间**整体偏一天**，
+  且只在每天 00:00~08:00 之间暴露。本机（GMT+8）开发看不出来。
+- **`app.css` 是编译产物且在 `.gitignore` 里** —— 全新 clone 出来的仓库没有它。
+  `bootstrap-server.sh` 会跑 `npm run build:css`；`push-from-mac.sh` 也会把本机
+  编译好的产物带过去，两层保险。漏了的症状是**页面完全没有样式**（不报错）。
+
+> **关于数据位置**：上面默认让三个库留在 `/srv/acemate/backend/var/`（与 `run.py`
+> 本机开发完全同构，迁移只需搬一个 `var/`）。若要放到独立数据盘（重新部署代码时
+> 更不容易误删），在 `deploy/acemate.env` 里设置 `ACEMATE_DB` /
+> `NETPULSE_ANNOTATION_DIR` / `NETPULSE_RAW_DIR`，注意**必须用绝对路径**。
+> 三个存储各自的路径变量见 `deploy/acemate.env.example` 里的注释。
+
+### systemd 替代方案
+
+不想用 PM2 的话：
 
 ```ini
 [Unit]
@@ -50,9 +132,9 @@ Description=AceMate Backend
 After=network.target
 
 [Service]
-WorkingDirectory=/srv/acemate/backend-web
-Environment=ACEMATE_DB=/srv/acemate/data/acemate.db
-ExecStart=/srv/acemate/.venv/bin/uvicorn server.app:app --host 0.0.0.0 --port 8787 --workers 4
+WorkingDirectory=/srv/acemate/backend
+EnvironmentFile=/srv/acemate/backend/deploy/acemate.env
+ExecStart=/srv/acemate/backend/.venv/bin/uvicorn server.app:app --host 0.0.0.0 --port 8787
 Restart=always
 User=acemate
 
@@ -60,8 +142,7 @@ User=acemate
 WantedBy=multi-user.target
 ```
 
-> **把数据库放到数据盘**（如 `/srv/acemate/data/`），不要留在代码目录 ——
-> 重新部署代码时容易误删。
+（`EnvironmentFile` 的格式与 `deploy/acemate.env` 一致，可以直接复用同一个文件。）
 
 ## 3. 部署产物清单
 
