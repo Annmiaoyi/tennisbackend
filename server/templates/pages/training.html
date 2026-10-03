@@ -183,7 +183,7 @@
 <span class="font-label-sm text-label-sm text-on-surface-variant">置信度 96.4%</span>
 </div>
 <p class="font-body-md text-body-md text-on-surface leading-relaxed">
-<span class="font-semibold text-primary">张哲恒</span> 具有显著更强的主动进攻终结能力（正手进攻平均球速高出李思源 <span class="text-primary-fixed font-bold">10 km/h</span>，发球制胜分率高出同段位标杆 <span class="text-primary-fixed font-bold">24%</span>）；但在超过 <span class="text-secondary font-bold">8 拍以上</span> 的多拍相持对抗中，<span class="font-semibold text-secondary">李思源</span> 展现出更高的战术耐心，非受迫性失误率比张哲恒低 <span class="text-secondary font-bold">18%</span>。
+<span class="font-semibold text-primary">张哲恒</span> 具有显著更强的主动进攻终结能力（正手进攻平均球速高出李思源 <span class="text-primary-fixed font-bold">10 km/h</span>，发球极速高出同段位标杆 <span class="text-primary-fixed font-bold">19%</span>）；但在超过 <span class="text-secondary font-bold">8 拍以上</span> 的多拍相持对抗中，<span class="font-semibold text-secondary">李思源</span> 展现出更高的战术耐心，长回合（≥8 拍）占比高出张哲恒 <span class="text-secondary font-bold">23 个百分点</span>。
             </p>
 </div>
 </div>
@@ -431,7 +431,7 @@
 <!-- Metric Cards -->
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md my-space-sm">
 <div class="bg-surface-container-low p-space-md rounded-xl flex flex-col gap-1">
-<span class="font-label-sm text-label-sm text-on-surface-variant">对局平均心率</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">单场平均心率 (Avg HR)</span>
 <div class="flex items-baseline gap-space-xs">
 <span class="font-metric-digit text-headline-lg font-extrabold text-primary-fixed">158</span>
 <span class="font-body-md text-body-md text-on-surface-variant">vs</span>
@@ -451,42 +451,60 @@
 <span class="font-label-sm text-label-sm text-secondary font-semibold">李思源心肺耐力恢复更迅速 (+58%)</span>
 </div>
 <div class="bg-surface-container-low p-space-md rounded-xl flex flex-col gap-1">
-<span class="font-label-sm text-label-sm text-on-surface-variant">高强度相持失误转折点</span>
+{#- 硬件准入移除：「高强度相持失误转折点 第 7 拍 vs 第 13 拍」指标卡。
+    「失误」要先知道球有没有落在界内、这一分是否因此丢掉 —— 属计分数据，
+    腕部 IMU 只知道你挥了几拍。已换成本场峰值心率（HealthKit 直接可得）。 -#}
+<span class="font-label-sm text-label-sm text-on-surface-variant">单场峰值心率 (Max HR)</span>
 <div class="flex items-baseline gap-space-xs">
-<span class="font-metric-digit text-headline-lg font-extrabold text-primary-fixed">第 7 拍</span>
+<span class="font-metric-digit text-headline-lg font-extrabold text-primary-fixed">188</span>
 <span class="font-body-md text-body-md text-on-surface-variant">vs</span>
-<span class="font-metric-digit text-headline-lg font-extrabold text-secondary">第 13 拍</span>
+<span class="font-metric-digit text-headline-lg font-extrabold text-secondary">167</span>
+<span class="font-label-sm text-label-sm text-outline">BPM</span>
 </div>
-<span class="font-label-sm text-label-sm text-on-surface-variant">张哲恒相持后体能下降失误率剧增</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">张哲恒峰值更高，与其局间回落更慢一致</span>
 </div>
 </div>
-<!-- Simulated Apple Health Cardio Chart Range -->
-<div class="relative w-full h-36 bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between overflow-hidden">
-<div class="flex items-center justify-between text-outline font-label-sm text-label-sm">
-<span>185 BPM (无氧极限)</span>
-<span>第 1 盘 (对攻期)</span>
-<span>第 2 盘 (决胜期)</span>
-<span>赛后放松</span>
-</div>
-<div class="relative w-full h-16 flex items-end">
-<!-- Simulated HR Curve Line Chart -->
-<svg class="w-full h-full overflow-visible" viewbox="0 0 700 80">
-<!-- Threshold Line -->
-<line opacity="0.3" stroke="#ffb4ab" stroke-dasharray="3,3" stroke-width="1" x1="0" x2="700" y1="20" y2="20"></line>
-<!-- Player B Curve (Blue) -->
-<path d="M 0,60 Q 70,55 140,45 T 280,35 T 420,40 T 560,30 T 700,55" fill="none" stroke="#7bd0ff" stroke-width="2.5"></path>
-<!-- Player A Curve (Volt) -->
-<path d="M 0,65 Q 70,30 140,15 T 280,10 T 420,25 T 560,8 T 700,60" fill="none" stroke="#c3f400" stroke-width="2.5"></path>
-</svg>
-</div>
-<div class="flex items-center justify-between text-outline font-label-sm text-label-sm">
-<span>90 BPM (基线)</span>
+<div class="relative w-full bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-sm overflow-hidden">
+<div class="flex flex-wrap items-center justify-between gap-space-sm text-outline font-label-sm text-label-sm">
+<span>全程心率轨迹 · 时长 85 分钟（腕部 PPU 连续采样）</span>
 <div class="flex items-center gap-space-md">
 <span class="text-primary-fixed font-bold">● 张哲恒 (波动剧烈, 爆发消耗型)</span>
 <span class="text-secondary font-bold">● 李思源 (平稳持久, 巡航防守型)</span>
 </div>
-<span>时长 85 分钟</span>
 </div>
+<div class="flex gap-space-sm">
+<div class="shrink-0 relative text-outline font-label-sm text-label-sm" style="width: 34px; height: 112px;">
+<span class="absolute right-0" style="top: 0%; transform: translateY(-50%);">190</span>
+<span class="absolute right-0" style="top: 25%; transform: translateY(-50%);">165</span>
+<span class="absolute right-0" style="top: 50%; transform: translateY(-50%);">140</span>
+<span class="absolute right-0" style="top: 75%; transform: translateY(-50%);">115</span>
+<span class="absolute right-0" style="top: 100%; transform: translateY(-50%);">90</span>
+</div>
+<div class="flex-1 min-w-0 flex flex-col gap-space-2xs">
+<div style="width: 100%; height: 112px;">
+{#- 曲线由 scripts/gen_hr_demo_path.py 生成：
+    x = 分钟/85*700，y = (190−BPM)/1.25；两条曲线 5 分钟采样均值恰为
+    卡片上的平均心率 158 / 144 BPM，峰值 188 / 167。可复算，不是手绘 y 值。
+    preserveAspectRatio="none" + vector-effect 保证曲线铺满绘图区、线宽不被拉伸。 -#}
+<svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 700 80">
+<line stroke="#313633" stroke-width="1" vector-effect="non-scaling-stroke" x1="0" x2="700" y1="0" y2="0"></line>
+<line stroke="#313633" stroke-width="1" vector-effect="non-scaling-stroke" x1="0" x2="700" y1="20" y2="20"></line>
+<line stroke="#313633" stroke-width="1" vector-effect="non-scaling-stroke" x1="0" x2="700" y1="40" y2="40"></line>
+<line stroke="#313633" stroke-width="1" vector-effect="non-scaling-stroke" x1="0" x2="700" y1="60" y2="60"></line>
+<line stroke="#313633" stroke-width="1" vector-effect="non-scaling-stroke" x1="0" x2="700" y1="80" y2="80"></line>
+<line opacity="0.45" stroke="#ffb4ab" stroke-dasharray="5,4" stroke-width="1" vector-effect="non-scaling-stroke" x1="0" x2="700" y1="24" y2="24"></line>
+<path d="M 0.00,71.44 C 6.86,68.77 27.45,60.77 41.18,55.44 C 54.90,50.11 68.63,43.97 82.35,39.44 C 96.08,34.91 109.80,30.64 123.53,28.24 C 137.25,25.84 150.98,24.77 164.71,25.04 C 178.43,25.31 192.16,29.57 205.88,29.84 C 219.61,30.11 233.33,26.37 247.06,26.64 C 260.78,26.91 274.51,31.97 288.24,31.44 C 301.96,30.91 315.69,23.97 329.41,23.44 C 343.14,22.91 356.86,29.04 370.59,28.24 C 384.31,27.44 398.04,19.17 411.76,18.64 C 425.49,18.11 439.22,24.51 452.94,25.04 C 466.67,25.57 480.39,21.31 494.12,21.84 C 507.84,22.37 521.57,26.37 535.29,28.24 C 549.02,30.11 562.75,29.57 576.47,33.04 C 590.20,36.51 603.92,44.51 617.65,49.04 C 631.37,53.57 645.10,57.31 658.82,60.24 C 672.55,63.17 693.14,65.57 700.00,66.64" fill="none" stroke="#7bd0ff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" vector-effect="non-scaling-stroke"></path>
+<path d="M 0.00,77.92 C 6.86,74.45 27.45,64.59 41.18,57.12 C 54.90,49.65 68.63,40.05 82.35,33.12 C 96.08,26.19 109.80,19.52 123.53,15.52 C 137.25,11.52 150.98,9.25 164.71,9.12 C 178.43,8.99 192.16,15.12 205.88,14.72 C 219.61,14.32 233.33,6.99 247.06,6.72 C 260.78,6.45 274.51,13.39 288.24,13.12 C 301.96,12.85 315.69,5.39 329.41,5.12 C 343.14,4.85 356.86,12.05 370.59,11.52 C 384.31,10.99 398.04,2.45 411.76,1.92 C 425.49,1.39 439.22,8.05 452.94,8.32 C 466.67,8.59 480.39,2.45 494.12,3.52 C 507.84,4.59 521.57,11.25 535.29,14.72 C 549.02,18.19 562.75,19.25 576.47,24.32 C 590.20,29.39 603.92,39.79 617.65,45.12 C 631.37,50.45 645.10,53.39 658.82,56.32 C 672.55,59.25 693.14,61.65 700.00,62.72" fill="none" stroke="#c3f400" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+<div class="flex items-center text-outline font-label-sm text-label-sm pt-space-2xs border-t border-surface-container-high/40">
+<span style="width: 47%;">第 1 盘 (对攻期)</span>
+<span class="text-center" style="width: 35%;">第 2 盘 (决胜期)</span>
+<span class="text-right" style="width: 18%;">赛后放松</span>
+</div>
+</div>
+</div>
+<p class="font-label-sm text-label-sm text-outline">虚红线 = 160 BPM 无氧阈值参考线 · 纵轴 90–190 BPM 等距刻度 · 横轴 = 距开场分钟数</p>
 </div>
 </div>
 {#- 硬件准入移除：「击球甜区散点重叠 / 拍面甜区集中率对比」整块卡片。
@@ -499,9 +517,9 @@
 <div class="flex flex-col">
 <div class="flex items-center gap-space-xs">
 <span class="font-headline-sm text-headline-sm text-primary font-bold">历史训练对局与对抗详细日志</span>
-<span class="px-space-xs py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-label-sm font-semibold">近 5 场对局遥测切片</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-label-sm font-semibold">近 5 场训练遥测切片</span>
 </div>
-<p class="font-body-md text-body-md text-on-surface-variant">展示两人近 30 天内直接对抗 (Head-to-Head) 及同条件发球机测试实测记录</p>
+<p class="font-body-md text-body-md text-on-surface-variant">展示两人近 30 天内的同场训练与同条件发球机标定记录</p>
 </div>
 <div class="flex items-center gap-space-sm">
 <div class="relative">
@@ -518,12 +536,12 @@
 <table class="w-full text-left text-body-md">
 <thead>
 <tr class="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider bg-surface-container-low/70">
-<th class="py-space-sm px-space-md rounded-l-lg">对局日期 / 场地类型</th>
-<th class="py-space-sm px-space-md">对局形式</th>
-<th class="py-space-sm px-space-md text-primary-fixed">张哲恒 (A) 得分/均速</th>
-<th class="py-space-sm px-space-md text-secondary">李思源 (B) 得分/均速</th>
+<th class="py-space-sm px-space-md rounded-l-lg">训练日期 / 场地类型</th>
+<th class="py-space-sm px-space-md">训练形式</th>
+<th class="py-space-sm px-space-md text-primary-fixed">张哲恒 (A) 均速 / 极速</th>
+<th class="py-space-sm px-space-md text-secondary">李思源 (B) 均速 / 极速</th>
 <th class="py-space-sm px-space-md">最长相持 (Rally)</th>
-<th class="py-space-sm px-space-md">胜负关键归因</th>
+<th class="py-space-sm px-space-md">本场要点</th>
 <th class="py-space-sm px-space-md text-right rounded-r-lg">操作</th>
 </tr>
 </thead>
@@ -538,19 +556,19 @@
 <span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface font-label-sm text-label-sm">单打实战 (抢七)</span>
 </td>
 <td class="py-space-md px-space-md font-semibold text-primary-fixed">
-<div class="text-headline-sm">7 <span class="text-body-md text-on-surface-variant font-normal">(124 km/h)</span></div>
-<div class="font-label-sm text-label-sm text-primary-fixed">Ace球 4 记 · 制胜分 9</div>
+<div class="text-headline-sm">124 <span class="text-body-md text-on-surface-variant font-normal">km/h</span></div>
+<div class="font-label-sm text-label-sm text-primary-fixed">正手均速 122 · 发球极速 176</div>
 </td>
 <td class="py-space-md px-space-md font-semibold text-secondary">
-<div class="text-headline-sm">5 <span class="text-body-md text-on-surface-variant font-normal">(114 km/h)</span></div>
-<div class="font-label-sm text-label-sm text-secondary">非受迫失误仅 2 次</div>
+<div class="text-headline-sm">114 <span class="text-body-md text-on-surface-variant font-normal">km/h</span></div>
+<div class="font-label-sm text-label-sm text-secondary">正手均速 112 · 发球极速 162</div>
 </td>
 <td class="py-space-md px-space-md font-semibold text-on-surface">
                 14 拍
-                <span class="block font-label-sm text-label-sm text-secondary">李思源反手穿越得分</span>
+                <span class="block font-label-sm text-label-sm text-secondary">全场最长多拍回合</span>
 </td>
 <td class="py-space-md px-space-md text-on-surface-variant">
-                张哲恒抢七发球连续 2 记外角 Ace 终结比赛
+                张哲恒发球极速 176 km/h 为全场最高，李思源多拍相持更稳
               </td>
 <td class="py-space-md px-space-md text-right">
 <button class="px-space-sm py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm transition-colors">回放切片</button>
@@ -566,19 +584,19 @@
 <span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface font-label-sm text-label-sm">1盘常规对抗 (Set)</span>
 </td>
 <td class="py-space-md px-space-md font-semibold text-primary-fixed">
-<div class="text-headline-sm">4 <span class="text-body-md text-on-surface-variant font-normal">(118 km/h)</span></div>
-<div class="font-label-sm text-label-sm text-error">非受迫失误 16 次</div>
+<div class="text-headline-sm">118 <span class="text-body-md text-on-surface-variant font-normal">km/h</span></div>
+<div class="font-label-sm text-label-sm text-primary-fixed">正手均速 116 · 反手均速 98</div>
 </td>
 <td class="py-space-md px-space-md font-semibold text-secondary">
-<div class="text-headline-sm">6 <span class="text-body-md text-on-surface-variant font-normal">(116 km/h)</span></div>
-<div class="font-label-sm text-label-sm text-secondary">破发成功率 75%</div>
+<div class="text-headline-sm">116 <span class="text-body-md text-on-surface-variant font-normal">km/h</span></div>
+<div class="font-label-sm text-label-sm text-secondary">正手均速 114 · 反手均速 105</div>
 </td>
 <td class="py-space-md px-space-md font-semibold text-on-surface">
                 22 拍
-                <span class="block font-label-sm text-label-sm text-secondary">张哲恒反手出界</span>
+                <span class="block font-label-sm text-label-sm text-secondary">红土场地最长多拍回合</span>
 </td>
 <td class="py-space-md px-space-md text-on-surface-variant">
-                红土降速后多拍相持拉长，李思源反手深球致胜
+                红土场地球速整体下降约 6 km/h，多拍回合数相应上升
               </td>
 <td class="py-space-md px-space-md text-right">
 <button class="px-space-sm py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm transition-colors">回放切片</button>
@@ -594,12 +612,12 @@
 <span class="px-2 py-0.5 rounded bg-surface-container-highest text-primary font-label-sm text-label-sm font-semibold">100球正手标定</span>
 </td>
 <td class="py-space-md px-space-md font-semibold text-primary-fixed">
-<div class="text-headline-sm">92% <span class="text-body-md text-on-surface-variant font-normal">入界率</span></div>
-<div class="font-label-sm text-label-sm text-primary-fixed">均速 126 km/h (顶尖)</div>
+<div class="text-headline-sm">126 <span class="text-body-md text-on-surface-variant font-normal">km/h</span></div>
+<div class="font-label-sm text-label-sm text-primary-fixed">正手均速 · 100 球定点极速</div>
 </td>
 <td class="py-space-md px-space-md font-semibold text-secondary">
-<div class="text-headline-sm">96% <span class="text-body-md text-on-surface-variant font-normal">入界率</span></div>
-<div class="font-label-sm text-label-sm text-secondary">均速 113 km/h (平稳)</div>
+<div class="text-headline-sm">113 <span class="text-body-md text-on-surface-variant font-normal">km/h</span></div>
+<div class="font-label-sm text-label-sm text-secondary">正手均速 · 100 球定点均值</div>
 </td>
 <td class="py-space-md px-space-md font-semibold text-on-surface">
                 -- 
@@ -617,7 +635,7 @@
 </div>
 <!-- Pagination & Table Footer -->
 <div class="flex flex-col sm:flex-row items-center justify-between gap-space-sm pt-space-xs text-on-surface-variant font-label-sm text-label-sm">
-<span>共检索到 18 条跨学员关联对抗记录</span>
+<span>共检索到 18 条跨学员关联训练记录</span>
 <div class="flex items-center gap-space-xs">
 <button class="p-1 rounded bg-surface-container-high text-on-surface disabled:opacity-40" disabled="">
 <span class="material-symbols-outlined text-[16px]">chevron_left</span>

@@ -15,6 +15,20 @@
 """
 from .db import RAW_DIR, VIDEO_DIR, get_conn  # noqa: F401  (RAW_DIR/VIDEO_DIR 供外部引用)
 
+import json
+import re
+import unicodedata
+
+# 训练形式 / 场地类型的中文名。与 server/analytics.py 里的那份保持一致 ——
+# 同一个枚举在两个页面必须显示同一个中文名，否则「专项练习」和「截击专项」
+# 会被当成两种东西。
+from ..analytics import COURT_TYPE_LABEL, SESSION_TYPE_LABEL  # noqa: E402
+# 时间区间口径也复用 /training 那一份（`resolve_range` + `_range_clause`）：
+# 两个页面筛「最近 7 天」必须是同一个边界，否则同一批数据在两边对不上。
+# `_range_clause` 带下划线是因为它本来只服务 analytics 内部；这里主动复用它，
+# 而不是在 annotation 侧再写一遍 date(started_at) 的比较。
+from ..analytics import _range_clause  # noqa: E402
+
 # 采集 → 标注 → 训练 → 分析 四段链路（静态描述，与 datasources.PIPELINE 衔接）
 STAGES = [
     {'step': '01', 'key': 'capture', 'icon': 'watch',
@@ -293,3 +307,461 @@ def session_rows(limit=12):
         return out
     finally:
         conn.close()
+
+
+# --------------------------------------------------------------------------- #
+# 历史采集元数据（mock 批次）
+# --------------------------------------------------------------------------- #
+# 目的：把 `seed_annotation_history.py` 造出来的那批场次，**逐场逐字段**摊开，
+# 让人一眼看到「每个数字是多少」，同时回答「下一批采集该采哪些字段、
+# 哪些字段是期望有值的」。
+#
+# 布局：**字段为列、场次为行**（2026-10-03 由「字段为行」转置而来）。
+#   这样「一场训练 = 一行、一个字段 = 一列」与「一条记录一行」的直觉一致，
+#   也才容纳得下「按学员 + 时间范围筛选」—— 筛选筛的是**行**（场次），
+#   列（字段）是稳定的口径，不该随筛选消失。
+#   代价是列很多（33 列），所以表头纵向 sticky、左侧会话标识横向 sticky。
+#   · 字段清单、必采标记、采集来源全部来自 server/datasources.py（唯一真源，
+#     不在本页另写一份口径）；
+#   · 覆盖数由 training_sessions / stroke_records 现算，**随筛选同步重算**，
+#     不是写死的文案；
+#   · 甜区 / 转速 / 落点 / 失误 / 制胜分等**硬件不可得**的字段不在此表 ——
+#     它们已经从登记表移除，留档见 /settings#removed。
+HIST_PREFIX = 'hist-'
+
+# `artifact` 字段的落点，例如 'training_sessions.avg_hr' → ('training_sessions','avg_hr')
+_ARTIFACT_RE = re.compile(r'^(training_sessions|stroke_records|students)\.([a-z_]+)')
+
+# 每个字段在表格单元格里的呈现方式。没列到的走 _cell_default。
+_CELL_FMT = {
+    'duration_sec': lambda v: '%d 分' % round(v / 60.0),
+    'started_at': lambda v: str(v)[5:16].replace('T', ' '),
+    'ended_at': lambda v: str(v)[5:16].replace('T', ' '),
+    'worn_wrist': lambda v: {'left': '左手', 'right': '右手'}.get(v, v),
+    # 训练形式 / 场地类型在这里就必须转中文：页面上「drill」和「专项练习」
+    # 会被当成两种东西，而 /training 显示的是后者。
+    'session_type': lambda v: SESSION_TYPE_LABEL.get(v, v),
+    'court_type': lambda v: COURT_TYPE_LABEL.get(v, v),
+    # 心率区间在库里是一列 JSON。矩阵里要的是**五个数**，不是 JSON 文本 ——
+    # 摊平成 zone1/zone2/…/zone5，一眼能比出各场强度分布。
+    'hr_zone': lambda v: '/'.join(str(x) for x in _zone_list(v)) or str(v),
+    'external_id': lambda v: str(v),
+    'calories_kcal': lambda v: '%.0f' % v,
+    'distance_km': lambda v: '%.2f' % v,
+    'avg_speed_kmh': lambda v: '%.1f' % v,
+    'peak_speed_kmh': lambda v: '%.1f' % v,
+    'forehand_avg_kmh': lambda v: '%.1f' % v,
+    'backhand_avg_kmh': lambda v: '%.1f' % v,
+    'serve_avg_kmh': lambda v: '%.1f' % v,
+    'serve_peak_kmh': lambda v: '%.1f' % v,
+    'confidence': lambda v: '%.2f' % v,
+    'anomaly': lambda v: '%d' % int(v or 0),
+}
+
+# 矩阵里每个场次列的宽度按 100px 设计。ASCII 字宽约 6.2px、CJK 约 12px，
+# 所以裁剪按「显示宽度」算，CJK 记 2 个单位，预算 16 个单位。
+# 超出部分裁掉并加省略号 —— 但**完整原值一定挂在 title 上**（见 _cell_pair），
+# 悬停就能看到，不会因为窄列丢信息。
+_CELL_BUDGET = 16
+
+
+def _dw(s):
+    """字符串的显示宽度：全角/CJK 记 2，其余记 1。"""
+    return sum(2 if unicodedata.east_asian_width(c) in 'WF' else 1 for c in str(s))
+
+
+def _clip(s, budget=_CELL_BUDGET):
+    if _dw(s) <= budget:
+        return s
+    out, used = '', 0
+    for c in str(s):
+        w = 2 if unicodedata.east_asian_width(c) in 'WF' else 1
+        if used + w > budget - 1:
+            break
+        out += c
+        used += w
+    return out + '…'
+
+
+def _cell_default(v):
+    if v is None:
+        return '—'
+    if isinstance(v, float):
+        return '%.1f' % v
+    return str(v)
+
+
+def _cell(key, v):
+    if v is None or v == '':
+        return '—'
+    fn = _CELL_FMT.get(key)
+    return fn(v) if fn else _cell_default(v)
+
+
+def _cell_pair(key, v):
+    """矩阵单元格 = (显示值, 悬停原值)。
+
+    显示值经过中文映射 / 单位化简 / 宽度裁剪；原值永远是库里那一列的内容，
+    两者不同才挂 title（相同就不挂，免得悬停出一模一样的浮层）。
+    """
+    if v is None or v == '':
+        return {'v': '—', 't': ''}
+    disp = _cell(key, v)
+    raw = v if isinstance(v, str) else str(v)
+    shown = _clip(disp)
+    # 与**裁剪后**的比较：被裁掉的那部分正是要靠 title 补回来的。
+    return {'v': shown, 't': raw if raw != shown else ''}
+
+
+
+def _field_plan():
+    """登记表 → 本页「字段 × 场次」矩阵的行定义。
+
+    每行的 level 决定它在表里的呈现：
+      · session —— training_sessions 有对应列，逐场给值
+      · stroke  —— stroke_records 有对应列，逐场给「样本数」
+      · profile —— 落在 students（档案级），没有逐场值
+      · none    —— derive / local / 待建列，压根不落库
+    """
+    from .. import datasources as ds
+    out = []
+    for r in ds.flat_rows():
+        m = _ARTIFACT_RE.match(r.get('artifact') or '')
+        table = m.group(1) if m else None
+        col = m.group(2) if m else None
+        if table in ('training_sessions', 'stroke_records'):
+            level = 'session' if table == 'training_sessions' else 'stroke'
+        elif table == 'students':
+            level = 'profile'
+        else:
+            level = 'none'
+        src = r.get('source') or '—'
+        out.append({
+            'no': r['no'], 'field': r['field'], 'key': r['key'],
+            'unit': r.get('unit') or '—',
+            'cat_key': r.get('cat_key') or '',
+            'cat_label': r['cat_label'], 'cat_tone': r['cat_tone'],
+            'cat_icon': r['cat_icon'],
+            'group_name': r.get('group_name') or '',
+            'required': bool(r.get('required')),
+            'sync': r.get('sync'),
+            'sync_label': r['sync_meta']['label'], 'sync_tone': r['sync_meta']['tone'],
+            'source': src,
+            # 「HealthKit · HKQuantityTypeIdentifierActiveEnergyBurned」这种全路径
+            # 在表里放不下，只留框架名（' · ' 之前那截）；全路径与取数方法挂在
+            # title 上，悬停即得。
+            'source_short': src.split(' · ')[0] or '—',
+            'acquire': (r.get('acquire') or '').strip(),
+            'artifact': (r.get('artifact') or '').strip(),
+            'level': level, 'col': col,
+            'note': (r.get('pending') or '').strip(),
+        })
+    return out
+
+
+# 「不落库 / 无逐场值」的行按性质分档。分档依据是 sync（采集形态），
+# 不是 artifact 文案 —— 文案会改，sync 是登记表里的枚举。
+_NO_VALUE_KINDS = [
+    ('profile', '学员档案级', 'text-secondary', 'badge',
+     '落在 students 表，按人一行 —— 有值，但**不是逐场的**。'
+     '要按学员查，不在本表的列里。'),
+    ('derive', '后端派生（不落库）', 'text-tertiary-fixed-dim', 'functions',
+     '不单独存一列，由后端聚合时现算。因此**永远不会有逐场存储值** —— '
+     '它出现在这里是为了说明「这个指标从哪来」，不是说要为它建列。'),
+    ('local', '仅设备本地（不上行）', 'text-outline', 'smartphone',
+     '隐私或体量原因不上行，只在手表/手机本地用。后端既收不到也存不下，'
+     '**不要指望在库里看到它**。'),
+    ('none', '口径已定义、尚未落地', 'text-error', 'construction',
+     '登记表里有定义（采集端会产出），但后端还没有对应列或计算。'
+     '要给它们留位置，就得先改 server/schema.sql。'),
+]
+
+
+
+def _hist_student_options(counts):
+    """学员筛选条的选项：只列**本批真有场次**的学员。
+
+    列一个 0 场的学员出来，点进去是空表，读者会以为数据丢了 —— 所以按
+    「本批场次数 > 0」过滤，并把场次数挂在 chip 上。
+    名单本身复用 `analytics.list_students()`，不在这里重写 SELECT ——
+    「谁算一个学员、按什么排序」这个口径只该有一处。
+    """
+    from .. import analytics
+    out = []
+    try:
+        for s in analytics.list_students():
+            n = counts.get(s['id'], 0)
+            if not n:
+                continue
+            out.append({
+                'id': s['id'], 'name': s['name'],
+                'initial': s.get('initial') or s['name'][:1],
+                'avatar_url': s.get('avatar_url'),
+                'tier': s.get('tier') or '',
+                'nt_label': s.get('nt_label') or '—',
+                'n': n,
+            })
+    except Exception:
+        pass
+    out.sort(key=lambda s: (-s['n'], s['name']))
+    return out
+
+
+def history_metadata(student=None, rng=None):
+    """「历史采集元数据」区块的全部数据。分析库不可用时退化成空表，不抛错。
+
+    参数
+      student —— 学员 id；None/空 = 全部学员
+      rng     —— analytics.resolve_range() 的返回值；None = 不限时间
+
+    返回的行（sessions）携带 `cells`，与列（fields）**下标一一对应**：
+    `sessions[i]['cells'][j]` 就是 `fields[j]` 在第 i 场的那一格。
+    """
+    plan = _field_plan()
+    # 能成为**列**的只有「逐场/逐拍」两种 level —— 其余 21 个字段没有
+    # 「这一场的那一个数」，硬做成列只会是一列「—」。它们改由下方
+    # 「另外 N 个字段没有逐场值」分档块承担说明职责。
+    col_fields = [f for f in plan if f['level'] in ('session', 'stroke')]
+
+    where = ["s.id LIKE ?", "s.deleted_at IS NULL"]
+    params = [HIST_PREFIX + '%']
+    if student:
+        where.append("s.student_id = ?")
+        params.append(student)
+    if rng:
+        # `_range_clause` 返回的是 ' AND a AND b'（为接在既有 WHERE 后面而设计）；
+        # 这里从零拼 WHERE，所以把开头那个 AND 切掉再拼。
+        clause, rparams = _range_clause('s', rng)
+        if clause.startswith(' AND '):
+            clause = clause[len(' AND '):]
+        if clause:
+            where.append(clause)
+            params.extend(rparams)
+
+    sess_rows, stroke_rows, counts, n_all = [], [], {}, 0
+    try:
+        from .. import db as analysis_db
+        sess_rows = analysis_db.query(
+            "SELECT s.*, st.name AS student_name, st.tier AS student_tier,"
+            "       st.avatar_url AS student_avatar,"
+            "       (SELECT COUNT(*) FROM stroke_records r WHERE r.session_id = s.id)"
+            "         AS n_strokes"
+            "  FROM training_sessions s LEFT JOIN students st ON st.id = s.student_id"
+            " WHERE " + ' AND '.join(where) + " ORDER BY s.id", tuple(params))
+        ids = [r['id'] for r in sess_rows]
+        if ids:
+            stroke_rows = analysis_db.query(
+                "SELECT session_id, speed_kmh, impact_ms, seq_in_session,"
+                "       confidence, anomaly"
+                "  FROM stroke_records WHERE session_id IN (%s)"
+                % ','.join('?' * len(ids)), tuple(ids))
+        # 全批口径（不受筛选影响）：筛选条要显示「当前 3 / 全批 16 场」，
+        # 否则读者分不清是本来就这么多、还是被筛掉了。
+        for r in analysis_db.query(
+                "SELECT student_id, COUNT(*) AS n FROM training_sessions"
+                " WHERE id LIKE ? AND deleted_at IS NULL GROUP BY student_id",
+                (HIST_PREFIX + '%',)):
+            counts[r['student_id']] = r['n']
+        n_all = sum(counts.values())
+    except Exception:
+        sess_rows, stroke_rows, counts, n_all = [], [], {}, 0
+
+    students = _hist_student_options(counts)
+
+    if not sess_rows:
+        return {
+            'exists': bool(n_all),          # 全批有数据、只是被筛空了 → 仍算 exists
+            'empty_filtered': bool(n_all),  # 用于区分「库里没有」和「筛没了」
+            'sessions': [], 'fields': [], 'col_groups': [],
+            'no_value': [], 'no_value_groups': [], 'gaps': [],
+            'students': students,
+            'totals': {'sessions': 0, 'sessions_all': n_all, 'fields': len(plan),
+                       'field_rows': len(col_fields), 'required': 0,
+                       'required_filled': 0, 'no_value': 0,
+                       'stroke_samples': 0, 'sessions_with_stroke': 0},
+            'filter': _hist_filter_info(student, rng, 0, n_all, students),
+        }
+
+    # ---- 逐场（表的行）---------------------------------------------------
+    sessions = []
+    for r in sess_rows:
+        sessions.append({
+            'id': r['id'],
+            'short': r['id'][5:],                     # 去掉 'hist-' 前缀
+            'name': r.get('student_name') or r.get('student_id') or '—',
+            'student_id': r.get('student_id') or '',
+            'initial': (r.get('student_name') or '?')[:1],
+            'avatar_url': r.get('student_avatar'),
+            'tier': r.get('student_tier') or '',
+            'date_label': str(r['started_at'])[:10],
+            'time_label': str(r['started_at'])[11:16],
+            'day_label': str(r['started_at'])[5:10],
+            'started_at': r['started_at'],
+            'type_label': SESSION_TYPE_LABEL.get(r.get('session_type'), '训练'),
+            'court_label': COURT_TYPE_LABEL.get(r.get('court_type'), '—'),
+            'duration_label': _fmt_dur(r.get('duration_sec')),
+            'hr_zone': _zone_list(r.get('hr_zone')),
+            'n_strokes': r.get('n_strokes') or 0,
+            'cells': [],
+        })
+    by_id = {s['id']: s for s in sessions}
+
+    stroke_by_sess = {}
+    for sr in stroke_rows:
+        stroke_by_sess.setdefault(sr['session_id'], []).append(sr)
+
+    # ---- 逐列（表头 + 覆盖数）-------------------------------------------
+    # 覆盖数现在是「**筛选后**有多少场这一列非空 / 筛选后共多少场」，
+    # 因为筛选筛的就是行。切学员后看到 4/4 表示该学员这 4 场都采到了。
+    fields = []
+    for f in col_fields:
+        item = {k: f[k] for k in (
+            'no', 'field', 'key', 'unit', 'cat_key', 'cat_label', 'cat_tone',
+            'cat_icon', 'group_name', 'required', 'sync', 'sync_label',
+            'sync_tone', 'source', 'source_short', 'acquire', 'artifact',
+            'level', 'col', 'note')}
+        coverage = 0
+        if f['level'] == 'session':
+            # 取值一律走 `sess_rows`（库里那一行），不是 `sessions`（已重命名过的
+            # 展示字典）—— 后者只有 id/name/... 那几个键，用它取 `duration_sec`
+            # 会静默全空，表现为「所有列 0/16 覆盖」这种最难查的假数据。
+            for r in sess_rows:
+                v = r.get(f['col'])
+                if v is not None and v != '':
+                    coverage += 1
+                by_id[r['id']]['cells'].append(_cell_pair(f['key'], v))
+        else:
+            for r in sess_rows:
+                sam = stroke_by_sess.get(r['id'], [])
+                if any(s.get(f['col']) is not None for s in sam):
+                    coverage += 1
+                by_id[r['id']]['cells'].append(_stroke_cell(f['col'], sam))
+        item['coverage'] = coverage
+        item['total'] = len(sessions)
+        item['filled'] = coverage == len(sessions)
+        item['status'] = 'per_session'
+        fields.append(item)
+
+    # ---- 列分组（表头第一行，用 group_name 的连续段）--------------------
+    # 用 group_name 而不是 cat_key：登记表里 group 是连续的 6 段，而 cat 是
+    # 横向交错的（会话概要 / 采集标识 / 生理负荷 …），按 cat 分会碎成十几个
+    # 单格 colspan，表头反而更乱。cat 的信息放在列头的色点 + title 上。
+    col_groups = []
+    for f in fields:
+        if not col_groups or col_groups[-1]['name'] != f['group_name']:
+            col_groups.append({'name': f['group_name'], 'span': 0,
+                               'tone': f['cat_tone']})
+        col_groups[-1]['span'] += 1
+    # 分组的第一列给模板一个显式标记：33 列里没有它，分组边界就看不出来，
+    # 读者横着滚过去分不清「这一列属于哪一组」。在 Python 里算好，
+    # 免得模板里比较相邻两项（Jinja 的 loop.previtem 只对 items 有效）。
+    for i, f in enumerate(fields):
+        f['group_first'] = (i == 0
+                            or fields[i - 1]['group_name'] != f['group_name'])
+
+    required = [f for f in fields if f['required']]
+
+    # ---- 没有逐场值的 21 个字段（与筛选无关，是字段性质）----------------
+    no_value = [dict(f, coverage=None, total=len(sessions),
+                     filled=False, status='no_value') for f in plan
+                if f['level'] not in ('session', 'stroke')]
+    buckets = {k[0]: [] for k in _NO_VALUE_KINDS}
+    for f in no_value:
+        kind = 'profile' if f['level'] == 'profile' else (f['sync'] or 'none')
+        buckets.setdefault(kind, buckets['none']).append(f)
+    no_value_groups = []
+    for key, label, tone, icon, desc in _NO_VALUE_KINDS:
+        rows_k = buckets.get(key) or []
+        if not rows_k:
+            continue
+        no_value_groups.append({
+            'key': key, 'label': label, 'tone': tone, 'icon': icon,
+            'desc': desc, 'fields': rows_k, 'count': len(rows_k),
+            'required': sum(1 for f in rows_k if f['required']),
+        })
+
+    # 台账里"必采"却在本筛选下没填满的字段 —— 页面要能把它们点出来，
+    # 否则「必采 20 / 填满 19」这个数字读者不知道差在哪。
+    gaps = [{'no': f['no'], 'field': f['field'], 'coverage': f['coverage'],
+             'total': f['total'], 'source': f['source']}
+            for f in fields if f['required'] and not f['filled']]
+
+    n_sess_with_stroke = len(stroke_by_sess)
+
+    return {
+        'exists': True,
+        'empty_filtered': False,
+        'sessions': sessions,
+        'fields': fields,
+        'col_groups': col_groups,
+        'no_value': no_value,
+        'no_value_groups': no_value_groups,
+        'gaps': gaps,
+        'students': students,
+        'totals': {
+            'sessions': len(sessions),
+            'sessions_all': n_all,
+            'fields': len(plan),
+            'field_rows': len(col_fields),
+            'required': len(required),
+            'required_filled': sum(1 for f in required if f['filled']),
+            'no_value': len(no_value),
+            'stroke_samples': sum(len(v) for v in stroke_by_sess.values()),
+            'sessions_with_stroke': n_sess_with_stroke,
+            'cells': len(sessions) * len(col_fields),
+        },
+        'filter': _hist_filter_info(student, rng, len(sessions), n_all, students),
+    }
+
+
+def _hist_filter_info(student, rng, n_shown, n_all, students):
+    """筛选状态（给模板画筛选条用）。文案一律现算，不写死。"""
+    rng = rng or {}
+    active = bool(student) or bool(rng.get('from'))
+    hit = next((s for s in students if s['id'] == student), None)
+    return {
+        'student': student or '',
+        'student_label': (hit or {}).get('name') or '全部学员',
+        'range_key': rng.get('key') or 'all',
+        'range_label': rng.get('label') or '全部记录',
+        'range_display': rng.get('display') or '不限',
+        'from_input': rng.get('from_input') or '',
+        'to_input': rng.get('to_input') or '',
+        'active': active,
+        'n_shown': n_shown,
+        'n_all': n_all,
+    }
+
+
+def _stroke_cell(col, samples):
+    """逐拍字段的单元格：值恒为「本场样本条数」，title 补列本身的分布。
+
+    stroke_records 是**抽样**表（本批每场 12 条），所以这一格不是「全量计数」。
+    不写成具体数值是为了不让读者拿它跟会话汇总列做除法（分母不同）。
+    """
+    n = len(samples)
+    if not n:
+        return {'v': '—', 't': '该场没有逐拍样本'}
+    tips = ['该场逐拍样本 %d 条（stroke_records 是抽样表，不是全量）' % n]
+    vals = [s.get(col) for s in samples if s.get(col) is not None]
+    if vals:
+        try:
+            lo, hi = min(vals), max(vals)
+            unit = {'speed_kmh': ' km/h', 'impact_ms': ' ms',
+                    'confidence': '', 'seq_in_session': ''}.get(col, '')
+            fmt = (lambda x: '%.1f' % x) if isinstance(lo, float) else (lambda x: '%d' % x)
+            tips.append('本列 %d 个非空样本，%s ~ %s%s' % (len(vals), fmt(lo), fmt(hi), unit))
+        except TypeError:
+            pass
+    else:
+        tips.append('本列在样本里全为空')
+    return {'v': '%d 条' % n, 't': ' · '.join(tips)}
+
+
+
+def _zone_list(raw):
+    """hr_zone（JSON 文本）→ 五个区间的占比列表；解析失败返回空列表。"""
+    try:
+        return [json.loads(raw)['zone%d' % i] for i in range(1, 6)]
+    except Exception:
+        return []

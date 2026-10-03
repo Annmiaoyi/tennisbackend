@@ -8,9 +8,14 @@
       3) 两条链路对照    4) 采集到训练的四段链路
       5) 标注状态机      6) 标注逻辑（规则）
       7) 作业须知        8) 标签空间        9) 标注进度
+     10) 历史采集元数据（场次为行 × 字段为列的完整台账，可按学员 / 时间筛选）
 
     区块 3~8 的全部文案来自 server/annotation/stats.py 的 SPEC_* 常量（唯一真源），
     模板只负责排版；改文案请改那个文件，不要写死在本模板里。
+    区块 9~10 的数字全部现查库（stats.session_rows / stats.history_metadata），
+    也没有写死的单元格值 —— 表里的每个数字都来自 DB。
+    区块 10 体积大且有自己的一套 sticky 约定，拆在
+    pages/_annotation_history.html，用 include 挂进来。
 
     外壳复用 base.html；卡片 / 徽章 / 数值一律沿用设计系统令牌，
     不引入设计稿之外的新颜色。 -#}
@@ -63,6 +68,7 @@ Watch 的启发式结果会自动预标注（暗色虚线），标注者只需�
 <a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#notes">作业须知</a>
 <a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#labels">标签空间</a>
 <a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#progress">标注进度</a>
+<a class="px-space-sm py-1 rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#history">历史采集元数据</a>
 </nav>
 
 <!-- ===================== 统计水位 ===================== -->
@@ -433,7 +439,11 @@ Watch 的启发式结果会自动预标注（暗色虚线），标注者只需�
 </div>
 {% endif %}
 </div>
-</div>
+
+{#- 历史采集元数据：区块体积大（~250 行密集表格 + 自己的 sticky 约定），
+    拆成 partial 便于单独改。数据来自 server/annotation/stats.py 的
+    history_metadata()，形状见该文件。 -#}
+{% include 'pages/_annotation_history.html' %}
 
 <!-- 一致性弹层 -->
 <div class="fixed inset-0 z-50 hidden items-center justify-center bg-surface-container-lowest/85 backdrop-blur-sm" id="cons">

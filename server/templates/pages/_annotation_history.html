@@ -1,0 +1,338 @@
+{#- ===================== 历史采集元数据 ===================== -#}
+{#- 这一块回答两件事：
+      ① 「每个数字是多少」—— **场次为行、字段为列**：
+         一行 = 一场训练，一格 = 该场该字段在库里的真实取值
+         （悬停可看未裁剪的原始形态）；
+      ② 「下一批该采什么」—— 列头的编号 / 必采 / 采集来源 / 覆盖数全部来自
+         server/datasources.py 的登记表 + 现查库，没有写死的数字。
+
+    方向为什么是「字段为列」（2026-10-03 由「字段为行」转置而来）：
+      · 筛选筛的是**行**。按学员 + 时间范围筛选时，字段（列）是稳定口径、
+        不该随筛选消失；反过来「字段为行」时筛掉一个学员就少一列，
+        表头跟着变，横竖都比不了。
+      · 代价是列多（33 列），所以表头纵向 sticky、左侧会话列横向 sticky。
+
+    关于 sticky / 列宽：**一律走 inline style**，不用 Tailwind 的任意值类
+    （w-[112px] / min-w-[3978px] / top-[30px] 这些）。任意值类必须先落进
+    编译产物 app.css，漏了会**静默失效**——本仓库已经在这上面栽过一次
+    （卡片塌成一格），排查花了两轮。详见 scripts/check_css_coverage.py。
+
+    数据形状（server/annotation/stats.py 的 history_metadata）：
+      hist.sessions[i].cells[j]  ←→  hist.fields[j]，下标一一对应。 -#}
+
+{% set W_SESS = 92 %}
+{% set W_NAME = 84 %}
+{% set W_DATE = 106 %}
+{% set W_FIELD = 112 %}
+{% set L_NAME = W_SESS %}
+{% set L_DATE = W_SESS + W_NAME %}
+{% set H_GROUP = 30 %}
+{% set H_FIELD = 76 %}
+{% set MINW = (W_SESS + W_NAME + W_DATE) + W_FIELD * (hist.fields | length) %}
+{#- 冻结列（横向滚动时固定在左边）与 sticky 表头的背景**必须不透明**，
+    否则滚过去的数字会透上来。取 surface-container / surface-container-low。 -#}
+{% set C_FROZEN = '#1c211e' %}
+{% set C_HEAD = '#181d1a' %}
+{% set C_LINE = 'rgba(142,147,121,0.12)' %}        {# 普通列间竖线 #}
+{% set C_GROUP = 'rgba(142,147,121,0.34)' %}       {# 分组边界竖线 #}
+{% set ROW = '1px solid rgba(142,147,121,0.10)' %} {# 行分隔线 #}
+
+<div class="scroll-mt-24" id="history"></div>
+<div class="rounded-xl bg-surface-container shadow-md overflow-hidden">
+<div class="p-space-lg pb-space-sm flex flex-col sm:flex-row sm:items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[22px]">table_view</span>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">历史采集元数据</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">场次为行 · 字段为列 —— 一行一场训练，每格是这一列在库里的取值</span>
+</div>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">字段口径唯一真源：<span class="font-mono">server/datasources.py</span></span>
+</div>
+
+{% if not hist.exists %}
+{#- 库里压根没有这批 mock。 -#}
+<div class="px-space-lg pb-space-lg">
+<div class="py-space-xl rounded-xl border border-dashed border-outline/30 flex flex-col items-center gap-space-xs">
+<span class="material-symbols-outlined text-[32px] text-outline">table_off</span>
+<span class="font-body-md text-body-md text-on-surface-variant">分析库里还没有历史采集记录</span>
+<span class="font-label-sm text-label-sm text-outline">跑 <span class="font-mono">.venv/bin/python scripts/seed_annotation_history.py --apply</span> 生成演示批次</span>
+</div>
+</div>
+{% else %}
+
+{#- ⚠️ 筛选条：学员 + 时间范围。全部走 query param + 服务端渲染
+    （与 /training 同一套约定）—— URL 可分享、刷新不丢筛选、禁 JS 也能用。
+    日期框只做渐进增强（改完即提交），不靠它工作。 -#}
+<div class="px-space-lg pb-space-md flex flex-col gap-space-xs border-b border-outline/15">
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline" style="width: 32px;">学员</span>
+{% for s in hist.student_links %}
+<a class="flex items-center gap-space-xs px-space-sm py-1 rounded-lg transition-colors {{ 'bg-primary-container text-on-primary-container' if s.active else 'bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high' }}" href="{{ s.href }}">
+{% if s.avatar_url %}
+<img alt="" class="w-5 h-5 rounded-full object-cover" src="{{ s.avatar_url }}">
+{% else %}
+<span class="w-5 h-5 rounded-full flex items-center justify-center font-label-sm text-label-sm {{ 'bg-surface-container-highest text-on-surface' if s.active else 'bg-surface-container-high text-on-surface-variant' }}">{{ s.initial }}</span>
+{% endif %}
+<span class="font-label-sm text-label-sm {{ 'font-bold' if s.active }}">{{ s.name }}</span>
+<span class="font-mono font-label-sm text-label-sm {{ 'text-on-primary-container' if s.active else 'text-outline' }}">{{ s.n }} 场</span>
+</a>
+{% endfor %}
+</div>
+
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline" style="width: 32px;">时间</span>
+{% for r in hist.range_links %}
+<a class="px-space-sm py-1 rounded-lg transition-colors font-label-sm text-label-sm {{ 'bg-primary-container text-on-primary-container font-bold' if r.active else 'bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high' }}" href="{{ r.href }}">{{ r.label }}</a>
+{% endfor %}
+
+<form action="/annotation" class="flex flex-wrap items-center gap-space-xs" id="histFilter" method="get">
+{#- 学员要带过来，否则「改日期」会把已选的学员悄悄丢掉。 -#}
+<input name="student" type="hidden" value="{{ hist.filter.student }}">
+<label class="flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-surface-container-low">
+<span class="font-label-sm text-label-sm text-outline">从</span>
+<input class="bg-transparent font-label-sm text-label-sm text-on-surface outline-none" name="from" style="color-scheme: dark; width: 122px;" type="date" value="{{ hist.filter.from_input }}">
+</label>
+<span class="font-label-sm text-label-sm text-outline">~</span>
+<label class="flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-surface-container-low">
+<span class="font-label-sm text-label-sm text-outline">到</span>
+<input class="bg-transparent font-label-sm text-label-sm text-on-surface outline-none" name="to" style="color-scheme: dark; width: 122px;" type="date" value="{{ hist.filter.to_input }}">
+</label>
+{#- 保留一个真按钮：日期框的「改完即提交」是 JS 增强，
+    没有 JS 时这是唯一能应用区间的方式。 -#}
+<button class="flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors font-label-sm text-label-sm" type="submit">
+<span class="material-symbols-outlined text-[16px]">filter_alt</span>应用
+</button>
+{% if hist.filter.active %}
+<a class="flex items-center gap-space-xs px-space-sm py-1 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors font-label-sm text-label-sm" href="{{ hist.reset_href }}">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>清除筛选
+</a>
+{% endif %}
+</form>
+</div>
+
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant">
+当前显示 <span class="font-mono text-on-surface font-bold">{{ hist.filter.n_shown }}</span>
+/ <span class="font-mono">{{ hist.filter.n_all }}</span> 场
+</span>
+{% if hist.filter.active %}
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[14px] text-primary-fixed">filter_alt</span>
+{{ hist.filter.student_label }} · {{ hist.filter.range_label }}{% if hist.filter.range_key == 'custom' %} {{ hist.filter.range_display }}{% endif %}
+</span>
+{% endif %}
+</div>
+</div>
+
+{#- 水位：全部现算，且**随筛选重算**（覆盖数 = 本筛选下非空的场次数）。 -#}
+<div class="px-space-lg py-space-md flex flex-wrap items-center gap-space-sm border-b border-outline/15">
+{% for lab, val, tone in [
+    ('当前场次', hist.totals.sessions, 'text-on-surface'),
+    ('全批场次', hist.totals.sessions_all, 'text-on-surface-variant'),
+    ('字段列', hist.totals.field_rows, 'text-on-surface'),
+    ('登记表字段', hist.totals.fields, 'text-on-surface-variant'),
+    ('必采字段', hist.totals.required, 'text-tertiary-fixed-dim'),
+    ('必采已填满', hist.totals.required_filled, 'text-primary-fixed'),
+    ('逐拍样本', hist.totals.stroke_samples, 'text-on-surface')] %}
+<span class="px-space-sm py-1 rounded-lg bg-surface-container-low flex items-center gap-space-xs font-label-sm text-label-sm">
+<span class="text-outline">{{ lab }}</span>
+<span class="font-mono font-label-md text-label-md {{ tone }} font-bold">{{ val }}</span>
+</span>
+{% endfor %}
+<span class="flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-surface-container-low font-label-sm text-label-sm text-outline">
+<span class="material-symbols-outlined text-[16px]">swipe</span>
+<span>表头与左侧会话列已固定；悬停任意格或列头看原始值</span>
+</span>
+</div>
+
+{% if hist.empty_filtered %}
+{#- 全批有数据，只是这一组筛选条件没命中 —— 必须与「库里没有」区分开，
+    否则读者会以为 mock 丢了。 -#}
+<div class="px-space-lg py-space-xl flex flex-col items-center gap-space-sm">
+<span class="material-symbols-outlined text-[32px] text-outline">filter_alt_off</span>
+<span class="font-body-md text-body-md text-on-surface-variant">这组条件下没有命中任何场次</span>
+<span class="font-label-sm text-label-sm text-outline">全批共 {{ hist.filter.n_all }} 场 —— 换个学员或把时间范围放宽即可</span>
+<a class="px-space-md py-1 rounded-lg bg-primary-container text-on-primary-container font-label-sm text-label-sm font-bold" href="{{ hist.reset_href }}">清除筛选</a>
+</div>
+{% else %}
+
+<div class="border-t border-outline/15" style="max-height: 82vh; overflow: auto;">
+{#- border-collapse: separate + border-spacing: 0 —— sticky 单元格在 collapse 下
+    边框会随滚动消失；separate 让每个格的边框属于自己，分隔线才稳定。
+    行/列的线因此改由每个 td 的 inline border 提供（见下面）。 -#}
+<table class="w-full text-left text-body-md" style="min-width: {{ MINW }}px; border-collapse: separate; border-spacing: 0;">
+<colgroup>
+<col style="width: {{ W_SESS }}px">
+<col style="width: {{ W_NAME }}px">
+<col style="width: {{ W_DATE }}px">
+{% for f in hist.fields %}<col style="width: {{ W_FIELD }}px">
+{% endfor %}
+</colgroup>
+<thead>
+<tr>
+{#- 左侧三列 rowspan=2 占满两行表头：它们是「行的标识」，不属于任何字段分组。 -#}
+<th class="font-label-sm text-label-sm uppercase tracking-wider text-outline" rowspan="2" style="position: sticky; left: 0; top: 0; z-index: 5; background: {{ C_HEAD }}; border-right: 1px solid {{ C_LINE }}; border-bottom: 1px solid {{ C_GROUP }}; padding: 8px; text-align: left; vertical-align: bottom;">会话</th>
+<th class="font-label-sm text-label-sm uppercase tracking-wider text-outline" rowspan="2" style="position: sticky; left: {{ L_NAME }}px; top: 0; z-index: 5; background: {{ C_HEAD }}; border-right: 1px solid {{ C_LINE }}; border-bottom: 1px solid {{ C_GROUP }}; padding: 8px; text-align: left; vertical-align: bottom;">学员</th>
+<th class="font-label-sm text-label-sm uppercase tracking-wider text-outline" rowspan="2" style="position: sticky; left: {{ L_DATE }}px; top: 0; z-index: 5; background: {{ C_HEAD }}; border-right: 1px solid {{ C_GROUP }}; border-bottom: 1px solid {{ C_GROUP }}; padding: 8px; text-align: left; vertical-align: bottom; box-shadow: 6px 0 10px -6px rgba(0,0,0,0.6);">日期</th>
+{#- 分组行：按登记表的 group_name 连续段。用 group 而不是 cat 是因为
+    cat（会话概要 / 采集标识 / 生理负荷…）在登记表里是横向交错的，
+    按它会碎成十几个单格 colspan，表头反而更乱。 -#}
+{% for g in hist.col_groups %}
+{#- 分组行的高度必须**精确**等于 H_GROUP：第二行表头的 sticky top 就是按它算的，
+    差 1px 就会在滚动时露出一条缝。box-sizing 是 border-box（Tailwind preflight），
+    height 已含那 1px 下边框，所以行高 line-height 要取 H_GROUP - 1。 -#}
+<th class="font-label-sm text-label-sm {{ g.tone }}" colspan="{{ g.span }}" style="position: sticky; top: 0; z-index: 3; height: {{ H_GROUP }}px; line-height: {{ H_GROUP - 1 }}px; padding: 0 8px; text-align: center; text-transform: none; letter-spacing: normal; white-space: nowrap; background: {{ C_HEAD }}; border-left: 1px solid {{ C_GROUP }}; border-bottom: 1px solid {{ C_GROUP }};">{{ g.name }}</th>
+{% endfor %}
+</tr>
+<tr>
+{% for f in hist.fields %}
+<th class="font-label-sm text-label-sm" style="position: sticky; top: {{ H_GROUP }}px; z-index: 3; height: {{ H_FIELD }}px; padding: 6px 8px; vertical-align: bottom; text-transform: none; letter-spacing: normal; background: {{ C_HEAD }}; border-left: 1px solid {{ C_GROUP if f.group_first else C_LINE }}; border-bottom: 1px solid {{ C_GROUP }};">
+<div class="flex flex-col gap-0.5 items-start" title="{{ f.no }} {{ f.field }} · {{ f.cat_label }}{% if f.unit != '—' %} · 单位 {{ f.unit }}{% endif %} · 采集来源 {{ f.source }}{% if f.acquire %}（{{ f.acquire }}）{% endif %}{% if f.note %} · {{ f.note }}{% endif %}">
+<div class="flex items-center gap-space-xs">
+<span class="font-mono text-outline" style="font-size: 10px;">{{ f.no }}</span>
+{% if f.required %}<span class="rounded bg-primary-container text-on-primary-fixed font-bold" style="font-size: 10px; padding: 0 3px;">必采</span>{% endif %}
+</div>
+<span class="text-on-surface font-semibold leading-tight">{{ f.field }}</span>
+<span class="font-mono text-outline" style="font-size: 10px;">{{ f.coverage }}/{{ f.total }}{% if f.unit != '—' %} · {{ f.unit }}{% endif %}</span>
+<span class="{{ f.cat_tone }} truncate" style="font-size: 10px; max-width: 100%;">{{ f.cat_label }}</span>
+</div>
+</th>
+{% endfor %}
+</tr>
+</thead>
+<tbody>
+{% for s in hist.sessions %}
+<tr class="group hover:bg-surface-container-high/40 transition-colors">
+{#- 冻结三列：sticky left + 不透明背景。背景走 group-hover 才能在行悬浮时
+    跟着变色（sticky 单元格自己的背景会盖住 tr 的背景）。 -#}
+<td class="bg-surface-container group-hover:bg-surface-container-high transition-colors" style="position: sticky; left: 0; z-index: 2; padding: 6px 8px; border-right: 1px solid {{ C_LINE }}; border-bottom: {{ ROW }}; vertical-align: middle;" title="{{ s.id }}">
+<div class="flex flex-col">
+<span class="font-mono font-label-md text-label-md text-on-surface font-bold">{{ s.short }}</span>
+<span class="font-label-sm text-label-sm text-outline truncate">{{ s.type_label }}</span>
+</div>
+</td>
+<td class="bg-surface-container group-hover:bg-surface-container-high transition-colors" style="position: sticky; left: {{ L_NAME }}px; z-index: 2; padding: 6px 8px; border-right: 1px solid {{ C_LINE }}; border-bottom: {{ ROW }}; vertical-align: middle;">
+<div class="flex items-center gap-space-xs">
+{% if s.avatar_url %}
+<img alt="" class="w-5 h-5 rounded-full object-cover shrink-0" src="{{ s.avatar_url }}">
+{% else %}
+<span class="w-5 h-5 rounded-full shrink-0 flex items-center justify-center bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">{{ s.initial }}</span>
+{% endif %}
+<span class="font-label-sm text-label-sm text-on-surface truncate">{{ s.name }}</span>
+</div>
+</td>
+<td class="bg-surface-container group-hover:bg-surface-container-high transition-colors" style="position: sticky; left: {{ L_DATE }}px; z-index: 2; padding: 6px 8px; border-right: 1px solid {{ C_GROUP }}; border-bottom: {{ ROW }}; vertical-align: middle; box-shadow: 6px 0 10px -6px rgba(0,0,0,0.6);">
+<div class="flex flex-col">
+<span class="font-mono font-label-sm text-label-sm text-on-surface">{{ s.date_label }}</span>
+<span class="font-label-sm text-label-sm text-outline">{{ s.time_label }} · {{ s.court_label }}</span>
+</div>
+</td>
+{#- 数据格：cells 与 fields 同序，用 loop.index0 取本列定义（为了拿
+    group_first 与 level 决定分隔线粗细和配色）。 -#}
+{% for c in s.cells %}
+{% set f = hist.fields[loop.index0] %}
+<td class="font-label-sm text-label-sm {{ 'text-secondary' if f.level == 'stroke' else ('text-outline' if c.v == '—' else 'text-on-surface') }}" style="padding: 6px 6px; text-align: center; border-left: 1px solid {{ C_GROUP if f.group_first else C_LINE }}; border-bottom: {{ ROW }}; font-variant-numeric: tabular-nums; white-space: nowrap;"{% if c.t %} title="{{ c.t | plain }}"{% endif %}>{{ c.v }}</td>
+{% endfor %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+{#- 必采缺口：本筛选下"必采"却没填满的字段。填满时这一条不渲染。 -#}
+{% if hist.gaps %}
+<div class="px-space-lg py-space-sm bg-error/10 border-t border-outline/15 flex flex-wrap items-center gap-space-sm">
+<span class="material-symbols-outlined text-error text-[18px]">warning</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">必采字段里有 {{ hist.gaps | length }} 项在当前筛选下没填满：</span>
+{% for g in hist.gaps %}
+<span class="flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container font-label-sm text-label-sm text-on-surface">
+<span class="font-mono text-outline">{{ g.no }}</span><span>{{ g.field }}</span>
+<span class="font-mono text-tertiary-fixed-dim font-bold">{{ g.coverage }}/{{ g.total }}</span>
+</span>
+{% endfor %}
+</div>
+{% endif %}
+
+{% endif %}
+
+<div class="border-t border-outline/15 p-space-lg flex flex-col gap-space-md">
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-outline text-[22px]">block</span>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">另外 {{ hist.totals.no_value }} 个字段没有逐场值</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">不是漏采 —— 是它们的性质决定了不存在「这一场的那一个数」，所以没做成列</span>
+</div>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm font-mono">{{ hist.totals.fields }} − {{ hist.totals.field_rows }} = {{ hist.totals.no_value }}</span>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-space-sm">
+{% for g in hist.no_value_groups %}
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] {{ g.tone }}">{{ g.icon }}</span>
+<span class="font-body-md text-body-md {{ g.tone }} font-bold">{{ g.label }}</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline whitespace-nowrap">{{ g.count }} 项{% if g.required %} · 其中 {{ g.required }} 项标了必采{% endif %}</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ g.desc | bold }}</span>
+<div class="flex flex-wrap items-center gap-1 mt-1">
+{% for f in g.fields %}
+<span class="flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container font-label-sm text-label-sm" title="{{ f.no }} {{ f.field }} · {{ f.source | plain }}{% if f.note %} · {{ f.note | plain }}{% endif %}">
+<span class="font-mono text-outline">{{ f.no }}</span>
+<span class="text-on-surface">{{ f.field }}</span>
+{% if f.required %}<span class="px-1 rounded bg-surface-container-high text-tertiary-fixed-dim font-label-sm text-label-sm font-bold">必采</span>{% endif %}
+</span>
+{% endfor %}
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+
+<div class="border-t border-outline/15 p-space-lg flex flex-col gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-outline">help</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">怎么读这张表</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-space-sm">
+{% for t, b in [
+  ('一行一场训练，一列一个字段',
+   '行是 training_sessions 里的一场比赛，列是登记表里的一个字段；'
+   '格子就是那一行那一列在库里的取值。表头分两行：上面是**采集分组**，'
+   '下面是字段本身（编号 / 名称 / 覆盖数 · 单位 / 分类）。'),
+  ('表头与左侧三列都是固定的',
+   '表格可上下左右滚，但表头纵向固定、会话 / 学员 / 日期三列横向固定，'
+   '所以滚到第 30 列也还知道自己在看哪一场、哪一列。'
+   '列头悬停能看到该字段的**采集来源与取数方法**（原本单占一列，现在收了进去）。'),
+  ('筛选筛的是行，覆盖数跟着重算',
+   '筛学员或时间范围筛的是**场次**（行），字段（列）不动 —— 这样才能横向比较。'
+   '列头上的覆盖数 = 当前筛选下这一列有多少场非空 / 共多少场，'
+   '所以切到单个学员会看到 4/4、5/5，而不是全批的 16。'),
+  ('「必采」说的是采集端，不是后端',
+   '它来自登记表的 required 字段，含义是「采集端**必须产出**这一项」，'
+   '并不保证后端一定有一列能存它 —— 下面「仅设备本地」那一档里就有一批标着必采、'
+   '却按设计永不上行的字段。'),
+  ('逐拍字段的格子是「12 条」，不是数值',
+   'stroke_records 是**抽样表**（本批每场只留 12 条），所以那几列（蓝色）'
+   '显示的是样本条数，不是测量值；悬停可看该列在样本里的取值范围。'
+   '会话汇总列才是全量计数 —— 两者分母不同，不要相除。'),
+  ('这 16 场是演示批次，来源列就是标记',
+   'source 一律 seed_history、external_id 用可读会话号 —— 一眼能看出是脚本合成的。'
+   '真实采集链路的 source 是 netpulse_watch、external_id 是采集端 UUID'
+   '（见 server/ingest.py）。**不要把本表当成真实测量结果**。')] %}
+<div class="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-1">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary-fixed">chevron_right</span>
+<span class="font-label-sm text-label-sm text-primary-fixed font-bold">{{ t }}</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">{{ b | bold }}</span>
+</div>
+{% endfor %}
+</div>
+</div>
+
+{% endif %}
+</div>

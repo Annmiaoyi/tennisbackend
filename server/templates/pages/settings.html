@@ -393,7 +393,7 @@
 </button>
 {% for c in ds.categories %}
 <button class="flex items-center gap-space-xs px-space-md py-1.5 rounded-lg font-label-md text-label-md transition-colors bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-        data-cat="{{ c.key }}" title="{{ c.desc }}" type="button">
+        data-cat="{{ c.key }}" title="{{ c.desc | plain }}" type="button">
 <span class="material-symbols-outlined text-[16px] {{ c.tone }}">{{ c.icon }}</span>
 <span>{{ c.label }}</span>
 <span class="font-label-sm text-label-sm opacity-70">{{ c.count }}</span>

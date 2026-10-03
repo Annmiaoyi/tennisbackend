@@ -7,7 +7,14 @@
  */
 module.exports = {
   content: [
+    // ⚠️ 下面两条设计稿路径是「候选」，其中**只有一条真实存在**（取决于设计稿
+    //    资产被放在工程同级还是 Resources 下）。不存在的 glob 只会匹配到 0 个
+    //    文件、**不会报错** —— 这正是 2026-10-03 那个「卡片塌成一格」的根因之一：
+    //    类名确实进了模板，但 CSS 很久没重编，而没人发现路径已失效。
+    //    模板（./server/templates/**）本身逐字节包含设计稿 main 内容，
+    //    所以即使设计稿路径全失效，覆盖仍然成立；这两条只是冗余保险。
     "../stitch_acemate_tennis_tracker_ui/stitch_acemate_tennis_tracker_backend/stitch_acemate_tennis_tracker_ui/**/*.html",
+    "../../Resources/BTennis/stitch_acemate_tennis_tracker_ui/stitch_acemate_tennis_tracker_backend/stitch_acemate_tennis_tracker_ui/**/*.html",
     "./server/templates/**/*.html",
     "./server/**/*.py",
     "./web/assets/js/**/*.js"

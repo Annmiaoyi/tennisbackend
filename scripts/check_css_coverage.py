@@ -16,8 +16,12 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-DESIGN = os.path.join(ROOT, '..', 'stitch_acemate_tennis_tracker_ui',
-                      'stitch_acemate_tennis_tracker_backend', 'stitch_acemate_tennis_tracker_ui')
+sys.path.insert(0, HERE)
+# 设计稿根目录的解析复用 build_pages 的那一份候选表（含 DESIGN_ROOT 环境变量）。
+# 早先这里独立硬编码了一条相对路径，设计稿资产搬到 Resources 下之后它已失效 ——
+# 而 `files.append()` 是无条件追加的，于是脚本照样打印「设计稿 5 个」，
+# 实际一个都没扫到。**报告的扫描数与真实扫描数不一致**，比直接报错更危险。
+from build_pages import resolve_design  # noqa: E402
 CSS = os.path.join(ROOT, 'web', 'assets', 'css', 'app.css')
 TEMPLATES = os.path.join(ROOT, 'server', 'templates')
 
@@ -27,6 +31,11 @@ DESIGN_PAGES = ['_1', '_2', '_3', '_4', '_5']
 IGNORE = {
     'group',          # 仅作为 group-hover 的标记
     'dark',           # 写在 <html> 上
+    # 仅作 JS 选择器钩子：settings.html 的分类筛选靠
+    # `querySelectorAll('tr.cat-row')` + `classList.toggle('hidden')` 工作，
+    # 本身不需要任何样式规则。不加进来的话每次都是 1 个假报错，
+    # 久而久之会让人不再认真看这个自检的输出。
+    'cat-row',
 }
 
 # Tailwind 工具类前缀白名单。
@@ -77,14 +86,31 @@ def python_class_literals(path):
 
 
 def collect_classes():
-    """收集设计稿 + 模板 + 路由层 Python 里会出现在 class 属性中的全部类词，
-    并附上「页内 <style> 自定义类」。"""
-    out = set()
+    """收集会出现在 class 属性中的类词。
+
+    返回 (全部, 本项目实际渲染的, 页内 <style> 自定义类, 文件表, py 表, 设计稿文件数)。
+
+    ⚠️ 两个集合的区别很重要：
+      · **全部** 含设计稿原文。设计稿里被硬件准入下线的区块（甜区散点卡等）
+        用到的类（`lg:col-span-4` / `h-36` …）永远不会出现在我们的页面上，
+        不该因为它们缺失而判定失败。
+      · **本项目实际渲染的** = 模板 + server/**.py + web/assets/js。只有这个集合
+        缺类才是真问题 —— 其余单列为信息，避免「每次都红、于是没人看」。
+    """
+    all_cls = set()
+    own = set()       # 本项目真正会渲染的类
     defined = set()   # 页内 <style> 里自定义的类名（Tailwind 不负责生成）
     files = []
     pyfiles = []
-    for f in DESIGN_PAGES:
-        files.append(os.path.join(DESIGN, f, 'code.html'))
+    jsfiles = []
+    design = resolve_design()
+    if design is None:
+        print('⚠️ 未找到设计稿根目录（可设 DESIGN_ROOT 指定），'
+              '本次只扫本项目模板 —— 模板已逐字节包含设计稿 main 内容，覆盖仍然成立。')
+    else:
+        for f in DESIGN_PAGES:
+            files.append(os.path.join(design, f, 'code.html'))
+    n_design = len(files)
     for root, _dirs, names in os.walk(TEMPLATES):
         for n in names:
             if n.endswith('.html'):
@@ -93,6 +119,10 @@ def collect_classes():
         for n in names:
             if n.endswith('.py'):
                 pyfiles.append(os.path.join(root, n))
+    for root, _dirs, names in os.walk(os.path.join(ROOT, 'web', 'assets', 'js')):
+        for n in names:
+            if n.endswith('.js'):
+                jsfiles.append(os.path.join(root, n))
 
     for p in files:
         if not os.path.exists(p):
@@ -102,12 +132,17 @@ def collect_classes():
         for st in re.findall(r'<style[^>]*>(.*?)</style>', s, re.S):
             for sel in re.findall(r'\.([A-Za-z0-9_-]+)', st):
                 defined.add(sel)
+        words = set()
         for m in re.finditer(r'class="([^"]*)"', s):
-            for c in strip_jinja(m.group(1)).split():
-                out.add(c.strip())
-    for p in pyfiles:
-        out |= python_class_literals(p)
-    return out, defined, files, pyfiles
+            words |= set(strip_jinja(m.group(1)).split())
+        all_cls |= words
+        if p.startswith(TEMPLATES):
+            own |= words
+    for p in pyfiles + jsfiles:
+        lits = python_class_literals(p)
+        all_cls |= lits
+        own |= lits
+    return all_cls, own, defined, files, pyfiles, n_design
 
 
 def unescape_css(css):
@@ -156,15 +191,9 @@ def css_escaped_variants(cls):
     return v
 
 
-def main():
-    raw = io.open(CSS, encoding='utf-8').read()
-    css = unescape_css(raw)
-    classes, defined, files, pyfiles = collect_classes()
-    print('扫描 HTML %d 个（设计稿 5 + 模板 %d）+ Python %d 个；'
-          'class 词 %d 个，页内 <style> 自定义类 %d 个'
-          % (len(files), len(files) - 5, len(pyfiles), len(classes), len(defined)))
-
-    missing = []
+def missing_in(css, raw, classes, defined):
+    """返回在 app.css 里找不到规则的类（已排除忽略项与页内自定义类）。"""
+    out = []
     for c in sorted(classes):
         if not c or c in IGNORE:
             continue
@@ -174,19 +203,42 @@ def main():
             continue
         if any(v in css or v in raw for v in css_escaped_variants(c)):
             continue
-        missing.append(c)
+        out.append(c)
+    return out
 
-    if not missing:
-        print('✅ app.css 已覆盖设计稿与模板的全部 class')
-        return 0
 
-    print('❌ 有 %d 个 class 在 app.css 中找不到对应规则：' % len(missing))
-    for c in missing:
-        print('   ', c)
-    print('\n排查方向：tailwind.config.js 的 content 是否涵盖了这些类所在的文件；')
-    print('          若是动态拼接的类名，需把完整类名字面量写进某个被扫描的文件'
-          '（模板或 server/**/*.py），或加入 safelist。')
-    return 1
+def main():
+    raw = io.open(CSS, encoding='utf-8').read()
+    css = unescape_css(raw)
+    classes, own, defined, files, pyfiles, n_design = collect_classes()
+    print('扫描 HTML %d 个（设计稿 %d + 模板 %d）+ Python %d 个；'
+          'class 词 %d 个（其中本项目渲染 %d 个），页内 <style> 自定义类 %d 个'
+          % (len(files), n_design, len(files) - n_design, len(pyfiles),
+             len(classes), len(own), len(defined)))
+
+    missing = missing_in(css, raw, own, defined)
+    # 设计稿独有、已被硬件准入下线的区块：只做提示，不判失败
+    design_only = missing_in(css, raw, classes - own, defined)
+
+    if missing:
+        print('❌ 有 %d 个 class 在 app.css 中找不到对应规则：' % len(missing))
+        for c in missing:
+            print('   ', c)
+        print('\n排查方向：tailwind.config.js 的 content 是否涵盖了这些类所在的文件；')
+        print('          若是动态拼接的类名，需把完整类名字面量写进某个被扫描的文件'
+              '（模板或 server/**/*.py），或加入 safelist；')
+        print('          改了模板里的类名后**必须重跑 `npm run build:css`** —— '
+              'CSS 是编译产物，不会自动跟着模板变。')
+    else:
+        print('✅ app.css 已覆盖本项目全部页面用到的 class')
+
+    if design_only:
+        print('\nℹ️ 以下 %d 个类只出现在设计稿原文、本项目已不再渲染（硬件准入下线的区块等），'
+              '无需 CSS：' % len(design_only))
+        for c in design_only:
+            print('   ', c)
+
+    return 1 if missing else 0
 
 
 if __name__ == '__main__':

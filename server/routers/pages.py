@@ -44,6 +44,21 @@ def _bold_filter(text):
 
 templates.env.filters['bold'] = _bold_filter
 
+
+def _plain_filter(text):
+    """**强调** → 纯文本（去掉标记，不加标签）。
+
+    只给**属性值**用：HTML 的 title / aria-label 里塞 <strong> 会被原样当字符
+    显示出来（`&lt;strong&gt;…`），所以这类位置要的是「把标记摘掉」，
+    而不是「渲染成粗体」——后者用 `| bold`。
+    """
+    if not text:
+        return ''
+    return str(text).replace('**', '')
+
+
+templates.env.filters['plain'] = _plain_filter
+
 # 管理站页面默认归属的演示用户（真实部署时由登录态注入）
 DEFAULT_PAGE_USER = os.environ.get('ACEMATE_USER', 'u_demo')
 
@@ -97,13 +112,15 @@ def users(request: Request):
                                       _context(request, 'pages/users.html', 'user-management'))
 
 
-def _qs(base, over=None, drop=()):
-    """构造 /training 的查询串。
+def _qs(base, over=None, drop=(), path='/training'):
+    """构造带筛选参数的 URL（/training 与 /annotation 共用）。
 
     所有筛选（学员 / 时间档位 / 指标）都走 **query param + 服务端渲染**，
     不使用前端状态：好处是任何一个视图都能直接分享/收藏，刷新不丢筛选，
     且禁用 JS 也能用。切换档位时要显式 drop 掉自定义起止日期，
     否则会一直沿用旧的自定义区间，表现为「点了近 7 天却还是老数据」。
+
+    `path` 默认 /training（历史沿革），/annotation 的筛选条传自己的路径。
     """
     q = dict(base)
     for k in drop:
@@ -114,7 +131,51 @@ def _qs(base, over=None, drop=()):
         else:
             q[k] = v
     q = {k: v for k, v in q.items() if v not in (None, '')}
-    return '/training?' + urlencode(q) if q else '/training'
+    return ('%s?%s' % (path, urlencode(q))) if q else path
+
+
+def _hist_filter_links(student_id, rng, n_all, students):
+    """历史采集元数据筛选条的链接（学员 chips + 时间档位 + 恢复默认）。
+
+    抽成模块级纯函数，是因为这三条规则**靠肉眼测不出来**，只能靠断言守住，
+    而断言需要一个不起服务的入口（见 scripts/verify_annotation_pages.py）：
+      · 切档位必须 **丢掉自定义起止**（from/to）。不丢的话表现为
+        「点了近 7 天却还是老的日期区间」—— 链接看着正常，数据是错的。
+      · `range=all` 是默认值，**不进 URL**；否则每个链接都拖一条尾巴，
+        而且「全部记录」与「无参数」会变成两个不同的地址却渲染同一张表。
+      · 切学员要 **保留当前时间区间**，否则每换一个学员就被重置回全部记录。
+    """
+    base = {'student': student_id or ''}
+    if rng['key'] == 'custom':
+        base['range'] = 'custom'
+        base['from'], base['to'] = rng['from_input'], rng['to_input']
+    elif rng['key'] != 'all':
+        base['range'] = rng['key']
+
+    def href(over=None, drop=()):
+        # 一律带 #history：筛选条在长文档第 10 屏，不带锚点每次都会被甩回页顶。
+        return _qs(base, over, drop=drop, path='/annotation') + '#history'
+
+    student_links = [{
+        'id': '', 'name': '全部学员', 'initial': '*', 'avatar_url': None,
+        'n': n_all, 'href': href({'student': None}), 'active': not student_id,
+    }] + [{
+        'id': s['id'], 'name': s['name'], 'initial': s['initial'],
+        'avatar_url': s.get('avatar_url'), 'n': s['n'],
+        'href': href({'student': s['id']}), 'active': s['id'] == student_id,
+    } for s in students]
+
+    # 时间档位只给 近 7 天 / 近 30 天 / 全部 —— 台账这个场景不需要 14 天，
+    # 档位越多越容易选错；想要别的区间就用筛选条上的自定义起止。
+    range_links = [{
+        'key': r['key'], 'label': r['label'],
+        'href': href({'range': None} if r['key'] == 'all' else {'range': r['key']},
+                     drop=('from', 'to')),
+        'active': rng['key'] == r['key'],
+    } for r in analytics.RANGES if r['key'] in ('7', '30', 'all')]
+
+    return {'student_links': student_links, 'range_links': range_links,
+            'reset_href': '/annotation#history'}
 
 
 @router.get('/training', response_class=HTMLResponse)
@@ -310,6 +371,28 @@ def annotation_workspace(request: Request):
     """
     from server.annotation import stats
 
+    # ---- 历史采集元数据的筛选（学员 + 时间范围）--------------------------
+    # 与 /training 完全同一套口径：全部走 query param + 服务端渲染 ——
+    # URL 可分享、刷新不丢筛选、禁 JS 也能用；区间解析直接调
+    # analytics.resolve_range，不在本页另写一份边界规则。
+    qp = request.query_params
+    valid_students = {s['id'] for s in analytics.list_students()}
+    student_id = qp.get('student') or None
+    if student_id and student_id not in valid_students:
+        student_id = None        # 传了不存在的学员 → 回落成「全部」，不留空表
+    # resolve_range 对**不认识的档位**会静默回落到 DEFAULT_RANGE（近 30 天），
+    # 而筛选表单在「清空日期后提交」时正好会送出一个 range=custom ——
+    # 那会表现为「点了清空却只剩近 30 天」。所以在进 resolve_range 之前先归一。
+    range_key = (qp.get('range') or 'all').strip().lower()
+    if range_key not in {r['key'] for r in analytics.RANGES}:
+        range_key = 'all'
+    rng = analytics.resolve_range(range_key, qp.get('from'), qp.get('to'))
+    hist = stats.history_metadata(student=student_id, rng=rng)
+    # 筛选条链接：三条易错规则（切档位丢自定义起止 / range=all 不进 URL /
+    # 切学员保留区间）集中在 _hist_filter_links 里，便于断言。
+    hist.update(_hist_filter_links(student_id, rng, hist['filter']['n_all'],
+                                   hist['students']))
+
     ctx = _context(request, 'pages/annotation.html', 'data-annotation')
     ctx.update({
         'ov': stats.overview(),
@@ -318,6 +401,11 @@ def annotation_workspace(request: Request):
         # 标注进度：最近若干场会话的人工介入情况
         # （上限给到 50，避免历史采集数据一多就把在标的场次挤出视野）
         'progress': stats.session_rows(limit=50),
+        # 历史采集元数据：把 mock 出来的那批历史场次**逐场逐字段**摊开
+        # （字段为列、场次为行的台账），既是「每个数字是多少」的账本，
+        # 也是「下一批采集该采哪些字段」的清单 —— 字段口径取自
+        # server/datasources.py，覆盖数是现算的，不在这里另写一份。
+        'hist': hist,
     })
     return templates.TemplateResponse(request, 'pages/annotation.html', ctx)
 

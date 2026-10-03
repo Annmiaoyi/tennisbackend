@@ -470,3 +470,37 @@ document.getElementById('consClose').onclick = () => {
 };
 
 loadSessions();
+
+/* ---------- 历史采集元数据的筛选条（渐进增强） ----------
+ * 筛选本身是纯服务端渲染（GET 表单 + query param），**没有 JS 也能用** ——
+ * 这里只补三件让操作顺手的小事，任何一件失败都不影响筛选本身：
+ *   1. 日期改完即提交，省掉「改完还得再点一次应用」；
+ *   2. 提交前把**空**的日期框摘出 URL（否则地址栏一直拖 from=&to=）；
+ *   3. 带着筛选参数进页面时（刷新 / 分享链接）直接回到表格 ——
+ *      筛选条在长文档的第 10 屏，被甩回页面顶部还得再滚一次。
+ * 不依赖 location.hash 判断，是因为表单 GET 提交会不会保留 fragment
+ * 各浏览器并不一致（HTML 规范没写死），指望它会出现「有时跳有时不跳」。
+ */
+(function initHistoryFilter() {
+  const form = document.getElementById('histFilter');
+  if (form) {
+    form.querySelectorAll('input[type=date]').forEach((el) => {
+      el.addEventListener('change', () => {
+        if (typeof form.requestSubmit === 'function') form.requestSubmit();
+        else form.submit();
+      });
+    });
+    form.addEventListener('submit', () => {
+      // 提交事件发生在表单序列化**之前**，所以这里 disable 有效。
+      // 空值一律摘掉（不只是日期框）：否则点「应用」会得到 ?student=&from=&to=
+      // 这种拖着一串空参数的地址，看着像坏了。
+      form.querySelectorAll('input[name]').forEach((el) => {
+        el.disabled = !el.value;
+      });
+    });
+  }
+  if (location.search && !location.hash) {
+    const anchor = document.getElementById('history');
+    if (anchor) requestAnimationFrame(() => anchor.scrollIntoView({ block: 'start' }));
+  }
+})();
