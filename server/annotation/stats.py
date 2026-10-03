@@ -479,14 +479,19 @@ _NO_VALUE_KINDS = [
 
 
 def _hist_student_options(counts):
-    """学员筛选条的选项：只列**本批真有场次**的学员。
+    """学员筛选框的候选：只列**本批真有场次**的学员。
 
     列一个 0 场的学员出来，点进去是空表，读者会以为数据丢了 —— 所以按
-    「本批场次数 > 0」过滤，并把场次数挂在 chip 上。
+    「本批场次数 > 0」过滤，并把场次数挂在选项上。
     名单本身复用 `analytics.list_students()`，不在这里重写 SELECT ——
     「谁算一个学员、按什么排序」这个口径只该有一处。
+
+    每个选项额外带 `search`（检索串：姓名 + 拼音全拼 + 拼音首字母 + 学员 id），
+    供筛选框按拼音找人和前端即时过滤 —— 生成规则见 `server/pinyin.py`，
+    这里只是把姓名与 id 拼起来，不另写一套匹配逻辑。
     """
     from .. import analytics
+    from .. import pinyin
     out = []
     try:
         for s in analytics.list_students():
@@ -499,6 +504,7 @@ def _hist_student_options(counts):
                 'avatar_url': s.get('avatar_url'),
                 'tier': s.get('tier') or '',
                 'nt_label': s.get('nt_label') or '—',
+                'search': pinyin.haystack(s['name'], s['id']),
                 'n': n,
             })
     except Exception:
@@ -507,21 +513,83 @@ def _hist_student_options(counts):
     return out
 
 
-def history_metadata(student=None, rng=None):
+def _hist_picker(q, students, student):
+    """筛选框的搜索状态 + 「唯一命中自动选中」。
+
+    为什么要有「唯一命中即自动选中」这条规则
+    ----------------------------------------
+    没有 JS 时，筛选框退化成「输入 → 提交 → 看结果」：若只是把命中的人列出来
+    等用户再点一次，就得点两步。而筛选框最常见的用法是**心里已经有这个人**
+    （打 zzh 回车），此时唯一命中还要求二次确认纯属添堵。
+    多命中时不做任何猜测，老老实实把候选列出来让用户点。
+
+    返回的 `hit` 标记会被写回 `students`（模板据此 hidden 掉不命中的选项），
+    这样「禁用 JS 也能用」：不命中的选项在服务端就不渲染出来。
+
+    注意：`q` **只用来找人，不参与表格筛选**（不命中就退回原筛选）。
+    它也不进任何链接的 query（见 pages._hist_filter_links）—— 搜索词是一次性的，
+    留在 URL 里会变成「分享出去的链接带着别人的搜索词」。
+    """
+    from .. import pinyin
+    q = (q or '').strip()
+    hits = [s for s in students if pinyin.match(q, s['search'])] if q else []
+    auto = ''
+    if q and not student and len(hits) == 1:
+        auto = hits[0]['id']
+    for s in students:
+        s['hit'] = pinyin.match(q, s['search']) if q else True
+        s['active'] = s['id'] == (student or auto)
+    return {
+        'q': q,
+        'n': len(students),
+        'n_hits': len(hits),
+        'auto_id': auto,
+        'auto_name': (hits[0]['name'] if auto else ''),
+        'miss': bool(q and not hits),
+    }
+
+
+
+def history_metadata(student=None, rng=None, q=None):
     """「历史采集元数据」区块的全部数据。分析库不可用时退化成空表，不抛错。
 
     参数
       student —— 学员 id；None/空 = 全部学员
       rng     —— analytics.resolve_range() 的返回值；None = 不限时间
+      q       —— 筛选框里的搜索词（姓名 / 拼音 / id）。**只用来找学员**：
+                 唯一命中时自动当作 student（省掉「搜到再点一下」），
+                 不参与也不破坏表格筛选 —— 见 _hist_picker。
 
     返回的行（sessions）携带 `cells`，与列（fields）**下标一一对应**：
     `sessions[i]['cells'][j]` 就是 `fields[j]` 在第 i 场的那一格。
     """
+    from .. import db as analysis_db
+
     plan = _field_plan()
     # 能成为**列**的只有「逐场/逐拍」两种 level —— 其余 21 个字段没有
     # 「这一场的那一个数」，硬做成列只会是一列「—」。它们改由下方
     # 「另外 N 个字段没有逐场值」分档块承担说明职责。
     col_fields = [f for f in plan if f['level'] in ('session', 'stroke')]
+
+    # ---- ① 全批计数（不受筛选影响）---------------------------------------
+    # 必须**先于**逐场查询：学员名单要按它剔掉 0 场的学员，而搜索词又可能
+    # 把 student 从空变成一个具体的人 —— 顺序颠倒就会「搜到了却筛出空表」。
+    counts, n_all, students = {}, 0, []
+    try:
+        for r in analysis_db.query(
+                "SELECT student_id, COUNT(*) AS n FROM training_sessions"
+                " WHERE id LIKE ? AND deleted_at IS NULL GROUP BY student_id",
+                (HIST_PREFIX + '%',)):
+            counts[r['student_id']] = r['n']
+        n_all = sum(counts.values())
+        students = _hist_student_options(counts)
+    except Exception:
+        pass
+
+    # ---- ② 搜索词 → 学员 → 逐场查询 --------------------------------------
+    picker = _hist_picker(q, students, student)
+    if picker['auto_id']:
+        student = picker['auto_id']
 
     where = ["s.id LIKE ?", "s.deleted_at IS NULL"]
     params = [HIST_PREFIX + '%']
@@ -538,9 +606,8 @@ def history_metadata(student=None, rng=None):
             where.append(clause)
             params.extend(rparams)
 
-    sess_rows, stroke_rows, counts, n_all = [], [], {}, 0
+    sess_rows, stroke_rows = [], []
     try:
-        from .. import db as analysis_db
         sess_rows = analysis_db.query(
             "SELECT s.*, st.name AS student_name, st.tier AS student_tier,"
             "       st.avatar_url AS student_avatar,"
@@ -555,18 +622,8 @@ def history_metadata(student=None, rng=None):
                 "       confidence, anomaly"
                 "  FROM stroke_records WHERE session_id IN (%s)"
                 % ','.join('?' * len(ids)), tuple(ids))
-        # 全批口径（不受筛选影响）：筛选条要显示「当前 3 / 全批 16 场」，
-        # 否则读者分不清是本来就这么多、还是被筛掉了。
-        for r in analysis_db.query(
-                "SELECT student_id, COUNT(*) AS n FROM training_sessions"
-                " WHERE id LIKE ? AND deleted_at IS NULL GROUP BY student_id",
-                (HIST_PREFIX + '%',)):
-            counts[r['student_id']] = r['n']
-        n_all = sum(counts.values())
     except Exception:
-        sess_rows, stroke_rows, counts, n_all = [], [], {}, 0
-
-    students = _hist_student_options(counts)
+        sess_rows, stroke_rows = [], []
 
     if not sess_rows:
         return {
@@ -574,13 +631,14 @@ def history_metadata(student=None, rng=None):
             'empty_filtered': bool(n_all),  # 用于区分「库里没有」和「筛没了」
             'sessions': [], 'fields': [], 'col_groups': [],
             'no_value': [], 'no_value_groups': [], 'gaps': [],
-            'students': students,
+            'students': students, 'picker': picker,
             'totals': {'sessions': 0, 'sessions_all': n_all, 'fields': len(plan),
                        'field_rows': len(col_fields), 'required': 0,
                        'required_filled': 0, 'no_value': 0,
                        'stroke_samples': 0, 'sessions_with_stroke': 0},
             'filter': _hist_filter_info(student, rng, 0, n_all, students),
         }
+
 
     # ---- 逐场（表的行）---------------------------------------------------
     sessions = []
@@ -698,6 +756,7 @@ def history_metadata(student=None, rng=None):
         'no_value_groups': no_value_groups,
         'gaps': gaps,
         'students': students,
+        'picker': picker,
         'totals': {
             'sessions': len(sessions),
             'sessions_all': n_all,
@@ -715,13 +774,21 @@ def history_metadata(student=None, rng=None):
 
 
 def _hist_filter_info(student, rng, n_shown, n_all, students):
-    """筛选状态（给模板画筛选条用）。文案一律现算，不写死。"""
+    """筛选状态（给模板画筛选条用）。文案一律现算，不写死。
+
+    学员的头像 / 首字也从这里出：模板要在「已选学员」胶囊上画出跟候选列表里
+    一致的样子，而模板里不该再去 `students` 里按 id 找一遍（Jinja 里做查找
+    既啰嗦又容易写错）。注意 `student` 可能来自「搜索唯一命中自动选中」——
+    所以这里不能用调用方传进来的原始值判断，一律以最终生效的 id 为准。
+    """
     rng = rng or {}
     active = bool(student) or bool(rng.get('from'))
     hit = next((s for s in students if s['id'] == student), None)
     return {
         'student': student or '',
         'student_label': (hit or {}).get('name') or '全部学员',
+        'student_avatar': (hit or {}).get('avatar_url') or '',
+        'student_initial': (hit or {}).get('initial') or '*',
         'range_key': rng.get('key') or 'all',
         'range_label': rng.get('label') or '全部记录',
         'range_display': rng.get('display') or '不限',

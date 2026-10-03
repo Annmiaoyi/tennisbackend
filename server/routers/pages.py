@@ -135,15 +135,21 @@ def _qs(base, over=None, drop=(), path='/training'):
 
 
 def _hist_filter_links(student_id, rng, n_all, students):
-    """历史采集元数据筛选条的链接（学员 chips + 时间档位 + 恢复默认）。
+    """历史采集元数据筛选条的链接（学员下拉 + 时间档位 + 恢复默认）。
 
-    抽成模块级纯函数，是因为这三条规则**靠肉眼测不出来**，只能靠断言守住，
+    抽成模块级纯函数，是因为这几条规则**靠肉眼测不出来**，只能靠断言守住，
     而断言需要一个不起服务的入口（见 scripts/verify_annotation_pages.py）：
       · 切档位必须 **丢掉自定义起止**（from/to）。不丢的话表现为
         「点了近 7 天却还是老的日期区间」—— 链接看着正常，数据是错的。
       · `range=all` 是默认值，**不进 URL**；否则每个链接都拖一条尾巴，
         而且「全部记录」与「无参数」会变成两个不同的地址却渲染同一张表。
       · 切学员要 **保留当前时间区间**，否则每换一个学员就被重置回全部记录。
+      · 任何链接都**不带搜索词 q**：q 是一次性的找人动作，跟着链接流传会变成
+        「分享出去的链接里带着别人的搜索词」，而且 q 与 student 同时出现时
+        语义含糊（到底是按 q 搜，还是按 student 筛）。选中学员后 q 就该退场。
+
+    每个学员项带 `search`（拼音检索串）与 `active`（当前是否选中）——
+    前者给前端做即时过滤，后者给模板画选中态，都不在模板里现算。
     """
     base = {'student': student_id or ''}
     if rng['key'] == 'custom':
@@ -158,10 +164,12 @@ def _hist_filter_links(student_id, rng, n_all, students):
 
     student_links = [{
         'id': '', 'name': '全部学员', 'initial': '*', 'avatar_url': None,
-        'n': n_all, 'href': href({'student': None}), 'active': not student_id,
+        'n': n_all, 'search': '*', 'hit': True,
+        'href': href({'student': None}), 'active': not student_id,
     }] + [{
         'id': s['id'], 'name': s['name'], 'initial': s['initial'],
         'avatar_url': s.get('avatar_url'), 'n': s['n'],
+        'search': s.get('search') or s['name'], 'hit': s.get('hit', True),
         'href': href({'student': s['id']}), 'active': s['id'] == student_id,
     } for s in students]
 
@@ -175,7 +183,12 @@ def _hist_filter_links(student_id, rng, n_all, students):
     } for r in analytics.RANGES if r['key'] in ('7', '30', 'all')]
 
     return {'student_links': student_links, 'range_links': range_links,
+            # 只取消学员（保留时间区间）—— 「已选学员」胶囊上的 × 用它。
+            # 与 reset_href（连区间一起清）区分开：两个动作的意图不同，
+            # 共用一个链接会让「只想换个人」的用户把区间也丢掉。
+            'clear_href': href({'student': None}),
             'reset_href': '/annotation#history'}
+
 
 
 @router.get('/training', response_class=HTMLResponse)
@@ -371,10 +384,15 @@ def annotation_workspace(request: Request):
     """
     from server.annotation import stats
 
-    # ---- 历史采集元数据的筛选（学员 + 时间范围）--------------------------
+    # ---- 历史采集元数据的筛选（学员 + 时间范围 + 学员搜索）--------------
     # 与 /training 完全同一套口径：全部走 query param + 服务端渲染 ——
     # URL 可分享、刷新不丢筛选、禁 JS 也能用；区间解析直接调
     # analytics.resolve_range，不在本页另写一份边界规则。
+    #
+    # `q` 是**筛选框里的搜索词**（姓名 / 拼音首字母 / 全拼 / 学员 id），
+    # 它只负责把人找出来：唯一命中时由 stats 自动当作 student（省掉
+    # 「搜到还得再点一下」），多命中时把候选人列出来让用户点。
+    # 它不参与表格筛选，也不进任何链接 —— 见 _hist_filter_links。
     qp = request.query_params
     valid_students = {s['id'] for s in analytics.list_students()}
     student_id = qp.get('student') or None
@@ -387,11 +405,14 @@ def annotation_workspace(request: Request):
     if range_key not in {r['key'] for r in analytics.RANGES}:
         range_key = 'all'
     rng = analytics.resolve_range(range_key, qp.get('from'), qp.get('to'))
-    hist = stats.history_metadata(student=student_id, rng=rng)
-    # 筛选条链接：三条易错规则（切档位丢自定义起止 / range=all 不进 URL /
-    # 切学员保留区间）集中在 _hist_filter_links 里，便于断言。
-    hist.update(_hist_filter_links(student_id, rng, hist['filter']['n_all'],
-                                   hist['students']))
+    hist = stats.history_metadata(student=student_id, rng=rng, q=qp.get('q'))
+    # 筛选条链接：几条易错规则（切档位丢自定义起止 / range=all 不进 URL /
+    # 切学员保留区间 / 谁也不带 q）集中在 _hist_filter_links 里，便于断言。
+    # ⚠️ 这里传的 student 要用 hist 里**已解析过搜索词**的结果 ——
+    # 否则「搜 zzh 自动选中张哲恒」时，下拉里高亮的会是「全部学员」。
+    hist.update(_hist_filter_links(hist['filter']['student'] or None, rng,
+                                   hist['filter']['n_all'], hist['students']))
+
 
     ctx = _context(request, 'pages/annotation.html', 'data-annotation')
     ctx.update({

@@ -83,12 +83,13 @@ def render(name, ctx):
         sys.exit(1)
 
 
-def render_annotation(student=None, date_from=None, date_to=None, range_key='all'):
+def render_annotation(student=None, date_from=None, date_to=None, range_key='all',
+                      q=None):
     """按 /annotation 路由的真实口径渲染一页，返回 (html, hist)。
 
-    刻意**复刻** pages.py 里的那段筛选归一化（校验学员、纠正未知档位），
-    而不是直接调路由函数 —— 路由要 Request 对象，且这一步的目的是让本脚本
-    能在不起服务的情况下验「筛选 → 渲染」整条链。
+    刻意**复刻** pages.py 里的那段筛选归一化（校验学员、纠正未知档位，
+    再把搜索词交给 stats 解析），而不是直接调路由函数 —— 路由要 Request 对象，
+    且这一步的目的是让本脚本能在不起服务的情况下验「筛选 → 渲染」整条链。
     """
     valid = {s['id'] for s in analytics.list_students()}
     if student and student not in valid:
@@ -96,11 +97,13 @@ def render_annotation(student=None, date_from=None, date_to=None, range_key='all
     if range_key not in {r['key'] for r in analytics.RANGES}:
         range_key = 'all'
     rng = analytics.resolve_range(range_key, date_from, date_to)
-    hist = ann_stats.history_metadata(student=student, rng=rng)
+    hist = ann_stats.history_metadata(student=student, rng=rng, q=q)
     # 筛选条链接**调路由里那个真函数**，不在这里复刻一份：
     # 「切档位要不要丢掉自定义起止」这类规则肉眼看不出来（链接长得都正常，
     # 只是数据不对），必须由断言守住 —— 而复刻一份就等于只测了复刻品。
-    hist.update(pages._hist_filter_links(student or None, rng,
+    # ⚠️ 传进去的学员要用 hist 里**解析过搜索词**的结果（搜索唯一命中会
+    #    自动选中一个人），否则「搜 zzh」时下拉里高亮的是「全部学员」。
+    hist.update(pages._hist_filter_links(hist['filter']['student'] or None, rng,
                                          hist['filter']['n_all'], hist['students']))
     ctx = dict(common, nav_active='data-annotation',
                ov=ann_stats.overview(), spec=ann_stats.annotation_spec(),
@@ -123,6 +126,17 @@ html_stu, hist_stu = render_annotation(student='stu-00001001')
 html_win, hist_win = render_annotation(student='stu-00001001',
                                        date_from='2026-09-27', date_to='2026-10-03')
 html_none, hist_none = render_annotation(date_from='2026-01-01', date_to='2026-01-31')
+
+# ---- 学员搜索框（2026-10-03：一排 chip 改成可搜索下拉）----------------------
+# 这四组把「输入什么 → 筛到谁」钉死。名单长了以后这四种输入都会用到，
+# 而且**拼音那条最容易被改坏**（换个匹配规则、忘了更新首字母索引…），
+# 所以每一类都留一条断言。
+html_q_ini, hist_q_ini = render_annotation(q='zzh')          # 拼音首字母
+html_q_han, hist_q_han = render_annotation(q='雨')            # 姓名任意字
+html_q_py, hist_q_py = render_annotation(q='zhaoming')       # 全拼
+html_q_id, hist_q_id = render_annotation(q='stu-00001003')   # 学员 id（粘贴）
+html_q_many, hist_q_many = render_annotation(q='z')          # 多命中：张哲恒 + 赵明
+html_q_miss, hist_q_miss = render_annotation(q='qqqq')       # 一个都不命中
 
 
 def slice_between(html, start, end):
@@ -170,6 +184,34 @@ checks = [    ('settings: 入口块', html_s, 'annotation-panel'),
     ('annotation: 无逐场值分档说明', html_a, '个字段没有逐场值'),
     ('annotation: 筛选条有学员 chip', html_a, '全部学员'),
     ('annotation: 筛选条有自定义区间表单', html_a, 'id="histFilter"'),
+    # ---- 学员搜索框：结构 + 有效性 + 唯一命中自动选中 ----
+    # 盯三类事：① 框和候选列表在不在；② 四种输入能不能找到人（这是需求本身）；
+    # ③ 唯一命中会不会真的把表格筛到那一个人（搜到却没筛 = 半截功能）。
+    ('搜索框: 有输入框（name=q）', html_a, 'id="histQ"'),
+    ('搜索框: 有候选列表', html_a, 'id="histPickList"'),
+    ('搜索框: 候选列表默认收起', html_a, 'overflow-auto hidden" id="histPickList"'),
+    ('搜索框: 候选带拼音检索串',
+     html_a, 'data-search="张哲恒|zhangzheheng|zzh|stu-00001001"'),
+    ('搜索框: 有「全部学员」兜底项', html_a, 'data-search="*"'),
+    ('搜索框: 拼音首字母 zzh → 筛到张哲恒', tbody_of(html_q_ini), 'hist-S01-01'),
+    ('搜索框: 拼音首字母 zzh → 不含他人', tbody_of(html_q_ini), 'hist-S02-01', False),
+    ('搜索框: 拼音首字母 zzh → 唯一命中已自动选中',
+     html_q_ini, '唯一匹配 → 已选中 张哲恒'),
+    ('搜索框: 姓名任意字「雨」→ 筛到陈雨菲', tbody_of(html_q_han), 'hist-S03-01'),
+    ('搜索框: 姓名任意字「雨」→ 不含他人', tbody_of(html_q_han), 'hist-S01-01', False),
+    ('搜索框: 全拼 zhaoming → 筛到赵明', tbody_of(html_q_py), 'hist-S05-01'),
+    ('搜索框: 学员 id → 筛到陈雨菲', tbody_of(html_q_id), 'hist-S03-01'),
+    ('搜索框: 多命中(z)不擅自选中，表格保持全批',
+     tbody_of(html_q_many), 'hist-S01-01'),
+    ('搜索框: 多命中(z)含另一位命中者', tbody_of(html_q_many), 'hist-S05-01'),
+    ('搜索框: 多命中(z)提示 2 位', html_q_many, '匹配到 2 位'),
+    ('搜索框: 不命中时表格不被清空', tbody_of(html_q_miss), 'hist-S01-01'),
+    ('搜索框: 不命中时有专门提示', html_q_miss, '没有匹配到学员'),
+    # 不命中的候选在**服务端**就 hidden —— 这是「禁 JS 也能用」的根据：
+    # 禁 JS 时用户看到的就是服务端筛好的那几位，不用等前端过滤。
+    ('搜索框: 不命中的候选服务端已 hidden',
+     slice_between(html_q_ini, 'id="histPickList"', '</ul>'),
+     'data-search="李思源|lisiyuan|lsy|stu-00001002" role="option">'),
     ('annotation: 表头是字段（编号在 thead）',
      thead_of(html_a), 'MD-001'),
     ('annotation: 表头不在 tbody', tbody_of(html_a), 'MD-001', False),
@@ -209,9 +251,12 @@ checks += [
     ('链接: 无筛选时学员链接不带 range=all', _ldef.get('全部记录'), 'range=all', False),
 ]
 for l in hist_a['student_links'] + hist_a['range_links']:
-    _lb = l.get('label') or l.get('name')          # 档位叫 label，学员 chip 叫 name
+    _lb = l.get('label') or l.get('name')          # 档位叫 label，学员项叫 name
     checks.append(('链接: %s 带 #history 锚点' % _lb, l['href'], '#history'))
     checks.append(('链接: %s 不带 range=all' % _lb, l['href'], 'range=all', False))
+    # 搜索词是**一次性的找人动作**，不该跟着链接流传（否则分享出去的地址里
+    # 带着别人的搜索词，而且 q 与 student 同时出现时语义含糊）。
+    checks.append(('链接: %s 不带搜索词 q' % _lb, l['href'], 'q=', False))
 fail = 0
 for c in checks:
     name, hay, needle = c[0], c[1], c[2]
@@ -224,6 +269,40 @@ for c in checks:
 
 # ---- 4. 逐行逐列的**算术**自检（HTML 层面数出来，与 stats 的返回对照） ----
 print()
+# ---- 3b. 拼音检索规则本身 ------------------------------------------------
+# 上面那些模板断言只能证明「某个人被筛出来了」，证明不了**规则没被改坏**：
+# 例如把首字母索引整个删掉，'zzh' 仍可能因为别的原因命中（haystack 里
+# 还挂着姓名与 id），断言照样绿。所以规则单独钉一遍，四种输入各一条。
+from server import pinyin as py_pinyin     # noqa: E402
+_PY_NAMES = ['张哲恒', '李思源', '陈雨菲', '王浩然', '赵明']
+
+
+def _py_hits(q):
+    return [n for n in _PY_NAMES if py_pinyin.match(q, py_pinyin.haystack(n, ''))]
+
+
+for label, q, want in [
+        ('拼音首字母 zzh', 'zzh', ['张哲恒']),
+        ('全拼 zhaoming', 'zhaoming', ['赵明']),
+        ('全拼中段 zheheng', 'zheheng', ['张哲恒']),
+        ('全拼前缀 zhang', 'zhang', ['张哲恒']),
+        ('姓名任意字「雨」', '雨', ['陈雨菲']),
+        ('首字母 zm', 'zm', ['赵明']),
+        ('空白分词「张 zzh」', '张 zzh', ['张哲恒']),
+        ('大小写不敏感 ZZH', 'ZZH', ['张哲恒']),
+        ('多命中 z', 'z', ['张哲恒', '赵明']),
+        ('不命中 qqqq', 'qqqq', []),
+        ('空检索词不过滤', '   ', _PY_NAMES)]:
+    got = _py_hits(q)
+    ok = got == want
+    print('%s 拼音: %-18s q=%-8r → %s' % ('✅' if ok else '❌', label, q, got))
+    if not ok:
+        fail += 1
+        print('     期望：%s' % want)
+print('   拼音库：%s' % ('pypinyin 已装（拼音检索可用）' if py_pinyin.HAS_PYPINYIN
+                        else '⚠️ 缺 pypinyin，已降级为只按原名匹配'))
+print()
+
 n_cols = len(hist_a['fields'])
 n_rows = len(hist_a['sessions'])
 body = tbody_of(html_a)

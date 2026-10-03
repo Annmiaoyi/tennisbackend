@@ -12,3 +12,8 @@ jinja2>=3.1,<4.0
 # 标注工作台的会话上传走 multipart/form-data（Form + File 字段），
 # FastAPI 解析这类请求体需要它，缺了会在**注册路由时**就抛 RuntimeError
 python-multipart>=0.0.9,<1.0
+# /annotation 历史采集元数据的「学员搜索框」要按拼音找人与过滤
+# （姓名任意字 / 拼音首字母 / 全拼 / id）—— 见 server/pinyin.py。
+# 纯 Python wheel、无编译依赖；**缺了不会崩**（降级成只按原名匹配），
+# 所以它是可选项而非常驻前提，但默认装上体验才完整。
+pypinyin>=0.51,<1.0

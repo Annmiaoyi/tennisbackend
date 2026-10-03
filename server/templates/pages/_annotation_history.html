@@ -61,23 +61,100 @@
 </div>
 {% else %}
 
-{#- ⚠️ 筛选条：学员 + 时间范围。全部走 query param + 服务端渲染
+{#- ⚠️ 筛选条：学员（可搜索下拉）+ 时间范围。全部走 query param + 服务端渲染
     （与 /training 同一套约定）—— URL 可分享、刷新不丢筛选、禁 JS 也能用。
+
+    学员为什么不做成一排 chip（2026-10-03 改）：
+      名单会越来越长，把所有人铺成 chip 既占屏幕又没法找。改成一个搜索框 +
+      展开的候选列表，**输入任意片段就能定位**：
+        中文任意字（「哲」）/ 拼音首字母（「zzh」）/ 全拼（「zheheng」）/
+        学员 id（「stu-00001」）。规则见 server/pinyin.py 的 match()。
+      候选列表在服务端就把不命中的 <li> 标成 hidden —— 所以**禁 JS 也能用**：
+      输入 → 提交 → 只看到命中的几位 → 点一位。JS 只是把「提交 → 重渲染」
+      加速成「边打边过滤」（见 annotation.js 的 initHistPicker）。
+
+    `q` 与 `student` 的分工（容易搞混，写在这里）：
+      · q         —— 一次性的**找人动作**，不参与表格筛选，也不进任何链接；
+                     唯一命中时由 stats 自动转成 student（省掉「搜到再点一下」）。
+      · student   —— **筛选状态**，进 URL、进所有链接、进日期表单的 hidden 域。
+      两者不共存：一旦选中某人，链接里只有 student。
+
     日期框只做渐进增强（改完即提交），不靠它工作。 -#}
 <div class="px-space-lg pb-space-md flex flex-col gap-space-xs border-b border-outline/15">
 <div class="flex flex-wrap items-center gap-space-xs">
 <span class="font-label-sm text-label-sm uppercase tracking-wider text-outline" style="width: 32px;">学员</span>
+<div class="relative" id="histPicker" style="width: 288px;">
+{#- 搜索框是**独立的 form**，只带 q —— 这样「搜一个新人」天然等于「放弃旧筛选」，
+    不会出现「改了搜索词但提交时把旧学员又带上了」这种自相矛盾的请求。 -#}
+<form action="/annotation" class="flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-surface-container-low border border-outline/25 focus-within:border-primary-fixed/60 transition-colors" id="histPickForm" method="get" role="search">
+<span class="material-symbols-outlined text-[16px] text-outline">search</span>
+<input aria-autocomplete="list" aria-controls="histPickList" aria-expanded="{{ 'true' if hist.picker.q else 'false' }}" autocomplete="off" class="bg-transparent font-label-sm text-label-sm text-on-surface outline-none w-full" id="histQ" name="q" placeholder="姓名 / 拼音首字母，如 zzh" role="combobox" type="search" value="{{ hist.picker.q }}">
+<button class="flex items-center text-outline hover:text-primary-fixed transition-colors shrink-0" title="搜索学员（也可直接回车）" type="submit">
+<span class="material-symbols-outlined text-[16px]">manage_search</span>
+</button>
+</form>
+{#- 候选列表：服务端渲染**全部**候选，不命中的加 hidden。
+    全渲染（而不是只渲染命中的）是为了让 JS 侧「清空输入 = 回到全部」成立 ——
+    只渲染命中的话，前端把输入清掉就没有「全部」可显示了。
+    带 q 进页面时列表默认展开（用户刚搜完，要看到命中结果）。 -#}
+<ul class="absolute z-30 mt-1 w-full rounded-xl bg-surface-container-high border border-outline/25 shadow-2xl overflow-auto{% if not hist.picker.q %} hidden{% endif %}" id="histPickList" role="listbox" style="max-height: 272px;">
 {% for s in hist.student_links %}
-<a class="flex items-center gap-space-xs px-space-sm py-1 rounded-lg transition-colors {{ 'bg-primary-container text-on-primary-container' if s.active else 'bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high' }}" href="{{ s.href }}">
-{% if s.avatar_url %}
-<img alt="" class="w-5 h-5 rounded-full object-cover" src="{{ s.avatar_url }}">
+<li{% if not s.hit %} hidden{% endif %} data-search="{{ s.search }}" role="option"{% if s.active %} aria-selected="true"{% endif %}>
+<a class="flex items-center gap-space-xs px-space-sm py-1.5 transition-colors {{ 'bg-primary-container text-on-primary-container' if s.active else 'text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface' }}" href="{{ s.href }}">
+{% if s.avatar_url and s.id %}
+<img alt="" class="w-5 h-5 rounded-full object-cover shrink-0" src="{{ s.avatar_url }}">
 {% else %}
-<span class="w-5 h-5 rounded-full flex items-center justify-center font-label-sm text-label-sm {{ 'bg-surface-container-highest text-on-surface' if s.active else 'bg-surface-container-high text-on-surface-variant' }}">{{ s.initial }}</span>
+<span class="w-5 h-5 rounded-full shrink-0 flex items-center justify-center bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">{{ s.initial }}</span>
 {% endif %}
-<span class="font-label-sm text-label-sm {{ 'font-bold' if s.active }}">{{ s.name }}</span>
+<span class="font-label-sm text-label-sm truncate flex-1 {{ 'font-bold' if s.active }}">{{ s.name }}</span>
 <span class="font-mono font-label-sm text-label-sm {{ 'text-on-primary-container' if s.active else 'text-outline' }}">{{ s.n }} 场</span>
 </a>
+</li>
 {% endfor %}
+{% if hist.picker.miss %}
+<li class="px-space-sm py-2 font-label-sm text-label-sm text-outline">没有匹配的学员 —— 换个字或拼音试试</li>
+{% endif %}
+<li class="px-space-sm py-1.5 border-t border-outline/20 font-label-sm text-label-sm text-outline">支持：姓名任意字 · 拼音首字母（zzh）· 全拼 · 学员 id</li>
+</ul>
+</div>
+
+{#- 已选学员：让「现在筛的是谁」不用展开下拉就能看到（× 只取消学员，不动时间区间）。 -#}
+{% if hist.filter.student %}
+<span class="flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-primary-container text-on-primary-container">
+{% if hist.filter.student_avatar %}
+<img alt="" class="w-5 h-5 rounded-full object-cover" src="{{ hist.filter.student_avatar }}">
+{% else %}
+<span class="w-5 h-5 rounded-full flex items-center justify-center bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">{{ hist.filter.student_initial }}</span>
+{% endif %}
+<span class="font-label-sm text-label-sm font-bold">{{ hist.filter.student_label }}</span>
+<a class="flex items-center text-on-primary-container/70 hover:text-on-primary-container" href="{{ hist.clear_href }}" title="只看全部学员">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</a>
+</span>
+{% endif %}
+
+{#- 搜索词的即时交代：唯一命中要说明「为什么表格突然变成一个人的了」，
+    否则这条自动选中会显得像页面自己乱跳。 -#}
+{% if hist.picker.q %}
+{% if hist.picker.auto_id %}
+<span class="flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-primary-fixed">done_all</span>
+「{{ hist.picker.q }}」唯一匹配 → 已选中 {{ hist.picker.auto_name }}
+</span>
+{% elif hist.picker.n_hits %}
+<span class="flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-primary-fixed">format_list_bulleted</span>
+「{{ hist.picker.q }}」匹配到 {{ hist.picker.n_hits }} 位，从下拉里选一位
+</span>
+{% else %}
+<span class="flex items-center gap-space-xs px-space-sm py-1 rounded-lg bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-error">search_off</span>
+「{{ hist.picker.q }}」没有匹配到学员，表格仍按当前筛选显示
+</span>
+{% endif %}
+{% endif %}
+
+<span class="font-label-sm text-label-sm text-outline">共 {{ hist.picker.n }} 位学员有场次</span>
 </div>
 
 <div class="flex flex-wrap items-center gap-space-xs">
@@ -110,6 +187,7 @@
 {% endif %}
 </form>
 </div>
+
 
 <div class="flex flex-wrap items-center gap-space-xs">
 <span class="font-label-sm text-label-sm text-on-surface-variant">

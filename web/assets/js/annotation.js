@@ -504,3 +504,124 @@ loadSessions();
     if (anchor) requestAnimationFrame(() => anchor.scrollIntoView({ block: 'start' }));
   }
 })();
+
+/* ---------- 历史采集元数据的「学员搜索框」（渐进增强） ----------
+ * 没有 JS 时的行为**已经是完整的**：输入 → 提交 → 服务端只渲染命中的候选，
+ * 点一位即可（见 templates/pages/_annotation_history.html 的筛选条）。
+ * 这里只把「提交 → 重渲染」加速成「边打边过滤」，并补上键盘操作：
+ *   · 打开：聚焦（或输入）即展开候选列表；
+ *   · 过滤：对已渲染的 <li> 按 data-search 即时显隐 —— **不重新渲染**，
+ *           因此服务端与前端不会出现两套列表长得不一样的问题；
+ *   · 回车：有命中就跳转命中项（= 选中这个人）；一个都没命中时**放行提交**，
+ *           交给服务端去查全体学员 —— 前端手里只有已渲染的那些，可能不全；
+ *   · ↑↓ 移动高亮，Esc 关闭，点空白处关闭。
+ * 匹配规则必须与 server/pinyin.py 的 match() 一致：小写、空白切词、词词都命中。
+ * 数据来源是服务端渲染的 data-search（值 = 姓名|全拼|首字母|学员 id）。
+ */
+function histMatch(query, hay) {
+  const tokens = String(query || '').toLowerCase().split(/\s+/).filter(Boolean);
+  if (!tokens.length) return true;
+  return tokens.every((t) => hay.indexOf(t) >= 0);
+}
+
+(function initHistPicker() {
+  const box = document.getElementById('histPicker');
+  const form = document.getElementById('histPickForm');
+  const input = document.getElementById('histQ');
+  const list = document.getElementById('histPickList');
+  if (!box || !form || !input || !list) return;
+
+  const items = Array.prototype.slice.call(list.querySelectorAll('li[data-search]'));
+  // 候选里第一条永远是「全部学员」（data-search="*"）。"*" 不是通配符语义，
+  // 只是标记：它表示「不限学员」，任何检索词下都该留着、也不参与键盘高亮。
+  const isAll = (li) => li.getAttribute('data-search') === '*';
+  const iAll = items.findIndex(isAll);
+  const pre = items.findIndex((li) => li.getAttribute('aria-selected') === 'true');
+  let active = -1;                       // 当前键盘高亮的候选下标
+
+  const visible = () => items.filter((li) => !li.hidden);
+
+  function mark() {
+    items.forEach((li, i) => {
+      const a = li.querySelector('a');
+      if (!a) return;
+      // 高亮类必须写完整字面量：tailwind.config 会扫本文件，
+      // 'bg-' + tone 这种运行时拼接扫不到，样式会被 purge（本仓库踩过）。
+      const on = i === active && i !== iAll;
+      // 只切背景，不碰文字色 —— 文字色有两个候选类（on-surface / on-surface-variant），
+      // 运行时再叠一个同类名，谁赢取决于编译产物里的先后顺序，属于不可控的偶然。
+      a.classList.toggle('bg-surface-container-highest', on);
+    });
+  }
+
+  function paint() {
+    const q = input.value;
+    items.forEach((li) => {
+      li.hidden = !(isAll(li) || histMatch(q, li.dataset.search || ''));
+    });
+    // 服务端在唯一命中时会自动选中某个人，候选里对应项带着 aria-selected；
+    // 高亮沿用它的位置 —— 用户按回车就是「确认那一位」。
+    // 只在当前高亮不可见时才回落，避免打字时把人选高亮抖回原处。
+    if (active < 0 || (items[active] && items[active].hidden)) {
+      active = (pre >= 0 && !items[pre].hidden) ? pre : -1;
+    }
+    mark();
+  }
+
+  function open() {
+    list.classList.remove('hidden');
+    input.setAttribute('aria-expanded', 'true');
+    if (!input.value) paint();           // 空检索词 = 展示全部（含「全部学员」）
+  }
+
+  function close() {
+    list.classList.add('hidden');
+    input.setAttribute('aria-expanded', 'false');
+    active = -1;
+    mark();
+  }
+
+  function move(step) {
+    const vis = visible();
+    if (!vis.length) return;
+    const cur = vis.indexOf(items[active]);
+    const next = vis[(cur + step + vis.length) % vis.length];
+    active = items.indexOf(next);
+    mark();
+    next.scrollIntoView({ block: 'nearest' });
+  }
+
+  input.addEventListener('focus', open);
+  input.addEventListener('input', () => { open(); paint(); });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); open(); move(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); open(); move(-1); }
+    else if (e.key === 'Escape') { close(); }
+    else if (e.key === 'Enter') {
+      // 回车 = 选中一位：优先用键盘高亮的那位，否则用第一个命中的。
+      // 一个都没命中时**放行提交**，交给服务端去全体学员里查 ——
+      // 前端手里只有已渲染的这些候选，可能不全（名单很大时就是这样）。
+      const hitOne = (active >= 0 && items[active] && !items[active].hidden
+        && active !== iAll) ? items[active]
+        : visible().filter((li) => li !== items[iAll])[0];
+      if (hitOne) {
+        e.preventDefault();
+        const a = hitOne.querySelector('a');
+        if (a) location.href = a.getAttribute('href');
+      } else {
+        close();
+      }
+    }
+  });
+
+  // 点候选：直接走 <a>，不做 preventDefault —— 与无 JS 时完全同一条路径，
+  // 少一个「JS 版本自己拼 URL」的分支，就不会出现两边跳去不同地址的问题。
+  list.addEventListener('click', () => close());
+  document.addEventListener('click', (e) => {
+    if (!box.contains(e.target)) close();
+  });
+
+  if (input.value) open();               // 带 q 进来（无 JS 提交/分享链接）→ 展开候选
+})();
+
