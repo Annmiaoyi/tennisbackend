@@ -126,22 +126,28 @@ ssh <user>@172.20.49.43 "sudo mkdir -p /srv/acemate/backend && sudo chown \$(id 
 bash deploy/push-from-mac.sh <user>@172.20.49.43 --data     # 推代码 + 搬 var/
 # 服务器
 ssh <user>@172.20.49.43
-cd /srv/acemate/backend && sudo bash deploy/bootstrap-server.sh && pm2 startup
+cd /srv/acemate/backend && sudo bash deploy/bootstrap-server.sh
+pm2 startup && pm2 save        # 开机自启；用**应用属主**执行，不要 sudo pm2
 ```
+
+PM2、`.venv`、`node_modules` 都归**应用属主**（默认 = 发起部署的那个用户，
+可用 `APP_USER=<用户>` 覆盖）。所以部署之后日常命令**不要加 sudo** ——
+`sudo pm2 list` 看到的是 root 的空表，不是这个应用。
 
 | 文件 | 作用 |
 |---|---|
 | `deploy/push-from-mac.sh` | 本机执行：rsync 推代码（`--data` 连数据一起搬） |
-| `deploy/bootstrap-server.sh` | 服务器执行：装依赖 + venv + 编译 CSS + `pm2 start` + `pm2 save` |
+| `deploy/bootstrap-server.sh` | 服务器执行：装依赖 + venv + 编译 CSS + `pm2 start` + `pm2 save`（以应用属主跑 PM2） |
 | `ecosystem.config.js` | PM2 配置，环境变量从 `deploy/acemate.env` 读 |
 | `deploy/acemate.env.example` | 环境变量模板（复制成 `acemate.env` 再填，该文件不入库） |
 | `deploy/nginx-acemate.conf` | 可选：需要 HTTPS / 反代时才用 |
 
 日常更新：`push-from-mac.sh` → 服务器上 `npm run build:css && pm2 reload acemate-backend`。
 
-> ⚠️ 三个**错了都不报错**的点，务必别改：PM2 必须 `instances: 1` / `fork`（SQLite 单写者）、
+> ⚠️ 几个**错了都不报错**的点，务必别改：PM2 必须 `instances: 1` / `fork`（SQLite 单写者）、
 > `watch: false`（否则写库触发无限重启）、`deploy/acemate.env` 里的 `TZ=Asia/Shanghai`
-> （服务器默认 UTC 会让"近 7 天"整体偏一天）。详见 [docs/DEPLOY.md](docs/DEPLOY.md)。
+> （服务器默认 UTC 会让"近 7 天"整体偏一天）、PM2 必须跑在**应用属主**而非 root 名下。
+> 详见 [docs/DEPLOY.md](docs/DEPLOY.md)。
 
 ---
 

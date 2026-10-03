@@ -81,8 +81,15 @@ cd /srv/acemate/backend
 sudo bash deploy/bootstrap-server.sh
 
 # ---- 4) 服务器：开机自启（只做一次，照抄它打印的 sudo 命令）----
+#      ⚠️ 用**应用属主**（发起部署的那个普通用户）执行，别用 sudo pm2：
+#         PM2 按"守护进程"归属，应用在那个用户的守护进程里。
 pm2 startup && pm2 save
 ```
+
+> `bootstrap-server.sh` 会自动把 PM2 / `.venv` / `node_modules` 都挂在
+> **应用属主**名下（默认 = `SUDO_USER`，可用 `APP_USER=<用户>` 覆盖），
+> 所以 `sudo bash deploy/bootstrap-server.sh` 之后，日常命令**不要加 sudo**
+> —— `sudo pm2 list` 看的是 root 的空表，不是这个应用。
 
 #### 日常更新
 
@@ -115,6 +122,19 @@ npm run build:css && pm2 reload acemate-backend     # 改了模板就必须重�
 - **`app.css` 是编译产物且在 `.gitignore` 里** —— 全新 clone 出来的仓库没有它。
   `bootstrap-server.sh` 会跑 `npm run build:css`；`push-from-mac.sh` 也会把本机
   编译好的产物带过去，两层保险。漏了的症状是**页面完全没有样式**（不报错）。
+- **PM2 / `.venv` / `node_modules` 必须归"应用属主"，不是 root**。
+  `bootstrap-server.sh` 默认取 `SUDO_USER`（发起部署的人）作为属主，可用
+  `APP_USER=<用户>` 覆盖。以 root 跑会同时踩三个**都不报错**的坑：
+  ① 普通用户 `pm2 list` 看不到这个应用（运维直接失联，还会被当成"服务没起来"）；
+  ② 应用进程以 root 运行，写出的 SQLite/WAL/日志全归 root，下次换属主启动就是
+  `permission denied`，现象是"数据没了"；
+  ③ 若那台机器本来就有该用户的 PM2 守护进程，会变成**两个守护进程都认为自己在管
+  同一个应用**，抢 8787 端口与同一批 SQLite 文件 —— 最难查的一类。
+  门禁在 `scripts/verify_deploy_config.py` 的 §4b。
+- **`deploy/acemate.env` 是 `chmod 600` 的，属主必须是应用属主**。
+  若归 root，PM2（以属主身份跑）读它直接 EACCES、应用起不来，
+  而日志里只有一行读文件失败 —— 与"环境文件缺失"的表现完全不同，很难往回查。
+  脚本里因此是**先 chown 再 chmod**，顺序不能反。
 
 > **关于数据位置**：上面默认让三个库留在 `/srv/acemate/backend/var/`（与 `run.py`
 > 本机开发完全同构，迁移只需搬一个 `var/`）。若要放到独立数据盘（重新部署代码时

@@ -166,6 +166,36 @@ check('搬数据那一份 rsync 没有 --delete（否则会删掉服务器上的
       '--exclude \'log/\' ./var/' in push and './var/' in push)
 
 # --------------------------------------------------------------------------- #
+section('4b. PM2 必须跑在应用属主名下（以 root 跑这一条不报错但运维会失联）')
+# --------------------------------------------------------------------------- #
+# 现象全是安静的：普通用户 `pm2 list` 看不到应用、应用写出的 SQLite/日志归 root、
+# 若该用户本来就有 PM2 守护进程则变成两个守护进程抢同一端口与同一批库。
+bs = read('deploy/bootstrap-server.sh')
+check('bootstrap 引入了应用属主概念（APP_USER / as_app）',
+      'APP_USER=' in bs and 'as_app()' in bs)
+# 裸 pm2 命令 = 以当前(可能是 root)身份跑。
+# 只看**代码段**：末尾那段 `cat <<EOF … EOF` 的帮助文本里就写着
+# `pm2 reload $APP_NAME` 之类的示例命令，扫进去会永远是假阳性。
+bs_code = bs.split('cat <<EOF')[0]
+_bare = re.findall(r'^[ \t]*(pm2 (?:start|reload|restart|save|status|delete|kill))\b',
+                   bs_code, re.M)
+check('bootstrap 代码段里没有裸 pm2 启动/重载命令（都要经 as_app）', _bare, [])
+if _bare:
+    print('    ⚠️ 以 root 身份执行的 pm2 命令：', ', '.join(_bare))
+# .venv / node_modules 的写入者也必须是应用属主，否则属主是 root
+check('bootstrap 以应用属主建 venv / 装 pip 依赖',
+      "as_app \"cd '$APP_DIR' && .venv/bin/python3 -m pip install" in bs)
+check('bootstrap 以应用属主跑 npm（ci 会先删 node_modules 再重装）',
+      "as_app \"cd '$APP_DIR' && npm ci" in bs or "as_app \"cd '$APP_DIR' && npm install" in bs)
+
+# 环境文件是 chmod 600 的：属主一旦是 root，PM2（以 APP_USER 跑）读它就是 EACCES，
+# 应用起不来，日志里只有一行读文件失败 —— 与"文件缺失"表现不同，很难往回查。
+_e = 'chown "$APP_USER:$APP_GROUP" deploy/acemate.env'
+_c = 'chmod 600 deploy/acemate.env'
+check('生成 acemate.env 时先 chown 再 chmod 600（顺序不能反）',
+      _e in bs and _c in bs and bs.index(_e) < bs.index(_c))
+
+# --------------------------------------------------------------------------- #
 section('5. 文档与实际文件一致')
 # --------------------------------------------------------------------------- #
 dep = read('docs/DEPLOY.md')
