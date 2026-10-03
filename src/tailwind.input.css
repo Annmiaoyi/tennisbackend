@@ -65,6 +65,43 @@
   scrollbar-width: none;
 }
 
+/* ---- 例外：必须「看得见滚动条」的容器（.hist-scroll） ----
+ * 上面两条是设计稿的要求（全站滚动条一律隐藏，靠毛玻璃/暗色底自己撑视觉）。
+ * 但历史采集元数据台账宽 3900+px，**必须**横向滚动才能看到右侧的列 ——
+ * 滚动条被隐藏后，「横向滚动」就只剩「用带横滚的滚轮/触控板横扫」这一条
+ * **看不见的**路径：鼠标没有横滚轮的人根本不知道这里能滚，右侧列等于不存在
+ * （2026-10-03 用户实际反馈）。
+ *
+ * ⚠️ 两条都必须覆盖，少一条都不生效：
+ *   · `scrollbar-width` —— 按规范，只要元素上设了非 auto 的 scrollbar-width，
+ *     浏览器就**改用标准滚动条渲染并忽略 `::-webkit-scrollbar`**，
+ *     所以光写 `::-webkit-scrollbar` 会被全局的 `scrollbar-width: none` 压住。
+ *   · `::-webkit-scrollbar` —— 给不支持 scrollbar-width 的旧 Safari 兜底。
+ * 选择器优先级：`.hist-scroll`（0,1,0）> `*`（0,0,0），所以无需 !important。
+ */
+.hist-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(142, 147, 121, 0.5) rgba(142, 147, 121, 0.1);
+}
+.hist-scroll::-webkit-scrollbar {
+  display: block;
+  width: 10px;
+  height: 10px;
+}
+.hist-scroll::-webkit-scrollbar-track {
+  background: rgba(142, 147, 121, 0.08);
+}
+.hist-scroll::-webkit-scrollbar-thumb {
+  background: rgba(142, 147, 121, 0.42);
+  border-radius: 9999px;
+}
+.hist-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(195, 244, 0, 0.6); /* primary-container */
+}
+.hist-scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* ============ 2. 外壳（设计稿未含，按截图还原） ============ */
 @layer components {
   /* ---- 应用骨架 ---- */

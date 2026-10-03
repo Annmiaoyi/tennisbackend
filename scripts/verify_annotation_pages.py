@@ -328,6 +328,60 @@ for label, got, want in [
 print()
 
 
+# ---- 3c. 横向滚动的入口（2026-10-03：右侧的列够不着） ----------------------
+# 这张表 33 列 × 112px + 左侧 3 列冻结 ≈ 3978px，**必须**横向滚动才能看到右侧的列。
+# 而设计稿在全局把滚动条隐藏了（src/tailwind.input.css 的 `*::-webkit-scrollbar`
+# 与 `*{scrollbar-width:none}`）—— 于是「横向滚动」只剩「用带横滚的滚轮 / 触控板
+# 横扫」这一条**看不见的**路径，没有横滚轮的人根本到不了右侧。
+#
+# 这里盯四件事，缺任何一件，右侧的列就又变成够不着：
+#   ① 模板的滚动容器挂上了 .hist-scroll（例外类是**按类**生效的，类名掉了等于没写）；
+#   ② CSS 源里那个例外**两条属性都在**（scrollbar-width 与 ::-webkit-scrollbar ——
+#      少一条都不生效，原因见 src/tailwind.input.css 的注释）；
+#   ③ 全局隐藏规则**还在**（它被删掉的话，这条例外就成了没人需要的死代码，
+#      应该顺手清掉，而不是留着误导人）；
+#   ④ 不依赖滚轮的入口在（可聚焦的容器 + 左右按钮 + 列位读数）。
+# 断言读的是 **CSS 源** 而不是编译产物 app.css：产物被 .gitignore 忽略、
+# 且本脚本本来就允许在「还没重编 CSS」的状态下跑。
+_CSS_SRC = io.open(os.path.join(ROOT, 'src', 'tailwind.input.css'),
+                   encoding='utf-8').read()
+_css_exc = _CSS_SRC.split('.hist-scroll {')[1].split('}')[0] if '.hist-scroll {' in _CSS_SRC else ''
+for label, got, want in [
+        ('横滚: 滚动容器挂着 .hist-scroll', 'class="hist-scroll ' in html_a, True),
+        ('横滚: 容器可聚焦（键盘方向键也能滚）',
+         'id="histScroll" role="region"' in html_a and 'tabindex="0"' in html_a, True),
+        ('横滚: 横扫到头不触发浏览器前进/后退',
+         'overscroll-behavior-x: contain' in html_a, True),
+        ('横滚: CSS 例外里 scrollbar-width 覆盖了全局的 none',
+         'scrollbar-width: thin' in _css_exc, True),
+        ('横滚: CSS 例外里给了旧 Safari 兜底（::-webkit-scrollbar）',
+         '.hist-scroll::-webkit-scrollbar {' in _CSS_SRC, True),
+        ('横滚: 全局隐藏滚动条的设计要求仍在（例外才有存在意义）',
+         '*::-webkit-scrollbar {' in _CSS_SRC and 'scrollbar-width: none' in _CSS_SRC, True),
+        ('横滚: 有左/右翻页按钮与列位读数',
+         all(k in html_a for k in ('id="histScrollPrev"', 'id="histScrollNext"',
+                                   'id="histScrollPos"')), True),
+        ('横滚: 控件默认隐藏（没有 JS 点了没反应，不如不显示）',
+         'hidden items-center gap-space-xs" id="histScrollCtl"' in html_a, True),
+        # JS 的「第 N–M 列」读数要拿列宽与冻结宽度。挂在同一处、由模板的 Jinja
+        # 常量渲染出来，JS 就不再抄一份常量 —— 抄一份就会在改列宽时对不上。
+        ('横滚: 列宽/冻结宽度/总列数挂在同一处',
+         'data-colw="112" data-frozen="282" data-ncols="%d"' % n_cols in html_a, True),
+        # 冻结列必须是 sticky，否则滚到右边就不知道自己在看哪一场（这也是
+        # 「横向滚动可用」的前提：没有冻结列，横滚等于把行标识也一起滚走）。
+        # 表头 3 个 th（rowspan=2 占满两行）+ 表体每行 3 个 td。
+        ('横滚: 冻结三列仍是 sticky（表头 3 + 表体 3×%d 行）' % n_rows,
+         thead_of(html_a).count('position: sticky; left:')
+         + tbody_of(html_a).count('position: sticky; left:'), 3 + n_rows * 3),
+]:
+    ok = got == want
+    print('%s %-52s got=%s want=%s' % ('✅' if ok else '❌', label, got, want))
+    if not ok:
+        fail += 1
+
+print()
+
+
 def body_text(html):
     """只剩「读者能看到的正文」—— 注释里写 **强调** 是给人读源码的，不算残留。
 

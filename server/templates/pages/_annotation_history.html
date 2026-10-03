@@ -222,6 +222,27 @@
 <span class="material-symbols-outlined text-[16px]">swipe</span>
 <span>表头与左侧会话列已固定；悬停任意格或列头看原始值</span>
 </span>
+
+{#- 横向翻页入口。
+    ⚠️ 为什么需要它：设计稿在全局隐藏了所有滚动条（src/tailwind.input.css 的
+    `*::-webkit-scrollbar` / `*{scrollbar-width:none}`），而这张表宽 3900+px。
+    滚动条被隐藏后，「横向滚动」只剩「用带横滚的滚轮 / 触控板横扫」这一条
+    **看不见的**路径 —— 没有横滚轮的人根本到不了右侧的列（2026-10-03 用户反馈）。
+    已在 CSS 里给 .hist-scroll 开了恢复滚动条的例外；这里再补一个**可点击**的入口，
+    两条路互不依赖。
+
+    控件在模板里是 `hidden`，由 annotation.js 揭开：按钮没有 JS 点了没反应，
+    「点了没动静」比「不显示」更像故障。没有 JS 时仍可拖底部滚动条。 -#}
+<div class="ml-auto hidden items-center gap-space-xs" id="histScrollCtl">
+<span class="font-label-sm text-label-sm text-outline whitespace-nowrap">横向</span>
+<button aria-label="向左滚动一屏" class="flex items-center justify-center w-7 h-7 rounded-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed" disabled="" id="histScrollPrev" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<span class="px-space-xs py-1 rounded-lg bg-surface-container-low font-mono font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap" id="histScrollPos" title="当前露出的字段列 / 总列数">—</span>
+<button aria-label="向右滚动一屏" class="flex items-center justify-center w-7 h-7 rounded-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed" id="histScrollNext" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
 </div>
 
 {% if hist.empty_filtered %}
@@ -235,7 +256,16 @@
 </div>
 {% else %}
 
-<div class="border-t border-outline/15" style="max-height: 82vh; overflow: auto;">
+{#- 滚动容器。三件事都要在：
+      · `overflow: auto`     —— 横竖都能滚（表格 min-width 3900+px）；
+      · `hist-scroll`        —— 恢复**可见**的滚动条（见 src/tailwind.input.css 的例外块）。
+                                没有它就只有「横滚滚轮」这条隐藏路径，右侧列等于够不着；
+      · `overscroll-behavior-x: contain` —— 横扫到头不要把浏览器的「前进/后退」手势
+                                带出来（macOS 双指横扫默认就是切页）。
+    tabindex="0" 让键盘用户能 Tab 进来用方向键滚 —— 这是滚动容器的标准做法。
+    列宽/冻结宽度也用 data-* 挂在同一处：JS 的「第 N–M 列」读数取的就是这份值
+    （优先实测 DOM，取不到才回落到 data-*），不在 JS 里再抄一份常量。 -#}
+<div class="hist-scroll border-t border-outline/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed/40" data-colw="{{ W_FIELD }}" data-frozen="{{ L_DATE + W_DATE }}" data-ncols="{{ hist.fields | length }}" id="histScroll" role="region" aria-label="历史采集元数据表格（可横向滚动）" style="max-height: 82vh; overflow: auto; overscroll-behavior-x: contain;" tabindex="0">
 {#- border-collapse: separate + border-spacing: 0 —— sticky 单元格在 collapse 下
     边框会随滚动消失；separate 让每个格的边框属于自己，分隔线才稳定。
     行/列的线因此改由每个 td 的 inline border 提供（见下面）。 -#}

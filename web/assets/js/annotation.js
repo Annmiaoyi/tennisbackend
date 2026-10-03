@@ -625,3 +625,78 @@ function histMatch(query, hay) {
   if (input.value) open();               // 带 q 进来（无 JS 提交/分享链接）→ 展开候选
 })();
 
+/* ---------- 历史采集元数据：「看到右侧的列」的第二条路（渐进增强） ----------
+ * 背景：这张表 33 列 × 112px + 左侧 3 列冻结 ≈ 3978px，**必须**横向滚动才能看到
+ * 右侧的列。而设计稿在全局把滚动条隐藏了（src/tailwind.input.css 的
+ * `*::-webkit-scrollbar{display:none}` + `*{scrollbar-width:none}`），于是
+ * 「横向滚动」只剩「用带横滚的滚轮 / 触控板横扫」这一条**看不见的**路径 ——
+ * 鼠标没有横滚轮的机器根本不知道这里能滚，右侧的列等于不存在
+ * （2026-10-03 用户实际反馈：右侧很多列展示不出来）。
+ *
+ * 正解在 CSS 侧：给 .hist-scroll 开例外、恢复**可见的滚动条** —— 那是**不依赖 JS**
+ * 的入口，也是第一位的。本函数补的是第二条路：可点击的「滚一屏」按钮 +
+ * 「现在露出第几列」读数，让没有横滚轮、也不想拖滚动条的人一样能过去。
+ *
+ * 控件在模板里是 `hidden` 的，到这里才揭开：按钮没有 JS 时点了没反应，
+ * 「点了没动静」比「不显示」更像故障。
+ */
+(function initHistoryScroll() {
+  const scroller = document.getElementById('histScroll');
+  const ctl = document.getElementById('histScrollCtl');
+  if (!scroller || !ctl) return;
+  const prev = document.getElementById('histScrollPrev');
+  const next = document.getElementById('histScrollNext');
+  const pos = document.getElementById('histScrollPos');
+
+  // 列宽 / 冻结宽度：**实测优先**。模板里挂的 data-* 是常量，而 colgroup 的宽度
+  // 在容器比表格 min-width 还宽时会被拉伸，那时常量就不再等于真实列宽；
+  // 取不到 DOM 尺寸（表格还没渲染）才回落到 data-*。
+  const ths = scroller.querySelectorAll('thead tr:last-child th');
+  const frozenThs = scroller.querySelectorAll('thead tr:first-child th');
+  const mCol = ths.length ? ths[0].getBoundingClientRect().width : 0;
+  // 冻结三列是 sticky，无论滚到哪都贴在滚动口左侧固定位置 ——
+  // 所以「第三列右缘 − 滚动口左缘」恒等于冻结区宽度，与当前滚动位置无关。
+  const mFrozen = frozenThs.length >= 3
+    ? frozenThs[2].getBoundingClientRect().right - scroller.getBoundingClientRect().left
+    : 0;
+  const COLW = mCol || parseFloat(scroller.dataset.colw) || 112;
+  const FROZEN = mFrozen || parseFloat(scroller.dataset.frozen) || 282;
+  const NCOL = ths.length || parseInt(scroller.dataset.ncols, 10) || 0;
+
+  ctl.classList.remove('hidden');
+  ctl.classList.add('flex');
+
+  function paint() {
+    const max = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+    const x = Math.min(Math.max(scroller.scrollLeft, 0), max);
+    // 冻结列永远盖住视口左侧 FROZEN 宽，所以「真正露出来的字段列」是内容坐标
+    // [x + FROZEN, x + clientWidth) 这一段对应的列。两端都夹住，避免末列读成 34。
+    const first = Math.min(NCOL, Math.max(0, Math.floor(x / COLW)));
+    const last = Math.min(NCOL - 1,
+      Math.max(first, Math.floor((x + scroller.clientWidth - FROZEN - 1) / COLW)));
+    if (pos) pos.textContent = (first + 1) + '–' + (last + 1) + ' / ' + NCOL;
+    if (prev) prev.disabled = x <= 0;
+    if (next) next.disabled = x >= max - 1;   // 浮点边界，留 1px 余量
+  }
+
+  function step(dir) {
+    // 一屏 = 视口里放得下的**字段列**总宽（扣掉冻结列），至少 2 列，
+    // 否则窄窗口下一屏只有一两列、点半天到不了头。
+    const span = Math.max(COLW * 2, scroller.clientWidth - FROZEN - COLW);
+    scroller.scrollBy({ left: dir * span, behavior: 'smooth' });
+  }
+
+  if (prev) prev.addEventListener('click', () => step(-1));
+  if (next) next.addEventListener('click', () => step(1));
+
+  // scroll 事件用 rAF 合并：滚一次会连发很多条，而 paint() 要读 scrollWidth /
+  // clientWidth，都是强制同步布局的取值，不该每条都读一遍。
+  let raf = 0;
+  scroller.addEventListener('scroll', () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => { raf = 0; paint(); });
+  }, { passive: true });
+  window.addEventListener('resize', paint);
+  paint();
+})();
+
