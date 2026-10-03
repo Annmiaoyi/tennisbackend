@@ -54,8 +54,9 @@ for p in list((ROOT / 'server').rglob('*.py')) + [ROOT / 'run.py']:
             text):
         CODE_ENV.add(m.group(1))
 
-# 这些是**部署**要用的、代码不读的（时区由解释器与 libc 读）
-DEPLOY_ONLY_ENV = {'TZ', 'PYTHONUNBUFFERED'}
+# 这些是**部署**要用的、代码不读的（时区由解释器与 libc 读；绑定地址由
+# ecosystem.config.js 读成 `--host/--port`，server/**.py 只认命令行参数）
+DEPLOY_ONLY_ENV = {'TZ', 'PYTHONUNBUFFERED', 'ACEMATE_BIND_HOST', 'ACEMATE_BIND_PORT'}
 
 ENV_EXAMPLE = 'deploy/acemate.env.example'
 example_text = read(ENV_EXAMPLE)
@@ -130,6 +131,12 @@ if eco:
           bool(re.search(r'缺少环境文件|ENV_FILE\)\s*\{|fs\.existsSync', eco)))
     check('口令为空 + 对外绑定 → 拒绝启动',
           'NETPULSE_INGEST_KEY' in eco and 'EXPOSED' in eco)
+    # 绑定地址的真源必须是**环境文件**，不是 PM2 进程自己的 process.env：
+    # 后者是"启动那一刻的 shell 环境"，而 run.py / server 只认 `--host`，
+    # 于是往 acemate.env 里写 ACEMATE_BIND_HOST 会**静默无效**，
+    # 而 bootstrap-server.sh 又 grep 这个文件做 fail-fast —— 两个真源互相矛盾。
+    check('绑定地址以 deploy/acemate.env 为真源（不是 PM2 的 process.env）',
+          'appEnv.ACEMATE_BIND_HOST' in eco)
 
 # --------------------------------------------------------------------------- #
 section('3. 机密不进 git')
@@ -194,6 +201,10 @@ _e = 'chown "$APP_USER:$APP_GROUP" deploy/acemate.env'
 _c = 'chmod 600 deploy/acemate.env'
 check('生成 acemate.env 时先 chown 再 chmod 600（顺序不能反）',
       _e in bs and _c in bs and bs.index(_e) < bs.index(_c))
+
+# 改端口之后健康检查必须跟着改，否则"改端口 → 永远检查失败"，会把人带进沟里
+check('bootstrap 的健康检查端口跟随环境文件的 ACEMATE_BIND_PORT',
+      'ACEMATE_BIND_PORT' in bs)
 
 # --------------------------------------------------------------------------- #
 section('5. 文档与实际文件一致')

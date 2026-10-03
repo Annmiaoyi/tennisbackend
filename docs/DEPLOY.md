@@ -135,6 +135,15 @@ npm run build:css && pm2 reload acemate-backend     # 改了模板就必须重�
   若归 root，PM2（以属主身份跑）读它直接 EACCES、应用起不来，
   而日志里只有一行读文件失败 —— 与"环境文件缺失"的表现完全不同，很难往回查。
   脚本里因此是**先 chown 再 chmod**，顺序不能反。
+- **绑定地址（`ACEMATE_BIND_HOST`）的真源是 `deploy/acemate.env`**，不是 PM2 进程的
+  `process.env`。`run.py` / `server/app.py` 只认 `--host`（默认 `127.0.0.1`），
+  **不读任何环境变量**；`ecosystem.config.js` 负责把环境文件里的值翻成 `--host`。
+  ⚠️ 早先这里是读 `process.env` 的 —— 于是往 `acemate.env` 里写
+  `ACEMATE_BIND_HOST=127.0.0.1` 会**静默无效**、实际仍绑 `0.0.0.0`：
+  你若同时填了口令，应用就对局域网敞开着，而你以为只听本机。
+  现已改成**环境文件优先**（`process.env` 仅作临时覆盖），门禁钉了 `appEnv.ACEMATE_BIND_HOST`。
+- **改了端口要一起改健康检查**：环境文件里设 `ACEMATE_BIND_PORT` 后，
+  `bootstrap-server.sh` 会跟着读它（否则会出现"改了端口 → 健康检查永远失败"）。
 
 > **关于数据位置**：上面默认让三个库留在 `/srv/acemate/backend/var/`（与 `run.py`
 > 本机开发完全同构，迁移只需搬一个 `var/`）。若要放到独立数据盘（重新部署代码时

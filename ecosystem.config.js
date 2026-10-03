@@ -37,11 +37,6 @@ const path = require('path');
 const ROOT = __dirname;
 const ENV_FILE = process.env.ACEMATE_ENV_FILE || path.join(ROOT, 'deploy', 'acemate.env');
 
-// 对外绑定地址。默认 0.0.0.0（局域网内可直接访问）；
-// 只给本机 + Nginx 反代时改成 127.0.0.1。
-const BIND_HOST = process.env.ACEMATE_BIND_HOST || '0.0.0.0';
-const BIND_PORT = process.env.ACEMATE_BIND_PORT || '8787';
-
 /** 解析极简 KEY=VALUE 环境文件（不引入 dotenv 依赖）。 */
 function parseEnvFile(file) {
   const out = {};
@@ -73,6 +68,19 @@ if (!fs.existsSync(ENV_FILE)) {
 }
 
 const appEnv = parseEnvFile(ENV_FILE);
+
+// 对外绑定地址。默认 0.0.0.0（局域网内可直接访问）；只给本机 + Nginx 反代时设为 127.0.0.1。
+//
+// ⚠️ 真源是 **deploy/acemate.env**，不是 PM2 进程自己的 `process.env`。
+//    原因：本文件是被 PM2 CLI `require` 进去求值的，`process.env` 是"启动那一刻的
+//    shell 环境"；而 run.py / server/app.py 只认 `--host`（默认 127.0.0.1），
+//    **不读任何环境变量**。
+//    早先这里只读 process.env.ACEMATE_BIND_HOST（见 git 历史）→ 在 acemate.env 里写
+//    `ACEMATE_BIND_HOST=127.0.0.1` 完全无效、且不报错，而 bootstrap-server.sh 又正是
+//    grep 那个文件来做"写口是否敞开"的 fail-fast —— 同一个决定两个真源，还互相矛盾。
+//    现在以环境文件优先；process.env 只留给"不想改文件"时的临时覆盖。
+const BIND_HOST = appEnv.ACEMATE_BIND_HOST || process.env.ACEMATE_BIND_HOST || '0.0.0.0';
+const BIND_PORT = appEnv.ACEMATE_BIND_PORT || process.env.ACEMATE_BIND_PORT || '8787';
 
 // 只在**真的对外暴露**时才强制要求采集口令。
 // 绑 127.0.0.1 时外部到不了那个端口，空口令只是开发期的便利。
