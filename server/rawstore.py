@@ -343,9 +343,13 @@ def archive(payload, *, session_id, shape=SHAPE_RAW_PACKAGE, openid=None, source
         if write_file:
             # 文件名带形态与版本，避免不同版本互相覆盖；压缩包带对应后缀
             name = 'raw_%s_%s_r%d%s' % (sid, shape, revision, SUFFIX.get(encoding, '.json'))
-            file_path = os.path.join(FILES_DIR, name)
-            with open(file_path, 'wb') as f:
+            dest = os.path.join(FILES_DIR, name)
+            with open(dest, 'wb') as f:
                 f.write(raw_bytes)
+            # ← 库里存**相对 DATA_DIR** 的路径，不存绝对路径：
+            #   `var/` 整体 rsync 到另一台机器后仍然有效。
+            #   曾存绝对路径，换机会导致全部读取失败且**不报错**（见 resolve_path）。
+            file_path = os.path.join('files', name)
 
         m = _meta_of(obj)
 
@@ -397,6 +401,41 @@ def by_raw_id(raw_id):
         conn.close()
 
 
+def resolve_path(p):
+    """把库里存的 `file_path` 解析成当前环境下**真实可读**的绝对路径；找不到返回 None。
+
+    ⚠️ 为什么必须有这一层（2026-10-05 实测踩到，代价是「看起来数据丢了」）：
+
+    `archive()` 曾经往库里写 `os.path.join(FILES_DIR, name)` —— **绝对路径**，
+    而 `FILES_DIR` 取决于部署目录。把整个 `var/` 搬到另一台机器（或换个目录）之后，
+    每一条 `file_path` 都还指着**旧机器**的位置，`os.path.exists()` 为假。
+
+    后果**不报错**：`_decode_row` 直接返回 None ⇒ `payload_of` 返回 None ⇒
+    逐拍页显示「原始包击球数 0 / 逐拍全量 0 行」、波形画不出来、导出说没有样本。
+    看起来像数据丢了，其实文件就躺在 `var/raw/files/` 里。
+    实测：**同一份库**，本机逐拍 106 行、服务器 0 行；只有 `file_path` 是差异。
+
+    解析顺序（三级回落，与 `converter.load_raw_payload` 同一思路，**顺序不能换**）：
+      1. 相对路径 → 相对 `DATA_DIR` 解析（新写入的形态，天然可搬迁，是目标形态）；
+      2. 绝对路径且**存在** → 直接用（老库在本机仍可跑，向后兼容）；
+      3. 兜底：按 `basename` 去当前 `FILES_DIR` 找（老绝对路径跨机搬迁后的唯一出路）。
+         文件名形如 `raw_<sid>_<shape>_r<rev>.<ext>`，含会话与版本，basename 唯一，
+         不会张冠李戴。
+    """
+    if not p:
+        return None
+    if os.path.isabs(p):
+        if os.path.exists(p):
+            return p
+        cand = os.path.join(FILES_DIR, os.path.basename(p))
+        return cand if os.path.exists(cand) else None
+    cand = os.path.join(DATA_DIR, p)
+    if os.path.exists(cand):
+        return cand
+    cand = os.path.join(FILES_DIR, os.path.basename(p))
+    return cand if os.path.exists(cand) else None
+
+
 def _decode_row(row):
     """把一行解成 dict。
 
@@ -405,6 +444,9 @@ def _decode_row(row):
       · 大包 / gzip 包 → `payload` 为空，正文在 `file_path` 指向的文件里
         （gzip 包读取时透明解压 —— 调用方拿到的一律是**原始 JSON**，
          不需要知道它落盘时是不是压缩的）
+
+    ⚠️ `file_path` 一律经 `resolve_path()` 解析，**不要直接 `os.path.exists(file_path)`** ——
+    库里可能存着别的机器上的绝对路径（见 `resolve_path` 的注释）。
     """
     if row is None:
         return None
@@ -414,8 +456,8 @@ def _decode_row(row):
             return json.loads(text)
         except Exception:
             return None
-    path = row['file_path']
-    if not path or not os.path.exists(path):
+    path = resolve_path(row['file_path'])
+    if not path:
         return None
     try:
         with open(path, 'rb') as f:

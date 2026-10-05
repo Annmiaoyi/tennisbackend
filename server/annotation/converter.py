@@ -48,8 +48,10 @@ def load_raw_payload(conn, session_id):
             return raw
 
     # 2) 会话表里的路径缓存
-    raw_path = row['raw_path']
-    if raw_path and os.path.exists(raw_path):
+    #    ⚠️ 一律经 rawstore.resolve_path 解析：这里存过**机器相关的绝对路径**
+    #    （可能来自另一台机器的 var/ 拷贝），直接 os.path.exists 会在换机后静默失效。
+    raw_path = rawstore.resolve_path(row['raw_path'])
+    if raw_path:
         try:
             with open(raw_path, encoding='utf-8') as f:
                 return json.load(f)

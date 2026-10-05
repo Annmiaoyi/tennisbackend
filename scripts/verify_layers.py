@@ -322,6 +322,42 @@ def suite_authed(tmp):
     ck('  库内不冗余内联（payload 为 NULL）且只落文件',
        row and row[0] is None and row[1], row)
 
+    print('\n=== D2. L0 路径可搬迁（var/ 搬到另一台机器后仍可读）===')
+    # 复现 2026-10-05 的线上事故：`file_path` 曾写 `os.path.join(FILES_DIR, name)` ——
+    # **绝对路径**。把 var/ rsync 到另一台机器后，库里每条路径都指向旧机器，
+    # `os.path.exists()` 为假 → `_decode_row` 静默返回 None →
+    # 逐拍页「原始包击球数 0 / 逐拍全量 0 行」，看起来像数据丢了。
+    # 实测：**同一份库**，本机逐拍 106 行、服务器 0 行，只有 file_path 是差异。
+    # 现在两道防线：① 新写入存**相对**路径（天然可搬迁）；
+    #             ② 老绝对路径按 basename 在当前 FILES_DIR 兜底。
+    sid_leg = 'VFY-%s-LEGACY' % RUN
+    st, _, b = req(PORT, 'POST', '/api/raw/sessions', headers=kh, form={'id': sid_leg},
+                   files={'raw': ('raw_%s.json' % sid_leg, json.dumps(raw_payload(sid_leg)))})
+    ck('  启用路径可搬迁的包上传 -> created',
+       st == 200 and jload(b).get('status') == 'created', (st, jload(b)))
+    c = sqlite3.connect(db)
+    row = c.execute('SELECT file_path FROM raw_sessions WHERE session_id=?',
+                    (sid_leg,)).fetchone()
+    _lp = (row and row[0]) or ''
+    ck('  库里存的是**相对**路径（不写死部署目录）', bool(_lp) and not os.path.isabs(_lp), _lp)
+    ck('  相对路径指向当前 FILES_DIR 下的真实文件',
+       bool(_lp) and os.path.exists(os.path.join(tmp, 'raw%d' % PORT, _lp)), _lp)
+    # 直接 INSERT 一条「旧机器留下的绝对路径」行（只追加层只禁 UPDATE/DELETE，
+    # INSERT 放行）：basename 与刚上传的那份**相同**，但所在目录在当前机器上不存在。
+    old_abs = '/old/machine/var/raw/files/' + os.path.basename(_lp)
+    c.execute('INSERT INTO raw_sessions(raw_id, session_id, shape, revision, sha256,'
+              ' byte_size, payload, file_path, received_at) VALUES(?,?,?,?,?,?,?,?,?)',
+              ('legacy-' + RUN, sid_leg, 'raw_package', 2, 'legacy-sha', 1, None,
+               old_abs, '2026-01-01T00:00:00.000Z'))
+    c.commit()
+    c.close()
+    st, _, b = req(PORT, 'GET', '/api/raw/sessions/%s/payload?shape=raw_package' % sid_leg,
+                   headers=kh)
+    got = jload(b) or {}
+    ck('  旧机器的绝对路径按 basename 兜底命中（而非 0 条）',
+       st == 200 and len(got.get('samples') or []) == len(PACKAGE['samples']),
+       (st, len(got.get('samples') or []), old_abs))
+
     print('\n=== E. L0 读 / 写口分档（配了口令时）===')
     ck('读口 无凭证 -> 401', req(PORT, 'GET', '/api/raw/stats')[0] == 401)
     ck('读口 口令错 -> 401',
@@ -355,8 +391,12 @@ def suite_authed(tmp):
     c.close()
     l0.close()
     ck('  sessions.raw_id 与 L0 同一行', bool(hit), (r and r['raw_id']))
-    ck('  raw_path 指向 var/raw/files', 'raw' in (r['raw_path'] or '') and
-       os.sep + 'files' + os.sep in (r['raw_path'] or ''), r and r['raw_path'])
+    # 可搬迁性：库里存的必须是**相对**路径，且能解析到当前 FILES_DIR 下的真实文件。
+    # （曾存绝对路径，rsync 到另一台机器后全部静默失效 —— 见 D2）
+    _rp = ((r['raw_path'] if r else None) or '')
+    ck('  raw_path 是相对路径（不绑死部署目录）', bool(_rp) and not os.path.isabs(_rp), _rp)
+    ck('  raw_path 能解析到 L0 真实文件',
+       bool(_rp) and os.path.exists(os.path.join(tmp, 'raw%d' % PORT, _rp)), _rp)
     ck('  预标注落库 5 条', ann == 5, ann)
     st, _, b = req(PORT, 'GET', '/api/sessions/%s/samples' % sid_a, cookie=cookie)
     ck('波形从 L0 取到（count>0）', st == 200 and (jload(b) or {}).get('count', 0) > 0, (st, b[:120]))
