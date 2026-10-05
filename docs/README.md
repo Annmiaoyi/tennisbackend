@@ -106,6 +106,7 @@ Windows 上可省事一些：`setup.cmd`（环境准备）→ `start.cmd --seed`
 | [INTEGRATION.md](INTEGRATION.md) | 采集端接入与端到端闭环、字段映射、质量门禁 | 查采集链路细节 |
 | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) | 颜色 / 字体 / 毛玻璃令牌，与设计稿的对应关系 | 改 UI |
 | [TESTING.md](TESTING.md) | 像素级保真验收 + 同步协议测试 | 提交前自检 |
+| [WATCH_FIELD_TEST.md](WATCH_FIELD_TEST.md) | **Apple Watch 真机实测方案**（四阶段 · 验收清单 · 四条上传口的可见性矩阵） | 真机联调前 |
 | [DEPLOY.md](DEPLOY.md) | 部署、备份、运维 | 上线 |
 
 ---
